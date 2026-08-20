@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vibe3d · iki registry, tek proje</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #07090c;
+        color: #d6dee6;
+        font: 14px/1.5 ui-sans-serif, system-ui, sans-serif;
+        overflow: hidden;
+      }
+      #viewport { display: block; width: 100vw; height: 100vh; }
+      #hud {
+        position: fixed; top: 16px; left: 16px;
+        display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+      }
+      #stages { display: flex; gap: 6px; }
+      button {
+        font: inherit; padding: 7px 13px; border-radius: 6px; cursor: pointer;
+        color: #b9c6d3; background: #161b22; border: 1px solid #262d36;
+      }
+      button:hover { background: #1d242d; }
+      button.active { color: #0a0d11; background: #f0b657; border-color: #f0b657; }
+      #action { color: #0a0d11; background: #6fb3d9; border-color: #6fb3d9; }
+      #action:hover { background: #86c4e6; }
+      #status { margin: 0; font-size: 12px; color: #6d8195; max-width: 54ch; }
+      #status.error { color: #ff8f6b; }
+    </style>
+  </head>
+  <body>
+    <canvas id="viewport"></canvas>
+    <div id="hud">
+      <div id="stages">
+        <button type="button" data-stage="gauge">@scifi-kit</button>
+        <button type="button" data-stage="barrel">@medieval-kit</button>
+      </div>
+      <button id="action" type="button">…</button>
+      <p id="status">başlatılıyor…</p>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

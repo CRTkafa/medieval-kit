@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "items": {
+    "@scifi-kit/core": {
+      "address": "@scifi-kit/core",
+      "source": "npm:@scifi-kit/registry",
+      "version": "latest",
+      "installedAt": "2026-08-20T20:26:13.607Z",
+      "files": [
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\batching.ts",
+          "sourceHash": "c27ddd60cb9f72aec413e3a67132640aba0288d2c0e7fada96e8da67f063a965"
+        },
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\effects.ts",
+          "sourceHash": "d735ab630899d296ffb0b5e68f326c3cf411c50225937699bed1bd5eb9b7ffd9"
+        },
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\generator.test.ts",
+          "sourceHash": "28f0ca98e97a19532eacbc400a7a8465d306276342ab1c95bd95d750f51c97bc"
+        },
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\glb.ts",
+          "sourceHash": "5f1f37136f9f92209f62e5d75321da59cad3e3a30f602e3745f4b315b997ad5b"
+        },
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\index.ts",
+          "sourceHash": "cbc02a3372d44895058eaeb161e1be9f69fdca01b710c827f2990a20075f58dc"
+        },
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\materials.ts",
+          "sourceHash": "a9462fdb3282620c97db02438bae620be6adb3c977f6502cee96a16f258d8e7f"
+        },
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\primitives.ts",
+          "sourceHash": "ae7b8d8d8f154150cd3aa0111aafbee13039d03eb8b078ecae082a337500664b"
+        },
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\profile.ts",
+          "sourceHash": "0ee3734762beddb5cc3316261c4633540a2e04d5497a8b4ed161116ee2acee95"
+        },
+        {
+          "path": "src\\lib\\vibe3d\\scifi-kit\\generator\\wear.ts",
+          "sourceHash": "b9452449e13b3fdb2d4eee8ecc8318eb28a07470b5fe1ab4ddfd5f2a394f99e4"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@scifi-kit/pressure-gauge": {
+      "address": "@scifi-kit/pressure-gauge",
+      "source": "npm:@scifi-kit/registry",
+      "version": "latest",
+      "installedAt": "2026-08-20T20:26:13.609Z",
+      "files": [
+        {
+          "path": "src\\models\\scifi-kit\\pressure-gauge\\model.ts",
+          "sourceHash": "7e79976cc1dcf86bcf5abe25cfd4c143f84ae215c95ccd60a43f9df01a0fb1e5"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-barrel": {
+      "address": "@medieval-kit/wooden-barrel",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-20T22:57:15.724Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-barrel\\model.ts",
+          "sourceHash": "52e73d497b7026f7f14748b23c41bf7e8be84dc7c8dcd52e867fea68ca6c56a1"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/core": {
+      "address": "@medieval-kit/core",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-20T22:57:15.720Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\core\\geometry.ts",
+          "sourceHash": "70a44cbd731ac822b6103b601f1a00b9798130ef64533928b1c57a0817218176"
+        },
+        {
+          "path": "src\\models\\medieval-kit\\core\\index.ts",
+          "sourceHash": "c18ab8ecdc97bea92ad32eae2c925115bf41014393af72068b6f85591c607f32"
+        },
+        {
+          "path": "src\\models\\medieval-kit\\core\\materials.ts",
+          "sourceHash": "4d75182ad96ebfd90d1f776248b8bc37817e55b6826b96ce54b84862cd37b422"
+        },
+        {
+          "path": "src\\models\\medieval-kit\\core\\random.ts",
+          "sourceHash": "de4e57736755b39b355a24a3b3df0cd79f31191343891502e7e5353417c0b3f2"
+        },
+        {
+          "path": "src\\models\\medieval-kit\\core\\parts.ts",
+          "sourceHash": "73abd39c264a1d5ede9506b7818a7bb4386b6d93b2e4ac4c87b5ca7439cab3e3"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/iron-brazier": {
+      "address": "@medieval-kit/iron-brazier",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-20T22:57:15.723Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\iron-brazier\\model.ts",
+          "sourceHash": "906b3e0b20aca546d1188b4f88f598d55d1bed9555a60547911d2db272ea14da"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-crate": {
+      "address": "@medieval-kit/wooden-crate",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-20T22:57:15.726Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-crate\\model.ts",
+          "sourceHash": "1036c1652d84ba82401d520331b841f9e8391b6a4035bf9ebcbb3faefb787233"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/kit": {
+      "address": "@medieval-kit/kit",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-20T22:57:15.726Z",
+      "files": [],
+      "dependencies": []
+    }
+  }
+}

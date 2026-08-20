@@ -1,0 +1,18 @@
+node_modules/
+
+# Derleme çıktıları. `my-registry/dist/registry.json` build script'inden üretilir;
+# depoya konmaz, `bun run registry:build` ile yeniden kurulur.
+dist/
+dist-viewer/
+
+*.log
+*.tgz
+*.tsbuildinfo
+.DS_Store
+
+# Ajan/araç durumu
+.omc/
+.claude/settings.local.json
+
+# models.lock.json KASITLI OLARAK dahil edilir: kurulu kaynağın hangi sürümden
+# geldiğini kaydeder ve `vibe3d diff` onunla yerel değişiklikleri bulur.

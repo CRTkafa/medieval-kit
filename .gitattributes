@@ -1,0 +1,12 @@
+# Depoda her zaman LF sakla, checkout'ta platformun yerel biçimini ver.
+# Bu olmadan Windows'ta yapılan commit'ler CRLF ile girer ve Linux/macOS'taki
+# katkıcılar dosyaların tamamını değişmiş görür.
+* text=auto eol=lf
+
+# İkili dosyalar dönüştürülmemeli.
+*.png binary
+*.jpg binary
+*.webp binary
+*.glb binary
+*.gltf binary
+*.woff2 binary
