@@ -1,9 +1,9 @@
-# Depoda her zaman LF sakla, checkout'ta platformun yerel biçimini ver.
-# Bu olmadan Windows'ta yapılan commit'ler CRLF ile girer ve Linux/macOS'taki
-# katkıcılar dosyaların tamamını değişmiş görür.
+# Always store LF in the repository, hand out the platform's native form on
+# checkout. Without this, commits made on Windows go in with CRLF and every
+# contributor on Linux or macOS sees the whole file as modified.
 * text=auto eol=lf
 
-# İkili dosyalar dönüştürülmemeli.
+# Binary files must not be converted.
 *.png binary
 *.jpg binary
 *.webp binary

@@ -1,13 +1,13 @@
 node_modules/
 
-# Derleme çıktıları. `my-registry/dist/registry.json` build script'inden üretilir;
-# depoya konmaz, `bun run registry:build` ile yeniden kurulur.
+# Build output. `my-registry/dist/registry.json` is produced by the build
+# script; it is not committed, and `bun run registry:build` rebuilds it.
 dist/
 dist-viewer/
 
-# `bun run render` ve `bun run export:glb` çıktıları. İkisi de kaynaktan
-# yeniden üretiliyor; depoda tutmak birkaç megabaytlık ikili dosyayı her
-# değişiklikte yeniden yazmak demek olurdu.
+# Output of `bun run render` and `bun run export:glb`. Both are regenerated
+# from source, and keeping them here would mean rewriting several megabytes
+# of binaries on every change.
 renders/
 glb/
 
@@ -16,11 +16,15 @@ glb/
 *.tsbuildinfo
 .DS_Store
 
-# Ajan/araç durumu
+# Agent and tool state
 .omc/
 .claude/settings.local.json
 
-# models.lock.json KASITLI OLARAK dahil edilir: kurulu kaynağın hangi sürümden
-# geldiğini kaydeder ve `vibe3d diff` onunla yerel değişiklikleri bulur.
+# models.lock.json is INTENTIONALLY tracked: it records which version the
+# installed source came from, and `vibe3d diff` uses it to find local edits.
 scripts/probe.ts
 scripts/zdiag.ts
+
+# Reference images. They belong to the (private) studio repo, not to the
+# registry that consumers clone.
+references/

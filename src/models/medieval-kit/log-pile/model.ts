@@ -47,8 +47,11 @@ export interface LogPileConfig {
 }
 
 export const logPileDefaults: LogPileConfig = {
-  rows: 3,
-  perRow: 5,
+  // Denser than it was. Twelve logs read as "some firewood"; a stack is the
+  // thing that makes a wall look lived-against, and that needs enough logs
+  // for the ends to form a pattern rather than a row.
+  rows: 4,
+  perRow: 7,
   logLength: 0.62,
   logRadius: 0.065,
   variation: 0.22,
@@ -97,7 +100,11 @@ export function createModel(overrides: Partial<LogPileConfig> = {}) {
       }
       const endTint = (): Color => {
         tint.copy(MEDIEVAL_PALETTE.oakEnd)
-        tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), 0.07 + jitter(random, 0.05))
+        // +0.07 did not deliver what the file header promises. A sawn end is
+        // dramatically paler than bark -- in a reference photograph the pale
+        // discs are the first thing the eye lands on -- and at this offset the
+        // ends were merely a slightly different brown.
+        tint.offsetHSL(jitter(random, 0.012), -0.06 + jitter(random, 0.04), 0.19 + jitter(random, 0.05))
         return tint
       }
 
@@ -165,7 +172,17 @@ export function createModel(overrides: Partial<LogPileConfig> = {}) {
           const tilt = jitter(random, 0.04)
           for (const [target, geometry] of [[bark, body], [ends, capA], [ends, capB]] as const) {
             geometry.rotateY(roll)
-            geometry.rotateZ(Math.PI / 2)
+            // About X, NOT about Z.
+            //
+            // `latheGeometry` builds along Y. Rotating +90 degrees about Z
+            // sends +Y to -X, so every log lay along the X axis -- which is
+            // the very axis the layout spaces them along. Each log was 0.62 m
+            // long and its neighbour's centre was 0.13 m away, so every log
+            // ran straight through about five of its neighbours. The tangent
+            // solve above was correct the whole time; it was solving for an
+            // orientation the geometry did not have. Rotating about X sends
+            // +Y to +Z, which is the axis `restingHeight` assumes.
+            geometry.rotateX(Math.PI / 2)
             geometry.rotateY(tilt)
             geometry.translate(log.x, log.y, jitter(random, config.logLength * 0.015))
             target.push(geometry)
