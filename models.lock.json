@@ -67,11 +67,11 @@
       "address": "@medieval-kit/wooden-barrel",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-20T22:57:15.724Z",
+      "installedAt": "2026-08-21T02:42:21.555Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-barrel\\model.ts",
-          "sourceHash": "52e73d497b7026f7f14748b23c41bf7e8be84dc7c8dcd52e867fea68ca6c56a1"
+          "sourceHash": "3d9f8c88b500c5af5c1986994b44a6e572d7d6bebe3805593c547fc7ca060791"
         }
       ],
       "dependencies": [
@@ -82,19 +82,19 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-20T22:57:15.720Z",
+      "installedAt": "2026-08-21T02:42:21.537Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
-          "sourceHash": "70a44cbd731ac822b6103b601f1a00b9798130ef64533928b1c57a0817218176"
+          "sourceHash": "f8e25c9a791e0cdacbbf37408bd3205d3f3f4ccfd46fac5f13bf99d78803240a"
         },
         {
           "path": "src\\models\\medieval-kit\\core\\index.ts",
-          "sourceHash": "c18ab8ecdc97bea92ad32eae2c925115bf41014393af72068b6f85591c607f32"
+          "sourceHash": "d7a32eff9c665260013556f95650f827ea8abb7fbe3f65676f53a9a7b4e8c183"
         },
         {
           "path": "src\\models\\medieval-kit\\core\\materials.ts",
-          "sourceHash": "4d75182ad96ebfd90d1f776248b8bc37817e55b6826b96ce54b84862cd37b422"
+          "sourceHash": "60e95d0a3c2e68138af4e35add2a45e8264de56d0dc23f3333b468617408a8b4"
         },
         {
           "path": "src\\models\\medieval-kit\\core\\random.ts",
@@ -103,21 +103,22 @@
         {
           "path": "src\\models\\medieval-kit\\core\\parts.ts",
           "sourceHash": "73abd39c264a1d5ede9506b7818a7bb4386b6d93b2e4ac4c87b5ca7439cab3e3"
-        }
-      ],
-      "dependencies": [
-        "three@>=0.185.0"
-      ]
-    },
-    "@medieval-kit/iron-brazier": {
-      "address": "@medieval-kit/iron-brazier",
-      "source": "file:my-registry/dist/registry.json",
-      "version": "workspace",
-      "installedAt": "2026-08-20T22:57:15.723Z",
-      "files": [
+        },
         {
-          "path": "src\\models\\medieval-kit\\iron-brazier\\model.ts",
-          "sourceHash": "906b3e0b20aca546d1188b4f88f598d55d1bed9555a60547911d2db272ea14da"
+          "path": "src\\models\\medieval-kit\\core\\kit.ts",
+          "sourceHash": "14c43be9a58a17ea56fea711288ad9d2c584792d7ea636f202033748aa5a841d"
+        },
+        {
+          "path": "src\\models\\medieval-kit\\core\\tool.ts",
+          "sourceHash": "ed38aae8a121f9516df17a1c89f968e519c8392aa7af5f8b3b3f420f83ad9357"
+        },
+        {
+          "path": "src\\models\\medieval-kit\\core\\occlusion.ts",
+          "sourceHash": "183ff33cb1bcdc872bc408a60cc257f1de9470244a174fa31c6e8675d6463b2f"
+        },
+        {
+          "path": "src\\models\\medieval-kit\\core\\tint.ts",
+          "sourceHash": "e642a10e8d2a22b8ab309d58ac8a89460c1d6b69a23b8ecb7ef39c7f5280161c"
         }
       ],
       "dependencies": [
@@ -128,11 +129,11 @@
       "address": "@medieval-kit/wooden-crate",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-20T22:57:15.726Z",
+      "installedAt": "2026-08-21T02:42:21.560Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-crate\\model.ts",
-          "sourceHash": "1036c1652d84ba82401d520331b841f9e8391b6a4035bf9ebcbb3faefb787233"
+          "sourceHash": "1ec79ad29dcb9e74b95660b895db57a9abac8350fbc1ceb2fa21c918c510df07"
         }
       ],
       "dependencies": [
@@ -143,9 +144,369 @@
       "address": "@medieval-kit/kit",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-20T22:57:15.726Z",
+      "installedAt": "2026-08-21T02:42:21.566Z",
       "files": [],
       "dependencies": []
+    },
+    "@medieval-kit/iron-anvil": {
+      "address": "@medieval-kit/iron-anvil",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.545Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\iron-anvil\\model.ts",
+          "sourceHash": "50861b839f6470ade634da0bb197aa8c2e791448313eb4332e5d7815381ce427"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-bucket": {
+      "address": "@medieval-kit/wooden-bucket",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.558Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-bucket\\model.ts",
+          "sourceHash": "3ae35cbed22ea08ad94744a05e79b99bcdc505272f7a99fa7d14f7d53c78744b"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-fence": {
+      "address": "@medieval-kit/wooden-fence",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.561Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-fence\\model.ts",
+          "sourceHash": "6adb4b00a70c551cbc316557928c8cdac4bb48eab227779feb07d2b22e9a4d03"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-hoe": {
+      "address": "@medieval-kit/wooden-hoe",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.562Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-hoe\\model.ts",
+          "sourceHash": "7ed9f67322ed9aa2314890396e906a9bc2d9854e24443a28494e16228a8f0100"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-ladder": {
+      "address": "@medieval-kit/wooden-ladder",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.563Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-ladder\\model.ts",
+          "sourceHash": "8cae238eed01ebdb3af3fb7a1dc995da985c71db68a70bda0bfb02e678640edf"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-pitchfork": {
+      "address": "@medieval-kit/wooden-pitchfork",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.564Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-pitchfork\\model.ts",
+          "sourceHash": "b45bf1c23a70d1159fdc8fb726ecb74c4e9a3463281951405e5043192ceddf7c"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-shovel": {
+      "address": "@medieval-kit/wooden-shovel",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.565Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-shovel\\model.ts",
+          "sourceHash": "33162c98de9dd3d69a9410fa105c727db116fffdbcd711f75c2f5bf318348baa"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-stool": {
+      "address": "@medieval-kit/wooden-stool",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.566Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-stool\\model.ts",
+          "sourceHash": "6a8724fb90091e08654f0209a063966312ffec9aa00a575c0cf5c91f56af821c"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/cart-wheel": {
+      "address": "@medieval-kit/cart-wheel",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.540Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\cart-wheel\\model.ts",
+          "sourceHash": "12f2e5be928a06a93bbdf8a912bb6a9b7da0f87edf2466fda13a866f1ebb4b8a"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/log-pile": {
+      "address": "@medieval-kit/log-pile",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.549Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\log-pile\\model.ts",
+          "sourceHash": "2728e7d7ac7f4f616029dc85c3a8b9b6a9eea767cffd536318573f3784c9a67a"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/trestle-table": {
+      "address": "@medieval-kit/trestle-table",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.554Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\trestle-table\\model.ts",
+          "sourceHash": "bab1abe8bd778a98ca4e644473abbcb865b65ad26415f8fc9fce4ce641f985bb"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-chest": {
+      "address": "@medieval-kit/wooden-chest",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.559Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-chest\\model.ts",
+          "sourceHash": "b16a3bf219af31c82bab8c0b71b77731a366fcaab1962e435ec365e8e9978e66"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/hay-bale": {
+      "address": "@medieval-kit/hay-bale",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.543Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\hay-bale\\model.ts",
+          "sourceHash": "91ccfdc3ccf075ad70562451dd73f4cd441b00cf3bb18d5ff22296361da268b7"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/pitch-torch": {
+      "address": "@medieval-kit/pitch-torch",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.551Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\pitch-torch\\model.ts",
+          "sourceHash": "b40d0cf06a1b12fe7405dbe46e474612269954982b5b41d89a365e9439a21c55"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/wooden-bench": {
+      "address": "@medieval-kit/wooden-bench",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.557Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\wooden-bench\\model.ts",
+          "sourceHash": "86b14d4eea0f0ac88c238ac58d86b19906affe7d89ebdb36ae4f543086c0c881"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/linen-sack": {
+      "address": "@medieval-kit/linen-sack",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.548Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\linen-sack\\model.ts",
+          "sourceHash": "78148f7765829c659e673ffea6d3111a68adc58eb3637c6ccc253e5ae616372a"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/oak-tankard": {
+      "address": "@medieval-kit/oak-tankard",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.550Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\oak-tankard\\model.ts",
+          "sourceHash": "cabf856ffa18cca4e9395fe62f82dde6dea17c044d7dc8bfbd4ee3daaaaa5823"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/straw-broom": {
+      "address": "@medieval-kit/straw-broom",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.552Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\straw-broom\\model.ts",
+          "sourceHash": "04348d70c3fe91a105adbe17638c30ee740d1be16709fb6cd1578f3af10fec97"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/bronze-bell": {
+      "address": "@medieval-kit/bronze-bell",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.539Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\bronze-bell\\model.ts",
+          "sourceHash": "93c13d4ad60ce19594cc0f94508650ceca2993a072da72194555820d028aedf8"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/iron-lantern": {
+      "address": "@medieval-kit/iron-lantern",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.546Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\iron-lantern\\model.ts",
+          "sourceHash": "0b2d5b74c6f9e2a6b83446f618f509733074e3d92db3caecc57519f9dd645f70"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/tavern-sign": {
+      "address": "@medieval-kit/tavern-sign",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.553Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\tavern-sign\\model.ts",
+          "sourceHash": "4d7d240688c4ecb16f4356ba9b1512b8c8620a030646552988dad1ce393562d1"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/coin-pouch": {
+      "address": "@medieval-kit/coin-pouch",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.541Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\coin-pouch\\model.ts",
+          "sourceHash": "02be9f0ce1a26ce0ef4c5da6b782e6f1d602b85afdf1f5211788d9249ec29d97"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/glass-phial": {
+      "address": "@medieval-kit/glass-phial",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.542Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\glass-phial\\model.ts",
+          "sourceHash": "e49f120c93313c87145b304887c7664783d18d5b5d347e1fa0086a14416d3cc1"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/leather-book": {
+      "address": "@medieval-kit/leather-book",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-21T02:42:21.547Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\leather-book\\model.ts",
+          "sourceHash": "b4da48c02dd34a407e093a3ac96070f8048258e54cf04f24af4f24b379f18a11"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
     }
   }
 }

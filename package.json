@@ -10,7 +10,10 @@
     "verify": "bun scripts/verify-model.ts",
     "registry:build": "bun my-registry/build.ts",
     "registry:validate": "vibe3d registry validate my-registry/dist/registry.json",
-    "viewer:build": "vite build --config vite.viewer.config.ts && bun scripts/build-artifact.ts"
+    "viewer:build": "vite build --config vite.viewer.config.ts && bun scripts/build-artifact.ts",
+    "verify:glb": "bun scripts/verify-glb.ts",
+    "render": "bun scripts/render.ts",
+    "export:glb": "bun scripts/export-glb.ts"
   },
   "dependencies": {
     "three": "^0.185.1"

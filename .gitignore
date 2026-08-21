@@ -5,6 +5,12 @@ node_modules/
 dist/
 dist-viewer/
 
+# `bun run render` ve `bun run export:glb` çıktıları. İkisi de kaynaktan
+# yeniden üretiliyor; depoda tutmak birkaç megabaytlık ikili dosyayı her
+# değişiklikte yeniden yazmak demek olurdu.
+renders/
+glb/
+
 *.log
 *.tgz
 *.tsbuildinfo

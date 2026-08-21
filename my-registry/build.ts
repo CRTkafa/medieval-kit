@@ -25,67 +25,7 @@ const NAMESPACE = '@medieval-kit'
 const THREE_RANGE = 'three@>=0.185.0'
 
 /** Model başına katalog verisi. Kaynak dosyalar diskten okunur. */
-const MODEL_META: Record<string, {
-  title: string
-  description: string
-  category: string
-  tags: string[]
-  controls: Record<string, unknown>
-  materialSlots: string[]
-  parts: string[]
-}> = {
-  'wooden-barrel': {
-    title: 'Wooden Barrel',
-    description:
-      'Ayrı meşe tahtalardan kurulmuş, demir çemberli, kapağı gömülü lowpoly fıçı.',
-    category: 'Props',
-    tags: ['medieval', 'lowpoly', 'props', 'procedural'],
-    controls: {
-      height: { type: 'number', label: 'Yükseklik', min: 0.4, max: 2, step: 0.02, unit: 'm' },
-      radius: { type: 'number', label: 'Yarıçap', min: 0.15, max: 0.9, step: 0.01, unit: 'm' },
-      taper: { type: 'number', label: 'Uç daralması', min: 0, max: 0.34, step: 0.01 },
-      staveCount: { type: 'number', label: 'Tahta sayısı', min: 6, max: 28, step: 1 },
-      hoopCount: { type: 'number', label: 'Çember sayısı', min: 0, max: 6, step: 1 },
-      seed: { type: 'number', label: 'Varyasyon tohumu', min: 1, max: 64, step: 1 },
-    },
-    materialSlots: ['oak', 'iron'],
-    parts: ['staves', 'heads', 'hoops'],
-  },
-  'wooden-crate': {
-    title: 'Wooden Crate',
-    description:
-      'Köşe dikmelerine çakılmış yatay tahta sıraları ve dövme demir kayışlar.',
-    category: 'Props',
-    tags: ['medieval', 'lowpoly', 'props', 'procedural'],
-    controls: {
-      width: { type: 'number', label: 'Genişlik', min: 0.3, max: 1.4, step: 0.02, unit: 'm' },
-      height: { type: 'number', label: 'Yükseklik', min: 0.25, max: 1.2, step: 0.02, unit: 'm' },
-      depth: { type: 'number', label: 'Derinlik', min: 0.3, max: 1.4, step: 0.02, unit: 'm' },
-      plankRows: { type: 'number', label: 'Tahta sırası', min: 1, max: 6, step: 1 },
-      strapCount: { type: 'number', label: 'Demir kayış', min: 0, max: 4, step: 1 },
-      seed: { type: 'number', label: 'Varyasyon tohumu', min: 1, max: 64, step: 1 },
-    },
-    materialSlots: ['oak', 'iron'],
-    parts: ['posts', 'planks', 'straps'],
-  },
-  'iron-brazier': {
-    title: 'Iron Brazier',
-    description:
-      'Üç ayaklı dövme demir mangal; titreyen alev, kor kömürler ve taşıdığı ateş ışığı.',
-    category: 'Lighting',
-    tags: ['medieval', 'lowpoly', 'lighting', 'animated', 'procedural'],
-    controls: {
-      height: { type: 'number', label: 'Yükseklik', min: 0.4, max: 1.6, step: 0.02, unit: 'm' },
-      bowlRadius: { type: 'number', label: 'Kâse yarıçapı', min: 0.12, max: 0.5, step: 0.01, unit: 'm' },
-      bowlSegments: { type: 'number', label: 'Kâse köşesi', min: 5, max: 20, step: 1 },
-      legCount: { type: 'number', label: 'Ayak sayısı', min: 3, max: 6, step: 1 },
-      flameCount: { type: 'number', label: 'Alev dili', min: 0, max: 9, step: 1 },
-      seed: { type: 'number', label: 'Varyasyon tohumu', min: 1, max: 64, step: 1 },
-    },
-    materialSlots: ['iron', 'char', 'ember'],
-    parts: ['bowl', 'legs', 'coals', 'flame'],
-  },
-}
+import { MODEL_META } from './meta.ts'
 
 const LIB_DESCRIPTION: Record<string, { title: string; description: string }> = {
   core: {
@@ -156,8 +96,11 @@ async function main(): Promise<void> {
     // durumu) buraya klasör bırakabilir; registry adları ise `[a-z0-9-]+`
     // olmak zorunda, yani böyle bir klasör derlemeyi kırardı.
     if (entry.name.startsWith('.')) continue
+    // Model olmanın ölçütü: klasörün KÖKÜNDE model.ts. Alt ağaçta aramak
+    // yanlış: `core/model.ts` paylaşılan bir yardımcı, model değil.
     const paths = await collectTypeScript(join(sourceRoot, entry.name))
-    if (paths.some((path) => path.endsWith(`${sep}model.ts`))) models.push(entry.name)
+    const root = join(sourceRoot, entry.name, 'model.ts')
+    if (paths.includes(root)) models.push(entry.name)
     else libs.push(entry.name)
   }
   models.sort()

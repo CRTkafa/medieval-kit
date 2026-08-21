@@ -1,24 +1,20 @@
 /**
- * @medieval-kit/wooden-barrel
- *
- * Gerçek bir fıçı tek parça değildir: uçlara doğru daralan ayrı tahtalardan
- * (stave) kurulur, demir çemberlerle sıkıştırılır, kapağı gövdenin içine
- * gömülür ve tahtalar kapağın üstünde bir bilezik (chime) bırakır. Bu model
- * onu böyle kuruyor — şişirilmiş bir silindir olarak değil.
- *
- * Bağımlılıklar: düz `three` ve `@medieval-kit/core`. scifi-kit'in
- * primitive/aşınma boru hattına hiç dokunmuyor; WebGL yeterli.
- */
-import { Color, Group, Mesh, type BufferGeometry, type Material } from 'three'
-
-import type { ConfigureResult, MaterialBindings, ModelInstance, PartHandle } from '@/lib/vibe3d/model.ts'
-import { ResourceScope } from '@/lib/vibe3d/ownership.ts'
+* @medieval-kit/wooden-barrel
+*
+* Gerçek bir fıçı tek parça değildir: uçlara doğru daralan ayrı tahtalardan
+* (stave) kurulur, demir çemberlerle sıkıştırılır, kapağı gövdenin içine
+* gömülür ve tahtalar kapağın üstünde bir bilezik (chime) bırakır. Bu model
+* onu böyle kuruyor — şişirilmiş bir silindir olarak değil.
+*
+* Bağımlılıklar: düz `three` ve `@medieval-kit/core`. scifi-kit'in
+* primitive/aşınma boru hattına hiç dokunmuyor; WebGL yeterli.
+*/
+import { Color, type BufferGeometry } from 'three'
 
 import {
   MEDIEVAL_PALETTE,
   bandGeometry,
-  createMedievalMaterials,
-  createPart,
+  createKitModel,
   createRandom,
   headGeometry,
   jitter,
@@ -51,14 +47,7 @@ export const woodenBarrelDefaults: WoodenBarrelConfig = {
   seed: 7,
 }
 
-export interface WoodenBarrelParts {
-  /** Duvar tahtaları. */
-  readonly staves: PartHandle<Group>
-  /** Üst ve alt kapaklar. */
-  readonly heads: PartHandle<Group>
-  /** Demir çemberler. */
-  readonly hoops: PartHandle<Group>
-}
+export type WoodenBarrelParts = 'staves' | 'heads' | 'hoops'
 
 const SLOTS = ['oak', 'iron'] as const
 type Slot = (typeof SLOTS)[number]
@@ -69,9 +58,9 @@ function profileAt(t: number, taper: number): number {
 }
 
 /**
- * Çemberler uçtan içe doğru simetrik yerleşir: en dıştakiler "chime" (uç)
- * çemberi, içtekiler "bilge" (göbek) çemberi.
- */
+* Çemberler uçtan içe doğru simetrik yerleşir: en dıştakiler "chime" (uç)
+* çemberi, içtekiler "bilge" (göbek) çemberi.
+*/
 function hoopPositions(count: number): number[] {
   if (count <= 0) return []
   if (count === 1) return [0]
@@ -87,189 +76,110 @@ function hoopPositions(count: number): number[] {
   return positions
 }
 
-export function createModel(
-  overrides: Partial<WoodenBarrelConfig> = {},
-): ModelInstance<WoodenBarrelConfig, WoodenBarrelParts> {
-  let config: WoodenBarrelConfig = { ...woodenBarrelDefaults, ...overrides }
+export function createModel(overrides: Partial<WoodenBarrelConfig> = {}) {
+  return createKitModel<WoodenBarrelConfig, 'oak' | 'iron', WoodenBarrelParts>({
+      id: 'wooden-barrel',
+      defaults: woodenBarrelDefaults,
+      slots: SLOTS,
+      build: ({ config, random }) => {
+        const half = config.height / 2
+        // Beş seviye: uçlar, çeyrekler ve göbek. Lowpoly bir fıçı eğrisi için
+        // yeterli; altıncı seviye siluete ölçülebilir bir şey katmıyor.
+        const levels = [-1, -0.58, 0, 0.58, 1]
 
-  // Modelin sahip olduğu kaynaklar. Tüketicinin verdiği materyaller buraya
-  // girmez, dolayısıyla dispose() onlara dokunmaz.
-  const scope = new ResourceScope()
-  const defaults = createMedievalMaterials(scope, SLOTS)
-  const overridesBySlot = new Map<Slot, Material>()
-  const resolve = (slot: Slot): Material => overridesBySlot.get(slot) ?? defaults[slot]
+        function buildStaves(random: () => number, half: number, levels: number[]): BufferGeometry {
+          const wallThickness = config.radius * 0.13
+          const step = (Math.PI * 2) / config.staveCount
+          // Tahtalar arasında ince bir boşluk — "tek parça" değil "monte edilmiş"
+          // okunmasını sağlayan tek detay bu.
+          const gap = step * 0.055
+          const tint = new Color()
+          const pieces: BufferGeometry[] = []
 
-  // Kök ve anchor'lar modelin ömrü boyunca aynı NESNE kalır. configure() sadece
-  // içlerini yeniden kurar, böylece tüketicinin anchor'a taktığı ışık, etiket
-  // veya gameplay nesnesi rebuild'i atlatır.
-  const root = new Group()
-  root.name = 'wooden-barrel'
-  const staves = createPart('wooden-barrel/staves')
-  const heads = createPart('wooden-barrel/heads')
-  const hoops = createPart('wooden-barrel/hoops')
-  root.add(staves.anchor, heads.anchor, hoops.anchor)
+          for (let index = 0; index < config.staveCount; index += 1) {
+            // Her tahta kendi ufak sapmalarını taşır: yarıçap, uç yüksekliği, ton.
+            // Mükemmel tekrar "üretilmiş" gibi okunur; kural: aynaları kır.
+            const radiusBias = 1 + jitter(random, 0.014)
+            const topBias = jitter(random, 0.006)
+            const bottomBias = jitter(random, 0.006)
 
-  let owned: BufferGeometry[] = []
+            const shaped: Level[] = levels.map((t, level) => {
+                const edge = level === 0 ? bottomBias : level === levels.length - 1 ? topBias : 0
+                return {
+                  y: t * half + edge,
+                  radius: config.radius * profileAt(t, config.taper) * radiusBias,
+                }
+            })
 
-  function buildStaves(random: () => number, half: number, levels: number[]): BufferGeometry {
-    const wallThickness = config.radius * 0.13
-    const step = (Math.PI * 2) / config.staveCount
-    // Tahtalar arasında ince bir boşluk — "tek parça" değil "monte edilmiş"
-    // okunmasını sağlayan tek detay bu.
-    const gap = step * 0.055
-    const tint = new Color()
-    const pieces: BufferGeometry[] = []
+            tint.copy(MEDIEVAL_PALETTE.oak)
+            tint.offsetHSL(jitter(random, 0.014), jitter(random, 0.05), jitter(random, 0.055))
 
-    for (let index = 0; index < config.staveCount; index += 1) {
-      // Her tahta kendi ufak sapmalarını taşır: yarıçap, uç yüksekliği, ton.
-      // Mükemmel tekrar "üretilmiş" gibi okunur; kural: aynaları kır.
-      const radiusBias = 1 + jitter(random, 0.014)
-      const topBias = jitter(random, 0.006)
-      const bottomBias = jitter(random, 0.006)
+            pieces.push(staveGeometry(
+                shaped,
+                index * step + gap / 2,
+                (index + 1) * step - gap / 2,
+                wallThickness,
+                tint,
+            ))
+          }
 
-      const shaped: Level[] = levels.map((t, level) => {
-        const edge = level === 0 ? bottomBias : level === levels.length - 1 ? topBias : 0
-        return {
-          y: t * half + edge,
-          radius: config.radius * profileAt(t, config.taper) * radiusBias,
+          return mergeColoured(pieces)
         }
-      })
 
-      tint.copy(MEDIEVAL_PALETTE.oak)
-      tint.offsetHSL(jitter(random, 0.014), jitter(random, 0.05), jitter(random, 0.055))
+        function buildHeads(random: () => number, half: number): BufferGeometry {
+          const wallThickness = config.radius * 0.13
+          const endRadius = config.radius * profileAt(1, config.taper)
+          // Kapak gövdenin İÇİNE oturur ve uçtan biraz geride kalır; tahtaların
+          // üstte bıraktığı bilezik (chime) fıçıyı fıçı yapan siluet detayı.
+          const seatRadius = endRadius - wallThickness * 0.9
+          const inset = config.height * 0.055
+          const tint = new Color(MEDIEVAL_PALETTE.oakEnd)
+          tint.offsetHSL(0, jitter(random, 0.03), jitter(random, 0.03))
 
-      pieces.push(staveGeometry(
-        shaped,
-        index * step + gap / 2,
-        (index + 1) * step - gap / 2,
-        wallThickness,
-        tint,
-      ))
-    }
+          return mergeColoured([
+              headGeometry(seatRadius, half - inset, config.staveCount, 'up', tint, 3, 0.06),
+              headGeometry(seatRadius, -half + inset, config.staveCount, 'down', tint, 3, 0.06),
+          ])
+        }
 
-    return mergeColoured(pieces)
-  }
+        function buildHoops(random: () => number, half: number): BufferGeometry | undefined {
+          const positions = hoopPositions(config.hoopCount)
+          if (positions.length === 0) return undefined
 
-  function buildHeads(random: () => number, half: number): BufferGeometry {
-    const wallThickness = config.radius * 0.13
-    const endRadius = config.radius * profileAt(1, config.taper)
-    // Kapak gövdenin İÇİNE oturur ve uçtan biraz geride kalır; tahtaların
-    // üstte bıraktığı bilezik (chime) fıçıyı fıçı yapan siluet detayı.
-    const seatRadius = endRadius - wallThickness * 0.9
-    const inset = config.height * 0.055
-    const tint = new Color(MEDIEVAL_PALETTE.oakEnd)
-    tint.offsetHSL(0, jitter(random, 0.03), jitter(random, 0.03))
+          const tint = new Color()
+          const pieces: BufferGeometry[] = []
 
-    return mergeColoured([
-      headGeometry(seatRadius, half - inset, config.staveCount, 'up', tint, 3, 0.06),
-      headGeometry(seatRadius, -half + inset, config.staveCount, 'down', tint, 3, 0.06),
-    ])
-  }
+          for (const t of positions) {
+            const seat = config.radius * profileAt(t, config.taper)
+            // Uç çemberleri daha geniştir: en çok zorlanan yer orası.
+            const bandHeight = config.height * (0.045 + 0.03 * Math.abs(t))
+            tint.copy(MEDIEVAL_PALETTE.iron)
+            tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.05))
 
-  function buildHoops(random: () => number, half: number): BufferGeometry | undefined {
-    const positions = hoopPositions(config.hoopCount)
-    if (positions.length === 0) return undefined
+            pieces.push(bandGeometry(
+                seat + config.radius * 0.022,
+                t * half,
+                bandHeight,
+                config.radius * 0.05,
+                config.staveCount,
+                tint,
+            ))
+          }
 
-    const tint = new Color()
-    const pieces: BufferGeometry[] = []
+          return mergeColoured(pieces)
+        }
 
-    for (const t of positions) {
-      const seat = config.radius * profileAt(t, config.taper)
-      // Uç çemberleri daha geniştir: en çok zorlanan yer orası.
-      const bandHeight = config.height * (0.045 + 0.03 * Math.abs(t))
-      tint.copy(MEDIEVAL_PALETTE.iron)
-      tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.05))
+        // Çağrı SIRASI korunmalı: tohuma bağlı rastgelelik akış hâlinde
+        // ilerliyor, sıra değişirse geometri de değişir.
+        const stavesPart = buildStaves(random, half, levels)
+        const headsPart = buildHeads(random, half)
+        const hoopsPart = buildHoops(random, half)
 
-      pieces.push(bandGeometry(
-        seat + config.radius * 0.022,
-        t * half,
-        bandHeight,
-        config.radius * 0.05,
-        config.staveCount,
-        tint,
-      ))
-    }
-
-    return mergeColoured(pieces)
-  }
-
-  function build(): void {
-    for (const geometry of owned) geometry.dispose()
-    owned = []
-    // reset() sadece üretilmiş içeriği değiştirir; anchor ve ona takılanlar kalır.
-    const staveTarget = staves.reset()
-    const headTarget = heads.reset()
-    const hoopTarget = hoops.reset()
-
-    const random = createRandom(config.seed)
-    const half = config.height / 2
-    // Beş seviye: uçlar, çeyrekler ve göbek. Lowpoly bir fıçı eğrisi için
-    // yeterli; altıncı seviye siluete ölçülebilir bir şey katmıyor.
-    const levels = [-1, -0.58, 0, 0.58, 1]
-
-    const staveGeometryData = buildStaves(random, half, levels)
-    owned.push(staveGeometryData)
-    const staveMesh = new Mesh(staveGeometryData, resolve('oak'))
-    staveMesh.name = 'wooden-barrel/staves'
-    staveMesh.userData.vibe3d = { model: '@medieval-kit/wooden-barrel', part: 'staves', materialSlot: 'oak' }
-    staveTarget.add(staveMesh)
-
-    const headGeometryData = buildHeads(random, half)
-    owned.push(headGeometryData)
-    const headMesh = new Mesh(headGeometryData, resolve('oak'))
-    headMesh.name = 'wooden-barrel/heads'
-    headMesh.userData.vibe3d = { model: '@medieval-kit/wooden-barrel', part: 'heads', materialSlot: 'oak' }
-    headTarget.add(headMesh)
-
-    const hoopGeometryData = buildHoops(random, half)
-    if (hoopGeometryData) {
-      owned.push(hoopGeometryData)
-      const hoopMesh = new Mesh(hoopGeometryData, resolve('iron'))
-      hoopMesh.name = 'wooden-barrel/hoops'
-      hoopMesh.userData.vibe3d = { model: '@medieval-kit/wooden-barrel', part: 'hoops', materialSlot: 'iron' }
-      hoopTarget.add(hoopMesh)
-    }
-  }
-
-  build()
-
-  const materials: MaterialBindings = {
-    get: (slot) => (SLOTS.includes(slot as Slot) ? resolve(slot as Slot) : undefined),
-    override: (slot, material) => {
-      if (!SLOTS.includes(slot as Slot)) return
-      overridesBySlot.set(slot as Slot, material)
-      build()
-    },
-    reset: (slot) => {
-      if (!overridesBySlot.delete(slot as Slot)) return
-      build()
-    },
-  }
-
-  return {
-    root,
-    parts: { staves, heads, hoops },
-    actions: {},
-    materials,
-    getConfig: () => config,
-    configure: (patch): ConfigureResult => {
-      const next = { ...config, ...patch }
-      const changed = (Object.keys(next) as Array<keyof WoodenBarrelConfig>)
-        .some((keyName) => next[keyName] !== config[keyName])
-      if (!changed) return { rebuilt: false }
-      config = next
-      build()
-      return { rebuilt: true }
-    },
-    update: () => undefined,
-    dispose: () => {
-      for (const geometry of owned) geometry.dispose()
-      owned = []
-      staves.reset()
-      heads.reset()
-      hoops.reset()
-      // Sadece modelin kendi materyallerini siler; override edilenlere dokunmaz.
-      scope.dispose()
-    },
-  }
+        return {
+          staves: { slot: 'oak' as const, geometry: stavesPart },
+          heads: { slot: 'oak' as const, geometry: headsPart },
+          hoops: hoopsPart ? { slot: 'iron' as const, geometry: hoopsPart } : undefined,
+        }
+      },
+    }, overrides)
 }

@@ -1,26 +1,22 @@
 /**
- * @medieval-kit/wooden-crate
- *
- * Sandık, kutu değildir: dört köşe dikmesine çakılmış yatay tahta sıralarıdır.
- * Aradaki ince boşluklar ve dikmelerin dışa taşması, siluete "monte edilmiş"
- * okunuşunu veren şey. Bu model onu böyle kuruyor.
- *
- * Fıçıyla aynı core'u paylaşıyor: aynı meşe tonu, aynı deterministik
- * rastgelelik, aynı vertex-renk tekniği. Yan yana koyduğunuzda aynı
- * katalogdan gelmiş gibi durmalarının sebebi bu.
- */
-import { Color, Group, Mesh, type BufferGeometry, type Material } from 'three'
-
-import type { ConfigureResult, MaterialBindings, ModelInstance, PartHandle } from '@/lib/vibe3d/model.ts'
-import { ResourceScope } from '@/lib/vibe3d/ownership.ts'
+* @medieval-kit/wooden-crate
+*
+* Sandık, kutu değildir: dört köşe dikmesine çakılmış yatay tahta sıralarıdır.
+* Aradaki ince boşluklar ve dikmelerin dışa taşması, siluete "monte edilmiş"
+* okunuşunu veren şey. Bu model onu böyle kuruyor.
+*
+* Fıçıyla aynı core'u paylaşıyor: aynı meşe tonu, aynı deterministik
+* rastgelelik, aynı vertex-renk tekniği. Yan yana koyduğunuzda aynı
+* katalogdan gelmiş gibi durmalarının sebebi bu.
+*/
+import { Color, type BufferGeometry } from 'three'
 
 import {
-  MEDIEVAL_PALETTE,
-  boxGeometry,
-  createMedievalMaterials,
-  createPart,
+  chamferedBoxGeometry,
+  createKitModel,
   createRandom,
   jitter,
+  MEDIEVAL_PALETTE,
   mergeColoured,
   type Vec3,
 } from '../core/index.ts'
@@ -49,225 +45,171 @@ export const woodenCrateDefaults: WoodenCrateConfig = {
   seed: 3,
 }
 
-export interface WoodenCrateParts {
-  /** Köşe dikmeleri. */
-  readonly posts: PartHandle<Group>
-  /** Yan, üst ve alt tahtalar. */
-  readonly planks: PartHandle<Group>
-  /** Demir kayışlar. */
-  readonly straps: PartHandle<Group>
-}
+export type WoodenCrateParts = 'posts' | 'planks' | 'straps'
 
 const SLOTS = ['oak', 'iron'] as const
 type Slot = (typeof SLOTS)[number]
 
-export function createModel(
-  overrides: Partial<WoodenCrateConfig> = {},
-): ModelInstance<WoodenCrateConfig, WoodenCrateParts> {
-  let config: WoodenCrateConfig = { ...woodenCrateDefaults, ...overrides }
+export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
+  return createKitModel<WoodenCrateConfig, 'oak' | 'iron', WoodenCrateParts>({
+      id: 'wooden-crate',
+      defaults: woodenCrateDefaults,
+      slots: SLOTS,
+      build: ({ config, random }) => {
+        /**
+        * Ölçü sözleşmesi.
+        *
+        * Z-FIGHTING KURALI: hiçbir iki yüzey aynı düzlemde, aynı yöne bakarak
+        * örtüşmemeli. Gerçek marangozlukta parçalar birbirine geçer; burada da öyle
+        * yapıyoruz. Dikmeler tahtalardan dışarı taşıyor, kapak ve taban çerçeveden
+        * biraz sarkıyor, tahtalar birbirine küt ekleniyor. Böylece her yüzey kendi
+        * düzleminde tek başına.
+        */
+        const dims = () => {
+          const post = Math.min(config.width, config.depth) * 0.11
+          const board = post * 0.5
+          return {
+            post,
+            board,
+            /** Dikmelerin tahta yüzeyinden ne kadar dışarı taştığı. */
+            postProud: board * 0.45,
+            /** Kapak ve tabanın çerçeveden sarkması. */
+            overhang: board * 0.6,
+            half: config.height / 2,
+          }
+        }
 
-  const scope = new ResourceScope()
-  const defaults = createMedievalMaterials(scope, SLOTS)
-  const overridesBySlot = new Map<Slot, Material>()
-  const resolve = (slot: Slot): Material => overridesBySlot.get(slot) ?? defaults[slot]
+        function buildPosts(random: () => number): BufferGeometry {
+          const { post, board, half } = dims()
+          const tint = new Color()
+          const pieces: BufferGeometry[] = []
+          const x = config.width / 2 - post / 2
+          const z = config.depth / 2 - post / 2
+          // Dikmeler kapak ve tabanın İÇİNE giriyor; uçları o katı parçaların
+          // içinde kaldığı için görünmez ve hiçbir yüzeyle hizalanmaz.
+          const reach = half - board * 0.3
 
-  const root = new Group()
-  root.name = 'wooden-crate'
-  const posts = createPart('wooden-crate/posts')
-  const planks = createPart('wooden-crate/planks')
-  const straps = createPart('wooden-crate/straps')
-  root.add(posts.anchor, planks.anchor, straps.anchor)
+          for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
+            tint.copy(MEDIEVAL_PALETTE.oak)
+            // Dikmeler gövdeden biraz daha koyu: farklı kesim, daha çok yıpranma.
+            tint.offsetHSL(jitter(random, 0.01), jitter(random, 0.04), -0.045 + jitter(random, 0.02))
+            pieces.push(chamferedBoxGeometry(
+                [post, post], [post, post], reach * 2,
+                board * 0.16, [sx * x, 0, sz * z], tint,
+            ))
+          }
 
-  let owned: BufferGeometry[] = []
+          return mergeColoured(pieces)
+        }
 
-  /**
-   * Ölçü sözleşmesi.
-   *
-   * Z-FIGHTING KURALI: hiçbir iki yüzey aynı düzlemde, aynı yöne bakarak
-   * örtüşmemeli. Gerçek marangozlukta parçalar birbirine geçer; burada da öyle
-   * yapıyoruz. Dikmeler tahtalardan dışarı taşıyor, kapak ve taban çerçeveden
-   * biraz sarkıyor, tahtalar birbirine küt ekleniyor. Böylece her yüzey kendi
-   * düzleminde tek başına.
-   */
-  const dims = () => {
-    const post = Math.min(config.width, config.depth) * 0.11
-    const board = post * 0.5
-    return {
-      post,
-      board,
-      /** Dikmelerin tahta yüzeyinden ne kadar dışarı taştığı. */
-      postProud: board * 0.45,
-      /** Kapak ve tabanın çerçeveden sarkması. */
-      overhang: board * 0.6,
-      half: config.height / 2,
-    }
-  }
+        function buildPlanks(random: () => number): BufferGeometry {
+          const { board, postProud, overhang, half } = dims()
+          const tint = new Color()
+          const pieces: BufferGeometry[] = []
 
-  function buildPosts(random: () => number): BufferGeometry {
-    const { post, board, half } = dims()
-    const tint = new Color()
-    const pieces: BufferGeometry[] = []
-    const x = config.width / 2 - post / 2
-    const z = config.depth / 2 - post / 2
-    // Dikmeler kapak ve tabanın İÇİNE giriyor; uçları o katı parçaların
-    // içinde kaldığı için görünmez ve hiçbir yüzeyle hizalanmaz.
-    const reach = half - board * 0.3
+          // Yan tahtalar dikmelerin ARKASINA çekili: dış yüzleri ±width/2 değil,
+          // ±(width/2 - postProud). Dikmelerle aynı düzleme oturmamalarının sebebi bu.
+          const faceX = config.width / 2 - postProud - board / 2
+          const faceZ = config.depth / 2 - postProud - board / 2
+          // Küt ek (butt joint): ön/arka tahtalar yan tahtaların iç yüzüne dayanır.
+          // Değiyorlar ama örtüşmüyorlar — kenar teması z-fighting üretmez.
+          const spanX = (config.width / 2 - postProud - board) * 2
+          const spanZ = (config.depth / 2 - postProud - board) * 2
 
-    for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
-      tint.copy(MEDIEVAL_PALETTE.oak)
-      // Dikmeler gövdeden biraz daha koyu: farklı kesim, daha çok yıpranma.
-      tint.offsetHSL(jitter(random, 0.01), jitter(random, 0.04), -0.045 + jitter(random, 0.02))
-      pieces.push(boxGeometry([post, reach * 2, post], [sx * x, 0, sz * z], tint))
-    }
+          // Sıralar kapak ve tabanın içine girecek kadar uzanıyor, ama dikmelerin
+          // uçlarından FARKLI bir yükseklikte bitiyor.
+          const wallTop = half - board * 0.65
+          const rows = Math.max(1, config.plankRows)
+          const gap = config.height * 0.012
+          const rowHeight = (wallTop * 2 - gap * (rows - 1)) / rows
 
-    return mergeColoured(pieces)
-  }
+          for (let row = 0; row < rows; row += 1) {
+            const y = -wallTop + rowHeight / 2 + row * (rowHeight + gap)
+            for (const side of [-1, 1] as const) {
+              tint.copy(MEDIEVAL_PALETTE.oak)
+              tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), jitter(random, 0.06))
+              pieces.push(chamferedBoxGeometry(
+                  [spanX, board], [spanX, board], rowHeight,
+                  board * 0.16, [0, y, side * faceZ], tint,
+              ))
 
-  function buildPlanks(random: () => number): BufferGeometry {
-    const { board, postProud, overhang, half } = dims()
-    const tint = new Color()
-    const pieces: BufferGeometry[] = []
+              tint.copy(MEDIEVAL_PALETTE.oak)
+              tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), jitter(random, 0.06))
+              pieces.push(chamferedBoxGeometry(
+                  [board, spanZ], [board, spanZ], rowHeight,
+                  board * 0.16, [side * faceX, y, 0], tint,
+              ))
+            }
+          }
 
-    // Yan tahtalar dikmelerin ARKASINA çekili: dış yüzleri ±width/2 değil,
-    // ±(width/2 - postProud). Dikmelerle aynı düzleme oturmamalarının sebebi bu.
-    const faceX = config.width / 2 - postProud - board / 2
-    const faceZ = config.depth / 2 - postProud - board / 2
-    // Küt ek (butt joint): ön/arka tahtalar yan tahtaların iç yüzüne dayanır.
-    // Değiyorlar ama örtüşmüyorlar — kenar teması z-fighting üretmez.
-    const spanX = (config.width / 2 - postProud - board) * 2
-    const spanZ = (config.depth / 2 - postProud - board) * 2
+          // Kapak ve taban: çerçevenin üstüne/altına oturan, biraz sarkan tahta
+          // levhalar. Sarkma sayesinde yan yüzleri dikmelerin yüzleriyle hizalanmıyor.
+          const slabWidth = config.width + overhang * 2
+          const slabDepth = config.depth + overhang * 2
+          const slabBoards = 3
+          const slabGap = slabDepth * 0.014
+          const boardDepth = (slabDepth - slabGap * (slabBoards - 1)) / slabBoards
 
-    // Sıralar kapak ve tabanın içine girecek kadar uzanıyor, ama dikmelerin
-    // uçlarından FARKLI bir yükseklikte bitiyor.
-    const wallTop = half - board * 0.65
-    const rows = Math.max(1, config.plankRows)
-    const gap = config.height * 0.012
-    const rowHeight = (wallTop * 2 - gap * (rows - 1)) / rows
+          for (const [y, shade] of [[half - board / 2, 0.03], [-half + board / 2, -0.05]] as const) {
+            for (let i = 0; i < slabBoards; i += 1) {
+              tint.copy(MEDIEVAL_PALETTE.oakEnd)
+              tint.offsetHSL(jitter(random, 0.01), jitter(random, 0.04), shade + jitter(random, 0.05))
+              pieces.push(chamferedBoxGeometry(
+                  [slabWidth, boardDepth],
+                  [slabWidth, boardDepth],
+                  board,
+                  board * 0.16,
+                  [0, y, -slabDepth / 2 + boardDepth / 2 + i * (boardDepth + slabGap)],
+                  tint,
+              ))
+            }
+          }
 
-    for (let row = 0; row < rows; row += 1) {
-      const y = -wallTop + rowHeight / 2 + row * (rowHeight + gap)
-      for (const side of [-1, 1] as const) {
-        tint.copy(MEDIEVAL_PALETTE.oak)
-        tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), jitter(random, 0.06))
-        pieces.push(boxGeometry([spanX, rowHeight, board], [0, y, side * faceZ], tint))
+          return mergeColoured(pieces)
+        }
 
-        tint.copy(MEDIEVAL_PALETTE.oak)
-        tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), jitter(random, 0.06))
-        pieces.push(boxGeometry([board, rowHeight, spanZ], [side * faceX, y, 0], tint))
-      }
-    }
+        function buildStraps(random: () => number): BufferGeometry | undefined {
+          if (config.strapCount <= 0) return undefined
 
-    // Kapak ve taban: çerçevenin üstüne/altına oturan, biraz sarkan tahta
-    // levhalar. Sarkma sayesinde yan yüzleri dikmelerin yüzleriyle hizalanmıyor.
-    const slabWidth = config.width + overhang * 2
-    const slabDepth = config.depth + overhang * 2
-    const slabBoards = 3
-    const slabGap = slabDepth * 0.014
-    const boardDepth = (slabDepth - slabGap * (slabBoards - 1)) / slabBoards
+          const { post } = dims()
+          const tint = new Color()
+          const pieces: BufferGeometry[] = []
+          const bandHeight = config.height * 0.07
+          const proud = post * 0.3
 
-    for (const [y, shade] of [[half - board / 2, 0.03], [-half + board / 2, -0.05]] as const) {
-      for (let i = 0; i < slabBoards; i += 1) {
-        tint.copy(MEDIEVAL_PALETTE.oakEnd)
-        tint.offsetHSL(jitter(random, 0.01), jitter(random, 0.04), shade + jitter(random, 0.05))
-        pieces.push(boxGeometry(
-          [slabWidth, board, boardDepth],
-          [0, y, -slabDepth / 2 + boardDepth / 2 + i * (boardDepth + slabGap)],
-          tint,
-        ))
-      }
-    }
+          for (let i = 0; i < config.strapCount; i += 1) {
+            // Kayışlar üstten ve alttan içe doğru simetrik yerleşir.
+            const t = config.strapCount === 1
+            ? 0
+            : 0.6 - (1.2 * i) / (config.strapCount - 1)
+            const y = (t * config.height) / 2
+            tint.copy(MEDIEVAL_PALETTE.iron)
+            tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.06))
 
-    return mergeColoured(pieces)
-  }
+            // Ön/arka kayışlar köşelerde dışa taşıyor; yan kayışlar onlara VARMADAN
+            // bitiyor. Böylece dört parçanın üst yüzleri köşede üst üste binmiyor.
+            pieces.push(
+              chamferedBoxGeometry([config.width + proud * 2, proud], [config.width + proud * 2, proud], bandHeight, proud * 0.22, [0, y, config.depth / 2], tint),
+              chamferedBoxGeometry([config.width + proud * 2, proud], [config.width + proud * 2, proud], bandHeight, proud * 0.22, [0, y, -config.depth / 2], tint),
+              chamferedBoxGeometry([proud, config.depth - proud], [proud, config.depth - proud], bandHeight, proud * 0.22, [config.width / 2, y, 0], tint),
+              chamferedBoxGeometry([proud, config.depth - proud], [proud, config.depth - proud], bandHeight, proud * 0.22, [-config.width / 2, y, 0], tint),
+            )
+          }
 
-  function buildStraps(random: () => number): BufferGeometry | undefined {
-    if (config.strapCount <= 0) return undefined
+          return mergeColoured(pieces)
+        }
 
-    const { post } = dims()
-    const tint = new Color()
-    const pieces: BufferGeometry[] = []
-    const bandHeight = config.height * 0.07
-    const proud = post * 0.3
+        // Çağrı SIRASI korunmalı: tohuma bağlı rastgelelik akış hâlinde
+        // ilerliyor, sıra değişirse geometri de değişir.
+        const postsPart = buildPosts(random)
+        const planksPart = buildPlanks(random)
+        const strapsPart = buildStraps(random)
 
-    for (let i = 0; i < config.strapCount; i += 1) {
-      // Kayışlar üstten ve alttan içe doğru simetrik yerleşir.
-      const t = config.strapCount === 1
-        ? 0
-        : 0.6 - (1.2 * i) / (config.strapCount - 1)
-      const y = (t * config.height) / 2
-      tint.copy(MEDIEVAL_PALETTE.iron)
-      tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.06))
-
-      // Ön/arka kayışlar köşelerde dışa taşıyor; yan kayışlar onlara VARMADAN
-      // bitiyor. Böylece dört parçanın üst yüzleri köşede üst üste binmiyor.
-      pieces.push(
-        boxGeometry([config.width + proud * 2, bandHeight, proud], [0, y, config.depth / 2], tint),
-        boxGeometry([config.width + proud * 2, bandHeight, proud], [0, y, -config.depth / 2], tint),
-        boxGeometry([proud, bandHeight, config.depth - proud], [config.width / 2, y, 0], tint),
-        boxGeometry([proud, bandHeight, config.depth - proud], [-config.width / 2, y, 0], tint),
-      )
-    }
-
-    return mergeColoured(pieces)
-  }
-
-  function attach(target: Group, geometry: BufferGeometry | undefined, part: string, slot: Slot): void {
-    if (!geometry) return
-    owned.push(geometry)
-    const mesh = new Mesh(geometry, resolve(slot))
-    mesh.name = `wooden-crate/${part}`
-    mesh.userData.vibe3d = { model: '@medieval-kit/wooden-crate', part, materialSlot: slot }
-    target.add(mesh)
-  }
-
-  function build(): void {
-    for (const geometry of owned) geometry.dispose()
-    owned = []
-    // reset() sadece üretilmiş içeriği değiştirir; anchor ve ona takılanlar kalır.
-    const random = createRandom(config.seed)
-    attach(posts.reset(), buildPosts(random), 'posts', 'oak')
-    attach(planks.reset(), buildPlanks(random), 'planks', 'oak')
-    attach(straps.reset(), buildStraps(random), 'straps', 'iron')
-  }
-
-  build()
-
-  const materials: MaterialBindings = {
-    get: (slot) => (SLOTS.includes(slot as Slot) ? resolve(slot as Slot) : undefined),
-    override: (slot, material) => {
-      if (!SLOTS.includes(slot as Slot)) return
-      overridesBySlot.set(slot as Slot, material)
-      build()
-    },
-    reset: (slot) => {
-      if (!overridesBySlot.delete(slot as Slot)) return
-      build()
-    },
-  }
-
-  return {
-    root,
-    parts: { posts, planks, straps },
-    actions: {},
-    materials,
-    getConfig: () => config,
-    configure: (patch): ConfigureResult => {
-      const next = { ...config, ...patch }
-      const changed = (Object.keys(next) as Array<keyof WoodenCrateConfig>)
-        .some((keyName) => next[keyName] !== config[keyName])
-      if (!changed) return { rebuilt: false }
-      config = next
-      build()
-      return { rebuilt: true }
-    },
-    update: () => undefined,
-    dispose: () => {
-      for (const geometry of owned) geometry.dispose()
-      owned = []
-      posts.reset()
-      planks.reset()
-      straps.reset()
-      scope.dispose()
-    },
-  }
+        return {
+          posts: { slot: 'oak' as const, geometry: postsPart },
+          planks: { slot: 'oak' as const, geometry: planksPart },
+          straps: strapsPart ? { slot: 'iron' as const, geometry: strapsPart } : undefined,
+        }
+      },
+    }, overrides)
 }

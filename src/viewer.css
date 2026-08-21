@@ -393,3 +393,94 @@ canvas { display: block; width: 100%; height: 100%; }
   .rail { border-right: 0; border-bottom: 1px solid var(--rule); }
   .provenance { max-width: 55vw; }
 }
+
+/* Varsayılana dönme: alan adına tıklanabilir, sapanlar işaretli. */
+.param-name.resettable { cursor: pointer; }
+.param-name.resettable:hover { color: var(--cyan); }
+.param-name.changed { color: var(--amber); }
+.param-name.changed::after { content: ' •'; }
+
+.reset-all { margin-bottom: 4px; }
+
+/* ---------------------------------------------------- parça ve yuva panelleri */
+
+.block-note {
+  float: right;
+  font-weight: 400;
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+}
+
+.chip {
+  border: 1px solid var(--rule);
+  background: var(--graphite-lift);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.2rem 0.62rem;
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, opacity 0.12s;
+}
+
+.chip:hover { border-color: var(--amber); }
+.chip[aria-pressed='true'] {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+}
+/* Solo kipinde gizlenen parçalar: hâlâ okunur ama kapalı oldukları belli. */
+.chip.muted { opacity: 0.34; }
+
+.slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slot-swatch {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 0.3rem;
+  background: none;
+  cursor: pointer;
+}
+.slot-swatch::-webkit-color-swatch-wrapper { padding: 2px; }
+.slot-swatch::-webkit-color-swatch { border: none; border-radius: 0.18rem; }
+
+.slot-name {
+  flex: 1;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+.slot.tinted .slot-name { color: var(--amber); }
+
+.slot-reset {
+  border: 1px solid var(--rule);
+  background: none;
+  color: var(--text-dim);
+  border-radius: 0.3rem;
+  inline-size: 1.4rem;
+  block-size: 1.4rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+.slot-reset:hover { color: var(--amber); border-color: var(--amber); }

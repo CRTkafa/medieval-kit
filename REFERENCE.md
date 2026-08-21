@@ -73,10 +73,25 @@ src/lib/vibe3d/                  `init`in kurduğu evrensel sözleşmeler
   ownership.ts                     ResourceScope (kaynak sahipliği)
   materials.ts                     MaterialSource arayüzü
 src/lib/vibe3d/scifi-kit/generator/   @scifi-kit/core — 2.100 satır prosedürel araç
+src/viewer.ts · src/viewer.css   model inceleyici (WebGPU, gökyüzü, gölge)
+src/catalog.ts                   inceleyicinin kataloğu — meta.ts'ten TÜRETİLİR
+src/glb.ts                       GLB dışa aktarımı (viewer ve CLI ortak kullanır)
 src/models/scifi-kit/pressure-gauge/  kurulu sci-fi modeli
-src/models/medieval-kit/wooden-barrel/ kurulu KENDİ modeliniz
-my-registry/                     kendi registry'nizin kaynağı + build script'i
-scripts/verify-model.ts          tarayıcısız conformance doğrulaması
+src/models/medieval-kit/…             kurulu KENDİ modelleriniz (26 model)
+my-registry/
+  meta.ts                          katalog metadata'sının TEK kaynağı
+  build.ts                         registry.json üreticisi
+  models/core/                     kitin paylaşılan sözlüğü
+  models/<id>/model.ts             modellerin kaynağı
+  drafts/                          registry'ye girmeyen taslaklar
+scripts/
+  verify-model.ts                  tarayıcısız conformance doğrulaması
+  verify-glb.ts                    GLB gidiş-dönüş doğrulaması
+  zfight.ts                        eş düzlem yüz tespiti
+  render.ts                        çevrimdışı yazılım rasterleyici → PNG
+  export-glb.ts                    kitin tamamını GLB'ye aktarır
+  catalog-table.ts                 REFERENCE.md'deki model tablosunu üretir
+  build-artifact.ts                inceleyiciyi tek dosyaya paketler
 ```
 
 `models.json` ↔ `models.lock.json` ayrımı kasıtlı: birincisi **yapılandırma**
@@ -87,10 +102,21 @@ sha256'sını tutar; `vibe3d diff` bununla yerel değişikliklerinizi tespit ede
 ### Çalıştırma
 
 ```bash
-bun run dev          # oyun alanı — iki registry, tek proje
-bun run typecheck    # kurulu kaynak gerçekten derleniyor mu
-bun scripts/verify-model.ts   # geometri, kimlik kararlılığı, sahiplik, dispose
+bun run dev                    # oyun alanı — iki registry, tek proje
+bun run typecheck              # kurulu kaynak gerçekten derleniyor mu
+
+bun my-registry/build.ts       # registry.json üret
+bunx vibe3d add @medieval-kit --overwrite   # kendi kitini kendine kur
+
+bun scripts/verify-model.ts    # geometri, protokol, metadata, eylemler
+bun scripts/verify-glb.ts      # dışa aktar → geri oku → karşılaştır
+bun scripts/render.ts          # renders/_sheet.png — modellere BAK
+bun scripts/export-glb.ts      # glb/ altına kitin tamamı
 ```
+
+Model üzerinde çalışırken sıra hep aynı: **kaynağı düzenle → derle → kendine
+kur → doğrula → render et.** Ortadaki iki adımı atlamak, `src/models/` altındaki
+kurulu kopyanın eski kalmasına yol açıyor ve doğrulama eski kodu sınıyor.
 
 > **WebGPU gerekir.** `@scifi-kit` modelleri TSL düğüm materyalleri (`colorNode`,
 > `attribute(...)`) kullanıyor, bu yüzden `WebGPURenderer` şart. Kendi
@@ -300,162 +326,311 @@ paket değişir.
 
 ## 5. Lowpoly medieval — evet, sorunsuz
 
-Bu bir varsayım değil; `@medieval-kit` çalışıyor ve doğrulandı. Dört item var:
+Bu bir varsayım değil: `@medieval-kit` çalışıyor, doğrulandı ve şu anda **26
+model + 1 lib** içeriyor. Tablo `bun scripts/catalog-table.ts` ile modellerin
+kendisinden üretiliyor — elle yazılmış bir liste ilk eklenen modelde bayatlıyor,
+nitekim bir kez bayatlamıştı da.
 
-| Item | Tür | İçerik |
+| Model | Kategori | Üçgen | Parça | Ölçü (m) | Materyal yuvaları | Eylemli |
+| --- | --- | ---: | ---: | --- | --- | :-: |
+| `wooden-chest` | Furniture | 552 | 4 | 0.86×0.51×0.48 | oak, iron | ✔ |
+| `wooden-barrel` | Props | 806 | 3 | 0.82×1.05×0.81 | oak, iron |  |
+| `wooden-crate` | Props | 1320 | 3 | 0.69×0.52×0.55 | oak, iron |  |
+| `wooden-bucket` | Props | 439 | 4 | 0.31×0.46×0.30 | oak, iron |  |
+| `trestle-table` | Furniture | 660 | 3 | 1.91×0.74×0.79 | oak |  |
+| `wooden-bench` | Furniture | 168 | 3 | 1.62×0.48×0.30 | oak |  |
+| `wooden-stool` | Furniture | 180 | 2 | 0.38×0.43×0.36 | oak |  |
+| `pitch-torch` | Lighting | 239 | 3 | 0.10×0.77×0.11 | oak, char, ember | ✔ |
+| `iron-lantern` | Lighting | 440 | 4 | 0.15×0.29×0.17 | iron, glass, char, ember | ✔ |
+| `iron-anvil` | Smithy | 220 | 5 | 0.48×0.36×0.21 | iron, steel |  |
+| `cart-wheel` | Structure | 1056 | 4 | 0.99×1.04×0.19 | oak, iron |  |
+| `log-pile` | Props | 504 | 2 | 1.25×0.43×0.18 | oak |  |
+| `hay-bale` | Props | 674 | 3 | 1.09×0.46×0.46 | straw, cloth |  |
+| `linen-sack` | Props | 300 | 3 | 0.32×0.53×0.32 | cloth |  |
+| `oak-tankard` | Props | 366 | 4 | 0.09×0.17×0.10 | oak, iron |  |
+| `straw-broom` | Tools | 768 | 3 | 0.38×1.28×0.35 | oak, straw, cloth |  |
+| `bronze-bell` | Props | 696 | 3 | 0.48×0.53×0.36 | brass, iron, oak | ✔ |
+| `tavern-sign` | Props | 516 | 2 | 0.54×0.75×0.63 | oak, iron | ✔ |
+| `leather-book` | Props | 248 | 3 | 0.20×0.07×0.28 | leather, cloth, brass |  |
+| `glass-phial` | Props | 321 | 3 | 0.06×0.14×0.06 | glass, ember, oak, char |  |
+| `coin-pouch` | Props | 546 | 3 | 0.18×0.11×0.19 | leather, cloth, brass |  |
+| `wooden-ladder` | Structure | 440 | 2 | 0.49×2.20×0.06 | oak |  |
+| `wooden-fence` | Structure | 440 | 2 | 4.89×1.10×0.09 | oak |  |
+| `wooden-hoe` | Tools | 220 | 3 | 0.21×1.17×0.25 | oak, iron, steel |  |
+| `wooden-shovel` | Tools | 468 | 3 | 0.27×1.20×0.08 | oak, iron, steel |  |
+| `wooden-pitchfork` | Tools | 338 | 3 | 0.25×1.56×0.11 | oak, iron, steel |  |
+
+Toplam **12 925 üçgen**. Kitin tamamı bir sahnede, bütçesi tek bir orta
+karmaşıklıktaki karakter modelinden az.
+
+### 5.1 Tek kaynak: `my-registry/meta.ts`
+
+Başlık, açıklama, kategori, etiketler, kaydırıcı aralıkları, parça adları ve
+materyal yuvaları TEK yerde duruyor. Oradan iki tüketici besleniyor:
+`build.ts` (registry.json üretirken) ve `src/catalog.ts` (viewer'ın kaydırıcı
+ve açıklamaları).
+
+Önceden ikisi ayrı ayrı elle yazılıyordu ve on yedinci modelde ayrışmışlardı.
+Şimdi ayrışması imkânsız değil ama SESSİZ olması imkânsız:
+`verify-model.ts` her modelde metadata ile gerçeği karşılaştırıyor —
+
+- `meta.controls` anahtarlarının hepsi modelin config alanı mı,
+- `meta.parts` modelin gerçek parça adlarıyla aynı mı,
+- bildirilen her yuva çözümleniyor mu,
+- ve daha önemlisi: **hiçbir mesh bildirilmemiş bir yuva kullanmıyor mu.**
+
+Son madde asıl olan. Fazladan bildirim sadece gürültü; EKSİK bildirim ise
+tüketicinin `materials.override()` ile ulaşamayacağı gizli bir materyal demek,
+yani registry sözleşmesinin ihlali. Bu kontrol eklendiği gün dört modelde
+gerçek bir sapma yakaladı (`steel` yuvası eklenmiş ama bildirilmemişti).
+
+### 5.2 Materyal sözlüğü — on yuva
+
+| Yuva | Ne | Neden ayrı |
 | --- | --- | --- |
-| `@medieval-kit/core` | `vibe3d:lib` | deterministik rastgelelik, slot bazlı materyaller, geometri sözlüğü, parça yuvaları |
-| `@medieval-kit/wooden-barrel` | `vibe3d:model` | 3 mesh, 806 üçgen, 0.82 × 1.05 × 0.81 m |
-| `@medieval-kit/wooden-crate` | `vibe3d:model` | 3 mesh, 360 üçgen, 0.67 × 0.52 × 0.53 m |
-| `@medieval-kit/iron-brazier` | `vibe3d:model` | 9 mesh, 423 üçgen, 0.53 × 0.90 × 0.53 m · **hareketli** |
+| `oak` | kereste | — |
+| `iron` | dövme demir, oksitli ve mat | `steel`den ayrı: fark renkte değil PÜRÜZLÜLÜKTE ve vertex color pürüzlülük taşıyamaz |
+| `steel` | kullanımdan parlamış çelik | örsün yüzü, küreğin ağzı, çatalın ucu |
+| `brass` | tunç ve bakır | çan, sikke |
+| `straw` | saman, hasır, süpürge teli | balyanın "meşe" bildirmesi tüketiciye söylenmiş bir yalan olurdu |
+| `cloth` | keten, çuval bezi, ip | — |
+| `leather` | işlenmiş deri | — |
+| `glass` | üflemeli cam | saydam, `depthWrite` KAPALI, `DoubleSide` |
+| `ember` | alev | `MeshBasicMaterial` — ışık almaz, yayar |
+| `char` | kömür, zift | — |
 
-### core'un sözlüğü
+`ember` iki yerde kural olarak da işliyor: kapanma ve alaca pişirilirken bu
+yuvadaki gövdeler tamamen atlanıyor. Sebebi basit — aydınlatılmayan bir
+materyalde vertex rengi son renktir, karartmak alevi söndürür. Kural
+`kit.ts`'te yuvanın kendisine bağlı, model başına bir bayrağa değil, ki
+unutulması mümkün olmasın.
 
-`geometry.ts` beş üreteç veriyor — hepsi indekssiz, hepsi vertex renkli:
-`boxGeometry` (tahta, kiriş, kayış, ayak), `prismGeometry` (kesik koni: kâse,
-alev dili; isteğe bağlı dikey renk geçişiyle), `staveGeometry` (fıçı tahtası),
-`bandGeometry` (demir çember), `headGeometry` (kapak diski). Ayrıca
-`flipGeometry` sarımı ters çevirir — içi görünen kaplar için gerekli: kâsenin
-dış yüzeyi dışa, iç yüzeyi içe bakmalı, ikisi de aynı koniden üretiliyor.
+### 5.3 `core`'un sözlüğü
 
-`materials.ts` slot bazlı: `createMedievalMaterials(scope, ['iron','ember'])`
-yalnızca istenenleri üretir. Mangalın meşeye, fıçının emissive materyale
-ihtiyacı yok; kullanılmayan materyal üretmek hem boşuna GPU kaynağı hem de
-modelin `materialSlots` bildirimiyle çelişen bir yalan olurdu.
+**Geometri üreteçleri** (`geometry.ts`) — hepsi indekssiz, hepsi vertex renkli,
+dolayısıyla düz gölgeleme bedava geliyor:
 
-`ember` yuvası bilinçli olarak **MeshBasicMaterial**. MeshStandardMaterial
-burada yanlış araç olurdu: `emissive` tek bir Color'dır, vertex renklerinden
-beslenmez — yani alevin dibinden ucuna renk geçişi yapılamazdı.
+`boxGeometry`, `taperedBoxGeometry`, `chamferedBoxGeometry` (44 üçgen, kendi
+kendini düzelten kenar/köşe sarımıyla), `prismGeometry`, `latheGeometry`,
+`staveGeometry`, `bandGeometry` (isteğe bağlı iç yüzle), `headGeometry`,
+`arcBarGeometry`, `dishedSheetGeometry`, `flipGeometry`, `mergeColoured`.
 
-Model, core'a `registryDependencies` ile bağlı ve build script'i bunu
-**kaynaktan türetiyor** — `from '../core/'` içeren her import otomatik
-bağımlılık oluyor, elle tutulan liste yok. `vibe3d add @medieval-kit/wooden-barrel`
-core'u kendiliğinden getiriyor.
+**Deformasyon** — sonradan eklendi ve modelleri "üretilmiş" olmaktan çıkaran
+şey oldu:
 
-### Fıçı nasıl kurulu
+- `bendGeometry(geometry, curvature)` düz bir gövdeyi yay hâline sarar. Gerçek
+  bir yay eşlemesi, "her noktayı yüksekliğiyle orantılı döndür" değil — o
+  yaklaşım gövdeyi uzatıp inceltiyordu. Yaba dişleri, maşrapa kulpu, çapa ağzı
+  ve tabelanın kıvrımı bunu kullanıyor.
+- `roughenGeometry(geometry, amount)` yüzeyi düzensizleştirir. Kritik nokta:
+  kayma miktarı KONUMDAN türetiliyor. Geometriler indekssiz, yani bir noktada
+  üç-dört köşe kopyası var; bağımsız oynatmak yüzeyi yırtıyordu. Konum karması
+  aynı noktadaki bütün kopyalara aynı kaymayı veriyor.
 
-Gerçek fıçı tek parça değildir, o yüzden model de tek parça değil: 13 ayrı
-tahta (stave), uçlara doğru daralan bir profil (`taper`), gövdeye gömülü
-kapaklar ve tahtaların kapak üstünde bıraktığı bilezik (chime), dört demir
-çember (uçtakiler daha geniş — en çok zorlanan yer orası).
+**Yüzey pişirme** — kit çapında, `createKitModel` içinde otomatik:
 
-İki teknik burada öğrenmeye değer:
+- `bakeOcclusion` (`occlusion.ts`) vertex renklerine ortam kapanması işler.
+  Yüzeyin KENDİ biçiminden karartma üretiyor: bir nokta ne kadar çok komşu
+  yüzeyle çevriliyse o kadar az gökyüzü görür. Tahtaların arası, çemberin altı,
+  kütüklerin değdiği yer koyulaşıyor.
+- `mottleGeometry` yüzey alacası işler ve bu, **"doku ne olacak?" sorusunun bu
+  kitteki cevabı.** Bitmap doku üç şey isterdi: UV koordinatları (geometrimizde
+  yok), registry'nin taşıması gereken görüntü dosyaları, ve kitin kimliğinin
+  değişmesi. Yerine yüzeyin konumundan türeyen bir leke deseni var; leke
+  büyüklüğü modelin ölçeğinden, ŞİDDETİ ise yuvadan geliyor —
 
-**Vertex renkleri.** 13 tahtanın 13 ayrı tonu var ama **tek materyal**
-kullanılıyor. Renk varyasyonu materyalde değil geometride taşınıyor
-(`vertexColors: true`), böylece hepsi tek çizim çağrısını paylaşıyor. Bu,
-scifi-kit'in aşınma boru hattındaki fikrin küçük hâli: yüzey kimliğini vertex
-attribute'una yaz, sonra birleştir. Ekranda ölçüldü: **61 farklı ahşap tonu**.
+  ```
+  straw 1.35 · cloth 1.15 · oak 1.00 · char 0.85 · leather 0.70
+  iron  0.50 · brass 0.35 · steel 0.22 · glass 0.15 · ember 0
+  ```
 
-**Deterministik rastgelelik.** `Math.random()` yok; `seed`'e bağlı bir
-mulberry32. Aynı tohum her zaman aynı fıçıyı verir — yoksa ne önizleme, ne
-test, ne sanat yönetimi tutar. `seed` yapılandırılabilir bir alan, yani aynı
-modelden istediğiniz kadar farklı fıçı çıkarabilirsiniz.
+  Kural malzemenin fiziğinden: bir yüzey ne kadar cilalıysa o kadar tek renk
+  olur, çünkü göze giden ışık pigmentten değil yansımadan gelir.
 
-**Indekssiz geometri.** `computeVertexNormals()` indekssiz geometride her
-üçgene kendi normalini verir — düz gölgeleme materyal bayrağı olmadan,
-geometrinin doğal sonucu olarak gelir. Lowpoly'de istenen tam olarak bu.
+  Dürüst sınırı: benekler köşelerde örnekleniyor, yani çözünürlüğü üçgen
+  yoğunluğu belirliyor. Sandığın büyük ön paneli iki üçgen, dolayısıyla orada
+  alaca neredeyse görünmüyor. Çare üçgeni bölmek, o da lowpoly bütçesini yer.
 
-Neden hiçbir engel yok:
+**İskele** (`kit.ts`) — `createKitModel` her modelin aynı sözleşmeyi kurmasını
+sağlıyor: kaynak sahipliği, materyal çözümleme ve override, sabit anchor +
+değiştirilebilir content, kimliği bozmayan `configure()`, idempotent
+`dispose()`. Model yazmak artık sadece geometri üretmek.
 
-- Şema stil hakkında hiçbir şey bilmiyor. Namespace, item adı, dosya, hash. O kadar.
-- `capabilities: []` bildirebilirsiniz — `@scifi-kit` `["webgpu","tsl"]` istiyor,
-  sizinki istemiyor, ikisi aynı projede yan yana yaşıyor.
-- `@scifi-kit/core`'a bağımlı **değilsiniz**. Fıçı sadece düz `three` ve
-  `init`in kurduğu evrensel sözleşmeleri kullanıyor.
-- Mimari dokümanın "non-goals" bölümü bunu açıkça yazıyor: *"Requiring all
-  registries to use the sci-fi kit's material library, visual language, geometry
-  helpers, or authoring pipeline."*
+### 5.4 Parça = bir ANLAM, bir mesh değil
 
-Bu desen `@scifi-kit`'in `axiom-cargo-kit` item'ıyla aynı: 50 model tek bir
-destek item'ını paylaşıyor, böylece tek tek kurulan bir sandık bile yanındaki
-konteynerle aynı katalogdan gelmiş gibi duruyor. Kite yeni model eklerken
-kural basit: **ortak olan her şey `core`'a, sadece o modele ait olan model
-dosyasına.**
+`BuiltPart` üç alan taşıyor ve ikisi sonradan geldi:
 
-### anchor / content ayrımı — protokolün en kolay kaçırılan yeri
+- `geometry` + `slot` — parçanın ana gövdesi.
+- **`extras`** — aynı parçaya ait, BAŞKA yuva kullanan gövdeler. Parçalar
+  root'un kardeş çocukları, yani biri hareket ettiğinde diğerleri onu takip
+  edemez. Sandığın kapağı hem meşe tahta hem demir kayış hem kilit kancasıdır
+  ve üçü birlikte dönmek zorunda; ayrı parça olsalardı kapak açılırken kayışlar
+  havada kalırdı. Bölünen şey anlam değil, sadece materyal.
+- **`origin`** — parçanın kendi dönme merkezi. Verildiğinde anchor oraya
+  konumlanıyor ve geometrinin o noktaya göre yazıldığı varsayılıyor. Sandık
+  kapağının menteşe etrafında dönmesi için gereken tek şey bu.
 
-`PartHandle` iki ayrı nesne bildirir ve ikisi **aynı olamaz**:
+`origin` bir incelik getiriyor: kapanma MONTAJ uzayında hesaplanmalı. Kendi
+orijininde yazılmış bir kapak, gövdenin yanında değil içinde duruyormuş gibi
+görünür ve yanlış yerleri karartır. `kit.ts` bu yüzden pişirmeden önce hepsini
+yerine taşıyıp sonra geri alıyor.
 
-- `anchor` — modelin ömrü boyunca aynı nesne. Tüketici ışığını, etiketini,
-  çarpışma gövdesini buraya takar.
-- `content` — `configure()` her çağrıldığında atılıp yeniden kurulan geometri.
+### 5.5 Eylemler ve animasyon
 
-İkisini aynı Group yapıp rebuild'de `clear()` çağırmak tüketicinin taktığı her
-şeyi de sessizce siler. Model çalışmaya devam eder, ama protokolün asıl vaadi
-bozulmuştur — ve bunu fark etmek zordur.
+Beş model hareketli ve dördü farklı bir mekanik gösteriyor:
 
-İlk üç modeli de bu hatayla yazdım; `scripts/verify-model.ts` yakaladı. Doğru
-yapı artık `core/parts.ts` içinde `createPart()` olarak duruyor, yani sonraki
-modeller aynı hataya düşemez. Mangalın ateş ışığı da bu sayede `anchor`'da
-yaşıyor ve `configure()` ateşi söndürmüyor.
+| Model | Eylem | Mekanik |
+| --- | --- | --- |
+| `wooden-chest` | `setOpen` / `toggle` / `openness` / `snap` | üstel yaklaşma — kare hızından bağımsız |
+| `pitch-torch` | `setLit` / `isLit` | uyumsuz frekanslı sinüs toplamı |
+| `iron-lantern` | `setLit` / `isLit` | aynı, ama daha yavaş: cam alevi rüzgârdan korur |
+| `bronze-bell` | `ring` / `still` / `strikes` | iki bağımsız sarkaç |
+| `tavern-sign` | `push` / `still` / `lean` | yumuşak sarkaç, uzun salınım |
 
-### Statik ve hareketli modeller
-
-Fıçı ve sandık statik. Mangal protokolün onların hiç dokunmadığı iki parçasını
-kullanıyor:
-
-- **tipli `actions`** — `setLit(boolean)` / `isLit()`
-- **`update(dt)`** — alev titremesi ve ışık dalgalanması
-
-Ayrım önemli ve mimari dokümanda yazılı: `configure()` topolojiyi yeniden kurar
+Ayrım mimari dokümanda yazılı ve önemli: `configure()` topolojiyi yeniden kurar
 ve **pahalıdır**, kullanıcı ayarı içindir. Kare başına değişen her şey
-`update()` içinde olmalı.
+`update()` içinde olmalı. Kapağı açmak sandığın KİMLİĞİNİ değiştirmiyor,
+dolayısıyla `configure()` işi değil.
 
-Alev titremesi iki farklı frekansın toplamı; tek sinüs fazla düzenli okunuyor,
-ateş öyle yanmaz. `update()` ayrıca adımı 0.05 s ile sınırlıyor ki sekme arka
-plandan dönünce alev fırlamasın.
+Üç kural bütün hareketli modellerde geçerli:
 
-### Z-fighting: hizalı yüz yapma, kasıtlı içiçe geç
+1. **Durum inşanın DIŞINDA tutulur.** `configure()` çağrılınca kapak
+   çarpmamalı, çan susmamalı. Açı ve faz kapanışta yaşıyor, `build()` içinde
+   değil.
+2. **`Math.random()` yok.** Alev titremesi bile deterministik: iki uyumsuz
+   frekanslı sinüsün toplamı. Aynı tohumlu iki meşale ayrışmıyor.
+3. **Kare hızından bağımsızlık.** Sandık `p += (hedef − p)·(1 − e^(−k·dt))`
+   kullanıyor; saf bir lerp 30 fps'te 120 fps'ten yavaş açardı. Test bunu iki
+   farklı adım sayısıyla aynı süreyi geçirip karşılaştırarak doğruluyor.
+
+Çan kitin en karmaşık parçası ve öğrettiği şey şu: **çanı çalan şey çanın
+sallanması değil, tokmağın GERİDE KALMASI.** İlk denemede tokmağı çanın
+`extras` gövdesi yapmıştım — çan sallanıyor, hiçbir şey olmuyordu. Şimdi ikisi
+ayrı parça, aynı eksende ama farklı sönümlemeyle salınıyor; aradaki fark vuruşu
+üretiyor ve `actions.strikes()` sayacını artırıyor. Model SES ÇALMIYOR: sahnenin
+ses sistemi hakkında varsayım yapmaya hakkı yok, ihtiyacı olan sayacı okur.
+
+### 5.6 Z-fighting: hizalı yüz yapma, kasıtlı içiçe geç
 
 İki yüzey aynı düzlemde, aynı yöne bakıyor ve alanları örtüşüyorsa hangisinin
 önde olduğu derinlik tamponunun kayan nokta hassasiyetine kalır. Kamera
 oynadıkça kazanan değişir ve yüzey titrer.
 
-Sandığın ilk hâli tam bu hataya düşmüştü: dikmeler, yan tahtalar ve kapak
-tahtalarının hepsi dış yüzeyini `±width/2` düzlemine koyuyordu — **96 çakışan
-yüz.** (Fıçı ve mangalda 0'dı, çünkü onlar dönel ve yüzeyleri doğal olarak
-farklı yarıçaplarda.)
+Sandığın (crate) ilk hâli tam bu hataya düşmüştü: dikmeler, yan tahtalar ve
+kapak tahtalarının hepsi dış yüzeyini `±width/2` düzlemine koyuyordu — **96
+çakışan yüz.** Çözüm bir "epsilon kaydırma" değil, gerçek marangozluk:
 
-Çözüm bir "epsilon kaydırma" değil, gerçek marangozluk:
-
-- **Dikmeler tahtalardan dışarı taşıyor** (`postProud`) — yan tahtalar
-  dikmelerin arkasına çekili, dış yüzleri farklı düzlemde.
-- **Kapak ve taban çerçeveden sarkıyor** (`overhang`) — yan yüzleri dikmelerin
-  yüzleriyle hizalanmıyor.
-- **Dikmeler kapak ve tabanın içine giriyor**, uçları katı parçanın içinde
-  kaldığı için görünmüyor ve hiçbir düzlemle hizalanmıyor.
+- **Dikmeler tahtalardan dışarı taşıyor** — yan tahtalar dikmelerin arkasına
+  çekili, dış yüzleri farklı düzlemde.
+- **Kapak ve taban çerçeveden sarkıyor.**
+- **Dikmeler kapak ve tabanın İÇİNE giriyor**, uçları katı parçanın içinde
+  kaldığı için hiçbir düzlemle hizalanmıyor.
 - **Tahtalar birbirine küt ekleniyor** (butt joint) — değiyorlar ama
   örtüşmüyorlar. Kenar teması z-fighting üretmez.
-- **Ön/arka kayışlar köşede dışa taşıyor, yan kayışlar onlara varmadan
-  bitiyor** — dört parçanın üst yüzü köşede üst üste binmiyor.
+- **Kayışlar köşede birbirine varmadan bitiyor.**
 
-`scripts/zfight.ts` bunu ölçüyor ve `verify-model.ts` her modelde, sandıkta ise
+Aynı disiplin yeni modellerde de bir sürü karar dayattı ve bazıları modeli
+daha DOĞRU yaptı:
+
+- Ortaçağ sandığında ön yüzün ortasına kayış konmuyor, çünkü **orası kilidin
+  yeri.** Kural hem tarihsel olarak doğru hem de kayışla kilit köprüsünün
+  belirli ölçülerde aynı düzleme oturmasını kökten engelliyor.
+- Süpürgenin levhaları birbirine tam paralel duramaz — elle bağlanmış bir
+  demette hiçbir tel diğerine paralel değildir zaten.
+- Çanın yatakları kirişin ÜSTÜNE taşıyor; gerçek yatak da öyledir.
+
+`scripts/zfight.ts` bunu ölçüyor ve `verify-model.ts` her modelde, üstelik
 birkaç farklı yapılandırmada birden çağırıyor. Ölçüt bounding box değil gerçek
-alan örtüşmesi: bir üçgenin ağırlık merkezi diğerinin içinde mi. Böylece
-bitişik tahtalar yanlış alarm vermiyor.
+alan örtüşmesi: bir üçgenin ağırlık merkezi diğerinin içinde mi.
 
-### Sarım denetimi
+### 5.7 Sarım denetimi
 
 Elle yazılan geometride en sinsi hata ters sarım: yüz içten görünür hâle gelir
-ve bu ancak belirli bir kamera açısında fark edilir. `scripts/verify-model.ts`
-bunu iki ayrı ölçütle denetliyor, çünkü iki ayrı geometri türü var:
+ve bu ancak belirli bir kamera açısında fark edilir. Üç ayrı ölçüt var, çünkü
+hiçbiri tek başına yeterli değil:
 
-**Dönel gövdeler** (fıçı, mangal kâsesi) için radyal hizalama — dış kabuktaki
-her **radyal** yüzün normali eksenden dışa bakmalı.
+**Radyal hizalama** — dönel gövdeler için. Dış kabuktaki her radyal yüzün
+normali eksenden dışa bakmalı. Yükseklik BANTLARI hâlinde ölçülüyor: konik
+gövdelerde tek bir yarıçap eşiği anlamsız.
 
-**Kapalı katılar** (sandık: tamamen kutulardan kurulu) için işaretli hacim.
-Kapalı bir yüzeyin hacmi Σ a·(b×c)/6 ile bulunur; sarım dışa bakıyorsa pozitif,
-içe bakıyorsa negatif çıkar. Sandıkta bu ölçüt radyal testten daha keskin,
-çünkü kutunun "radyal" yönü diye bir şey yok.
+**İşaretli hacim** — kapalı katılar için. Σ a·(b×c)/6 sarım dışa bakıyorsa
+pozitif çıkar. Ama bu ölçüt yalnızca GENEL tersliği yakalıyor.
 
-Önemli incelik: tahtaların yan (boşluk) yüzeyleri teğetseldir, yani bu çarpım
-onlar için tanımı gereği ~0'dır ve işareti sadece kayan nokta gürültüsüdür.
-Radyal bir test onları yargılayamaz, o yüzden ayıklanıyor ve **kaç tane
-ayıklandığı raporlanıyor** — sessizce elenmiyorlar.
+**Kenar dengesi** — tek bir ters çevrilmiş yüzü yakalayan tek ölçüt. İşaretli
+hacim testi bunu kaçırdığı için eklendi: bir yüzü ters çevirdiğimde hacim
+0.058'den 0.039'a düşmüş ama pozitif kalmıştı.
 
-Test mutasyonla doğrulandı: dış yüz dörtgeninin sarımı kasten ters çevrildiğinde
-104 radyal yüzün 52'si yakalandı; geri alınınca sıfır.
+Üç incelik daha:
+
+- Tahtaların yan yüzeyleri TEĞETSEL, yani radyal çarpım onlar için tanımı
+  gereği ~0 ve işareti sadece gürültü. Ayıklanıyorlar ve **kaç tane
+  ayıklandığı raporlanıyor** — sessizce elenmiyorlar.
+- İçi boş gövdeler (çan) bilerek içe bakan bir kabuk taşıyor. Onlarda eşik
+  yükseltiliyor ki iç kabuk "dış kabuk" sanılmasın.
+- `bandGeometry` varsayılan olarak iç yüz üretmiyor (çember hep bir gövdeyi
+  sarar, iç yüz görünmez). Serbest duran bir halka — çuvalın ipi, balyanın bağı
+  — bu yüzden kapalı katı olmuyordu; `{ inner: true }` bunun için var.
+
+### 5.8 Doğrulama: üç betik
+
+```bash
+bun scripts/verify-model.ts   # ~500 kontrol · geometri, protokol, metadata, eylemler
+bun scripts/verify-glb.ts     # her modeli dışa aktarıp GERİ OKUR
+bun scripts/render.ts         # PNG kontak sayfası — modele BAKMAK için
+```
+
+Yöntem baştan beri aynı: **her kontrol mutasyonla sınandı.** Sabote et,
+FAIL geldiğini gör, geri al, PASS geldiğini gör. Geçen bir test, çalıştığını
+kanıtlamaz.
+
+Bu disiplin iki kez kendini fena hâlde haklı çıkardı ve ikisinde de hata
+BENDEYDİ, testte değil:
+
+- Radyal test 17 yanlış pozitif veriyordu. Teşhis çıktım "0 negatif" diyordu
+  çünkü `toFixed(3)` `-0` üretiyor ve JavaScript'te `-0 < 0` yanlış.
+- Kütükler hâlâ birbirine giriyordu. "0 içiçe geçme" diye ölçtüğüm şey
+  YERLEŞİM matematiğiydi; oysa uçların yarıçapı `log.r · (1 ± 0.05)` idi ve
+  yerleşim `log.r` ile hesaplanıyordu. Yanlış şeyi doğrulamıştım.
+
+`render.ts` en son eklendi ve eksik olan şeyi kapattı. Bütün doğrulama
+GEOMETRİKTİ: üçgen sayısı, sarım, eş düzlem, sınır kutusu. Hepsi gerçek hatalar
+yakaladı ama hiçbiri "bu kürek küreğe benzemiyor" diyemedi. O cümleyi kurabilmek
+için modele bakmak gerekiyor — betik tarayıcısız, GPU'suz bir yazılım
+rasterleyici: üçgenleri topluyor, kamerayla yansıtıyor, z-tamponuyla dolduruyor,
+PNG yazıyor. Kürek dördüncü kez, çapa üçüncü kez, saman balyası ikinci kez o
+görüntülere bakıldığı için yeniden yazıldı.
+
+`--sweep` kipi bir parametrenin farklı değerlerini yan yana koyuyor:
+
+```bash
+bun scripts/render.ts --one wooden-hoe --sweep "bladeAngle=62|80|98|116|134"
+```
+
+Çapanın ağız açısı böyle seçildi. 98° civarında ağız neredeyse yatay kalıyor ve
+3/4 açıdan bakan bir kameraya TAM KENARINDAN görünüyor — modelin en karakteristik
+yüzeyi siluetten siliniyor. 66° seçildi.
+
+### 5.9 GLB dışa aktarımı
+
+vibe3d'nin kendi inceleyicisinde olup bizde olmayan tek özellik buydu. Artık
+iki yerden çalışıyor ve **ikisi de aynı kodu** kullanıyor (`src/glb.ts`):
+
+```bash
+bun scripts/export-glb.ts                      # kitin tamamı → glb/
+bun scripts/export-glb.ts --one wooden-chest
+```
+
+Viewer'daki "GLB indir" düğmesi bit bit aynı dosyayı üretiyor. Toplu dışa
+aktarım onlarda yok ve asıl işe yarayan o: kiti Blender'a, Godot'ya ya da
+Unity'ye tek komutla götürüyor.
+
+Renk bilgisi tamamen vertex color'da olduğu için glTF'e `COLOR_0` olarak
+gidiyor ve `baseColorFactor` beyaz kalıyor — dosyada hiç doku yok. Kitin bütün
+kimliği tek bir attribute'la seyahat ediyor.
+
+TaşınMAYAN tek şey şader: `@scifi-kit`'in göstergesindeki aşınma bir TSL düğüm
+grafiği, yani kod, ve glTF kod taşımaz. Bu bir eksiklik değil — vertex color
+ile şader tabanlı yüzey arasındaki gerçek farkın kendisi.
 
 ---
 
@@ -526,7 +701,15 @@ bunx vibe3d remove @scifi-kit/modular-wall [--force]
 bunx vibe3d doctor
 
 # registry yazarı
-bunx vibe3d registry validate ./dist/registry.json
+bunx vibe3d registry validate ./my-registry/dist/registry.json
+
+# bu depo
+bun my-registry/build.ts                    # registry.json üret
+bun scripts/verify-model.ts                 # tam doğrulama
+bun scripts/verify-glb.ts                   # GLB gidiş-dönüş
+bun scripts/render.ts [--one <id>] [--ids a,b] [--sweep "k=v1|v2"] [--size N]
+bun scripts/export-glb.ts [--one <id>] [--out dir]
+bun scripts/catalog-table.ts                # doküman tablosu
 
 # yazarlık skill'leri
 bunx vibe-model    [--global] [doctor] [--force]
