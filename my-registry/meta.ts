@@ -413,6 +413,25 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['leather', 'cloth', 'brass'],
     parts: ['pouch', 'cord', 'coins'],
   },
+  'wicker-basket': {
+    title: 'Wicker Basket',
+    description:
+      'Söğüt çubuğundan örülmüş sepet. Yatay çubuklar dikeylerin bir önünden bir arkasından geçiyor.',
+    category: 'Props',
+    tags: ['medieval', 'lowpoly', 'props', 'farm', 'procedural'],
+    controls: {
+      height: { type: 'number', label: 'Yükseklik', min: 0.1, max: 0.5, step: 0.01, unit: 'm' },
+      radius: { type: 'number', label: 'Ağız yarıçapı', min: 0.08, max: 0.35, step: 0.005, unit: 'm' },
+      taper: { type: 'number', label: 'Taban daralması', min: 0, max: 0.45, step: 0.01 },
+      stakes: { type: 'number', label: 'Dikey çubuk', min: 6, max: 18, step: 1 },
+      rows: { type: 'number', label: 'Örgü sırası', min: 2, max: 14, step: 1 },
+      produce: { type: 'number', label: 'Meyve sayısı', min: 0, max: 24, step: 1 },
+      hue: { type: 'number', label: 'Meyve rengi', min: 0, max: 1, step: 0.01 },
+      seed: { type: 'number', label: 'Varyasyon tohumu', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['straw', 'produce'],
+    parts: ['weave', 'rim', 'contents'],
+  },
   'wooden-ladder': {
     title: 'Wooden Ladder',
     description:

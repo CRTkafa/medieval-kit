@@ -45,6 +45,7 @@ import { createModel as createSign } from '@/models/medieval-kit/tavern-sign/mod
 import { createModel as createBook } from '@/models/medieval-kit/leather-book/model.ts'
 import { createModel as createPhial } from '@/models/medieval-kit/glass-phial/model.ts'
 import { createModel as createPouch } from '@/models/medieval-kit/coin-pouch/model.ts'
+import { createModel as createBasket } from '@/models/medieval-kit/wicker-basket/model.ts'
 
 const failures: string[] = []
 function expect(label: string, condition: boolean): void {
@@ -368,6 +369,10 @@ const CASES: readonly Case[] = [
     parts: 3, ownSlot: 'brass', borrowSlot: 'leather', radial: true, radialPart: 'pouch',
     shellRatio: 0.8, variants: [{ coins: 0 }, { fill: 1 }, { coinRadius: 0.02 }],
     maxSize: [0.32, 0.14, 0.32] },
+  { id: 'wicker-basket', make: as(createBasket), patch: { stakes: 14, rows: 9 },
+    parts: 3, ownSlot: 'produce', borrowSlot: 'straw', radial: true, radialPart: 'rim',
+    variants: [{ produce: 0 }, { taper: 0 }, { rows: 2 }],
+    maxSize: [0.42, 0.32, 0.42] },
   { id: 'log-pile', make: as(createLogPile), patch: { rows: 4, perRow: 7, variation: 0.4 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', maxSize: [1.6, 0.9, 0.9],
     variants: [{ rows: 1 }, { taperRows: 0 }, { perRow: 9 }] },

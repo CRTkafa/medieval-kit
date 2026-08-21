@@ -77,7 +77,7 @@ src/viewer.ts · src/viewer.css   model inceleyici (WebGPU, gökyüzü, gölge)
 src/catalog.ts                   inceleyicinin kataloğu — meta.ts'ten TÜRETİLİR
 src/glb.ts                       GLB dışa aktarımı (viewer ve CLI ortak kullanır)
 src/models/scifi-kit/pressure-gauge/  kurulu sci-fi modeli
-src/models/medieval-kit/…             kurulu KENDİ modelleriniz (26 model)
+src/models/medieval-kit/…             kurulu KENDİ modelleriniz (27 model)
 my-registry/
   meta.ts                          katalog metadata'sının TEK kaynağı
   build.ts                         registry.json üreticisi
@@ -326,7 +326,7 @@ paket değişir.
 
 ## 5. Lowpoly medieval — evet, sorunsuz
 
-Bu bir varsayım değil: `@medieval-kit` çalışıyor, doğrulandı ve şu anda **26
+Bu bir varsayım değil: `@medieval-kit` çalışıyor, doğrulandı ve şu anda **27
 model + 1 lib** içeriyor. Tablo `bun scripts/catalog-table.ts` ile modellerin
 kendisinden üretiliyor — elle yazılmış bir liste ilk eklenen modelde bayatlıyor,
 nitekim bir kez bayatlamıştı da.
@@ -351,6 +351,7 @@ nitekim bir kez bayatlamıştı da.
 | `straw-broom` | Tools | 768 | 3 | 0.38×1.28×0.35 | oak, straw, cloth |  |
 | `bronze-bell` | Props | 696 | 3 | 0.48×0.53×0.36 | brass, iron, oak | ✔ |
 | `tavern-sign` | Props | 516 | 2 | 0.54×0.75×0.63 | oak, iron | ✔ |
+| `wicker-basket` | Props | 1906 | 3 | 0.35×0.24×0.35 | straw, produce |  |
 | `leather-book` | Props | 248 | 3 | 0.20×0.07×0.28 | leather, cloth, brass |  |
 | `glass-phial` | Props | 321 | 3 | 0.06×0.14×0.06 | glass, ember, oak, char |  |
 | `coin-pouch` | Props | 546 | 3 | 0.18×0.11×0.19 | leather, cloth, brass |  |
@@ -360,7 +361,7 @@ nitekim bir kez bayatlamıştı da.
 | `wooden-shovel` | Tools | 468 | 3 | 0.27×1.20×0.08 | oak, iron, steel |  |
 | `wooden-pitchfork` | Tools | 338 | 3 | 0.25×1.56×0.11 | oak, iron, steel |  |
 
-Toplam **12 925 üçgen**. Kitin tamamı bir sahnede, bütçesi tek bir orta
+Toplam **14 831 üçgen**. Kitin tamamı bir sahnede, bütçesi tek bir orta
 karmaşıklıktaki karakter modelinden az.
 
 ### 5.1 Tek kaynak: `my-registry/meta.ts`
@@ -384,7 +385,7 @@ tüketicinin `materials.override()` ile ulaşamayacağı gizli bir materyal deme
 yani registry sözleşmesinin ihlali. Bu kontrol eklendiği gün dört modelde
 gerçek bir sapma yakaladı (`steel` yuvası eklenmiş ama bildirilmemişti).
 
-### 5.2 Materyal sözlüğü — on yuva
+### 5.2 Materyal sözlüğü — on bir yuva
 
 | Yuva | Ne | Neden ayrı |
 | --- | --- | --- |
@@ -396,6 +397,7 @@ gerçek bir sapma yakaladı (`steel` yuvası eklenmiş ama bildirilmemişti).
 | `cloth` | keten, çuval bezi, ip | — |
 | `leather` | işlenmiş deri | — |
 | `glass` | üflemeli cam | saydam, `depthWrite` KAPALI, `DoubleSide` |
+| `produce` | meyve ve sebze kabuğu | samanla aynı pürüzlülüğü verseydim elma kuru ot gibi görünürdü |
 | `ember` | alev | `MeshBasicMaterial` — ışık almaz, yayar |
 | `char` | kömür, zift | — |
 

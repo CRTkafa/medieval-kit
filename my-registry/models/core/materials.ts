@@ -21,6 +21,7 @@ export type MedievalSlot =
   | 'cloth'    // keten, çuval bezi, tirşe
   | 'leather'  // deri: kitap kabı, kese
   | 'glass'    // üflemeli cam
+  | 'produce'  // meyve ve sebze kabuğu
   | 'ember'    // alev — ışık almaz, yayar
   | 'char'     // kömür, zift
 
@@ -38,6 +39,7 @@ export interface SlotMaterial {
   readonly cloth: MeshStandardMaterial
   readonly leather: MeshStandardMaterial
   readonly glass: MeshStandardMaterial
+  readonly produce: MeshStandardMaterial
   readonly ember: MeshBasicMaterial
   readonly char: MeshStandardMaterial
 }
@@ -63,6 +65,8 @@ export interface MedievalPalette {
   readonly leather: Color
   /** Üflemeli cam — hafif yeşilimsi, dönemin camı berrak değildi. */
   readonly glass: Color
+  /** Meyve kabuğu taban tonu. Asıl renk modelin `hue` alanından geliyor. */
+  readonly produce: Color
   /** Alev dibi — sıcak ve parlak. */
   readonly ember: Color
   /** Alev ucu — daha doygun, daha kırmızı. */
@@ -89,6 +93,7 @@ export const MEDIEVAL_PALETTE: MedievalPalette = {
   cloth: new Color(0xb9a888),
   leather: new Color(0x6b452c),
   glass: new Color(0xbcd4cb),
+  produce: new Color(0xa8452f),
   ember: new Color(0xffd27a),
   emberTip: new Color(0xd8571b),
   char: new Color(0x241f1c),
@@ -191,6 +196,16 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       opacity: 0.34,
       depthWrite: false,
       side: DoubleSide,
+    }),
+    // Meyve kabuğu mumsu: tamamen mat değil ama metalik de değil. Ayrı bir
+    // yuva olmasının sebebi ad değil DAVRANIŞ — samanla aynı pürüzlülüğü
+    // verseydim elma kuru ot gibi görünürdü.
+    produce: () => new MeshStandardMaterial({
+      name: 'medieval-kit / produce',
+      color: 0xffffff,
+      vertexColors: true,
+      roughness: 0.52,
+      metalness: 0,
     }),
     // Alev ışık ALMAZ, yayar. MeshStandardMaterial burada yanlış araç olurdu:
     // `emissive` tek bir Color'dır, vertex renklerinden beslenmez — yani

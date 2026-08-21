@@ -42,6 +42,7 @@ import { createModel as createSign } from '@/models/medieval-kit/tavern-sign/mod
 import { createModel as createBook } from '@/models/medieval-kit/leather-book/model.ts'
 import { createModel as createPhial } from '@/models/medieval-kit/glass-phial/model.ts'
 import { createModel as createPouch } from '@/models/medieval-kit/coin-pouch/model.ts'
+import { createModel as createBasket } from '@/models/medieval-kit/wicker-basket/model.ts'
 
 export interface ParamSpec {
   readonly key: string
@@ -145,6 +146,7 @@ const FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'leather-book': as(createBook),
   'glass-phial': as(createPhial),
   'coin-pouch': as(createPouch),
+  'wicker-basket': as(createBasket),
   'wooden-ladder': as(createLadder),
   'wooden-fence': as(createFence),
   'wooden-hoe': as(createHoe),
@@ -292,7 +294,7 @@ const MEDIEVAL_ORDER = [
   'pitch-torch', 'iron-lantern', 'iron-anvil', 'cart-wheel',
   'log-pile', 'hay-bale', 'linen-sack',
   'oak-tankard', 'straw-broom', 'bronze-bell', 'tavern-sign',
-  'leather-book', 'glass-phial', 'coin-pouch',
+  'wicker-basket', 'leather-book', 'glass-phial', 'coin-pouch',
   'wooden-ladder', 'wooden-fence',
   'wooden-hoe', 'wooden-shovel', 'wooden-pitchfork',
 ] as const

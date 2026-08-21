@@ -130,6 +130,7 @@ const MOTTLE_BY_SLOT: Readonly<Record<MedievalSlot, number>> = {
   oak: 1,
   char: 0.85,
   leather: 0.7,
+  produce: 0.6,
   iron: 0.5,
   brass: 0.35,
   steel: 0.22,
