@@ -456,6 +456,33 @@ export const REGISTRIES = [
   },
 ] as const
 
+/**
+ * Numeric control ranges for a model, without building it.
+ *
+ * The showcase plans its whole timeline before the first frame, so it needs the
+ * ranges for models that are not on screen yet. Reading them from the metadata
+ * keeps that free — building 27 models just to ask their slider bounds would
+ * stall the start of a recording.
+ */
+export function controlsFor(id: string): ReadonlyArray<{
+  key: string
+  min: number
+  max: number
+  step: number
+}> {
+  const meta = MODEL_META[id]
+  if (!meta) return []
+  return Object.entries(meta.controls).map(([key, control]) => ({
+    key,
+    min: control.min,
+    max: control.max,
+    step: control.step,
+  }))
+}
+
+/** The medieval models in tour order, without the whole-kit entry. */
+export const SHOWCASE_ORDER: readonly string[] = MEDIEVAL_ORDER
+
 export const CATALOG: Record<string, Entry> = {
   'pressure-gauge': {
     id: 'pressure-gauge',

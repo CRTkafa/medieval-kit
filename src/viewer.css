@@ -484,3 +484,65 @@ canvas { display: block; width: 100%; height: 100%; }
   line-height: 1;
 }
 .slot-reset:hover { color: var(--amber); border-color: var(--amber); }
+
+/* ------------------------------------------------------------------ showcase */
+
+/*
+ * While a tour runs the rail and the hint are removed rather than faded: the
+ * point of the mode is a clean frame to record, and a 20%-opacity sidebar is
+ * still a sidebar in the clip.
+ */
+.showcase-running .rail,
+.showcase-running .hint,
+.showcase-running .provenance,
+.showcase-running .scale-note {
+  display: none;
+}
+
+.showcase-running .viewport {
+  grid-column: 1 / -1;
+}
+
+/* The dip that hides each model swap. */
+.veil {
+  position: absolute;
+  inset: 0;
+  background: #05070a;
+  opacity: 0;
+  pointer-events: none;
+  /* No transition: the showcase drives opacity per frame and a CSS transition
+     would fight it, smearing the cut over its own duration. */
+}
+
+.showcase-caption {
+  position: absolute;
+  left: 50%;
+  bottom: 6%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+}
+
+.showcase-address {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: clamp(0.95rem, 2.1vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  /* The caption sits over whatever the model happens to be, so it carries its
+     own contrast instead of relying on the background being dark. */
+  text-shadow: 0 2px 18px rgba(5, 7, 10, 0.9), 0 0 3px rgba(5, 7, 10, 0.8);
+}
+
+.showcase-note {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: clamp(0.65rem, 1.1vw, 0.8rem);
+  letter-spacing: 0.16em;
+  color: var(--amber);
+  text-shadow: 0 2px 14px rgba(5, 7, 10, 0.9);
+}

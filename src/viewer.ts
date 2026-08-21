@@ -27,7 +27,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 import './viewer.css'
 
-import { CATALOG, REGISTRIES, type Entry, type ParamGroup, type ParamSpec } from './catalog.ts'
+import {
+  CATALOG,
+  REGISTRIES,
+  SHOWCASE_ORDER,
+  controlsFor,
+  type Entry,
+  type ParamGroup,
+  type ParamSpec,
+} from './catalog.ts'
+import { createShowcase } from './showcase.ts'
+import { blend, capture, compatible, type MorphFrame } from './morph.ts'
 import { exportGlb } from './glb.ts'
 
 /* ----------------------------------------------------------------- scaffold */
@@ -101,6 +111,23 @@ app.innerHTML = `
         </button>
       </div>
     </section>
+    <section class="block">
+      <p class="block-label">Showcase<span class="block-note">press Esc to stop</span></p>
+      <div class="actions">
+        <button class="action action-primary" type="button" data-showcase="30">
+          <span>Play 30 s tour</span><span class="state">&#9654;</span>
+        </button>
+        <button class="action" type="button" data-showcase="60">
+          <span>Play 60 s tour</span><span class="state">&#9654;</span>
+        </button>
+        <button class="action" type="button" data-showcase="90">
+          <span>Play 90 s tour</span><span class="state">&#9654;</span>
+        </button>
+        <button class="action" type="button" data-record aria-pressed="false">
+          <span>Record to file</span><span class="state">off</span>
+        </button>
+      </div>
+    </section>
   </aside>
   <main class="viewport">
     <canvas></canvas>
@@ -109,6 +136,11 @@ app.innerHTML = `
       <span class="who" data-provenance-who></span>
     </div>
     <span class="overlay hint">drag · wheel to zoom</span>
+    <div class="veil" data-veil></div>
+    <div class="showcase-caption" data-caption>
+      <span class="showcase-address" data-caption-address></span>
+      <span class="showcase-note" data-caption-note></span>
+    </div>
     <span class="overlay scale-note" data-scale></span>
   </main>
 `
@@ -813,6 +845,16 @@ if (import.meta.env.DEV) {
        * set on the new meshes) and whether `materials.override()` actually
        * reaches the scene.
        */
+      /** First few vertex components of the first mesh — proves a morph moves. */
+      vertex: () => {
+        let out: number[] = []
+        current?.root.traverse((object) => {
+          if (out.length || !(object instanceof Mesh)) return
+          const p = object.geometry.getAttribute('position')
+          out = [0, 1, 2, 3].map((i) => +p.getX(i).toFixed(5))
+        })
+        return out
+      },
       meshes: () => {
         const rows: Array<Record<string, unknown>> = []
         current?.root.traverse((object) => {
@@ -835,11 +877,155 @@ if (import.meta.env.DEV) {
 }
 
 let previous = performance.now()
+/* ----------------------------------------------------------------- showcase */
+
+const veil = app.querySelector<HTMLElement>('[data-veil]')!
+const captionBox = app.querySelector<HTMLElement>('[data-caption]')!
+const captionAddress = app.querySelector<HTMLElement>('[data-caption-address]')!
+const captionNote = app.querySelector<HTMLElement>('[data-caption-note]')!
+const recordButton = app.querySelector<HTMLButtonElement>('[data-record]')!
+const recordState = recordButton.querySelector<HTMLElement>('.state')!
+
+let armed = false
+let recorder: MediaRecorder | undefined
+let morphStart: MorphFrame | undefined
+let morphEnd: MorphFrame | undefined
+
+/**
+ * The showcase drives the camera directly, so OrbitControls has to step aside
+ * for the duration. Leaving it enabled meant damping pulled the camera back
+ * towards its own target every frame and the orbit crawled.
+ */
+const showcase = createShowcase({
+  camera,
+  target: controls.target,
+  models: SHOWCASE_ORDER,
+  controls: (id) => controlsFor(id),
+  select: (id) => { select(id) },
+  configure: (patch) => {
+    current?.params?.apply(patch)
+    if (current) dressMeshes(current.root)
+  },
+  prepareMorph: (from, to) => {
+    if (!current?.params) return false
+    // Build the far end first, capture it, then come back to the near end. The
+    // live geometry has to be left holding the START pose, because that is the
+    // buffer `blend` writes into.
+    current.params.apply(to)
+    dressMeshes(current.root)
+    const end = capture(current.root)
+    current.params.apply(from)
+    dressMeshes(current.root)
+    const start = capture(current.root)
+    if (!compatible(start, end)) {
+      morphStart = undefined
+      morphEnd = undefined
+      return false
+    }
+    morphStart = start
+    morphEnd = end
+    return true
+  },
+  applyMorph: (t) => {
+    if (!current || !morphStart || !morphEnd) return
+    blend(current.root, morphStart, morphEnd, t)
+  },
+  hasAction: () => current?.action !== undefined,
+  triggerAction: () => { current?.action?.run() },
+  framing: () => {
+    const info = survey(current!.root)
+    return { centre: info.centre, radius: info.radius }
+  },
+  caption: (address, note, opacity) => {
+    captionAddress.textContent = address
+    captionNote.textContent = note
+    captionBox.style.opacity = String(opacity)
+  },
+  dim: (amount) => { veil.style.opacity = String(amount) },
+  setChromeHidden: (hidden) => {
+    app.classList.toggle('showcase-running', hidden)
+    controls.enabled = !hidden
+    if (hidden) controls.autoRotate = false
+  },
+})
+
+/**
+ * Records the canvas straight to a file.
+ *
+ * Asking someone to screen-record loses half the point: the window furniture,
+ * the cursor and whatever the desktop scale factor happens to be all end up in
+ * the clip. `captureStream` takes the canvas alone at its own resolution.
+ *
+ * The output is WebM because that is what browsers encode natively. Twitter
+ * wants MP4, so the README documents the one-line ffmpeg remux rather than
+ * pretending the file is ready to post.
+ */
+function startRecording(seconds: number): void {
+  const stream = canvas.captureStream(60)
+  const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+  const mimeType = types.find((type) => MediaRecorder.isTypeSupported(type))
+  if (!mimeType) {
+    console.warn('This browser cannot record the canvas; run the tour without recording.')
+    return
+  }
+  const chunks: Blob[] = []
+  recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 12_000_000 })
+  recorder.ondataavailable = (event) => { if (event.data.size > 0) chunks.push(event.data) }
+  recorder.onstop = () => {
+    const url = URL.createObjectURL(new Blob(chunks, { type: mimeType }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `medieval-kit-${seconds}s.webm`
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
+    recorder = undefined
+  }
+  recorder.start()
+}
+
+function runShowcase(seconds: number): void {
+  if (showcase.isRunning()) return
+  showcase.start(seconds)
+  if (armed) startRecording(seconds)
+}
+
+for (const button of app.querySelectorAll<HTMLButtonElement>('[data-showcase]')) {
+  button.addEventListener('click', () => runShowcase(Number(button.dataset.showcase)))
+}
+
+recordButton.addEventListener('click', () => {
+  armed = !armed
+  recordButton.setAttribute('aria-pressed', String(armed))
+  recordState.textContent = armed ? 'armed' : 'off'
+})
+
+function endShowcase(): void {
+  showcase.stop()
+  recorder?.stop()
+}
+
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && showcase.isRunning()) endShowcase()
+})
+
+// A tour can be started straight from the URL: viewer.html?showcase=60. That is
+// what makes an unattended recording possible — open, record, close.
+const requested = Number(new URLSearchParams(location.search).get('showcase'))
+if (requested === 30 || requested === 60 || requested === 90) {
+  // One frame of grace so the first model is built and framed before the
+  // camera starts moving.
+  setTimeout(() => runShowcase(requested), 400)
+}
+
 renderer.setAnimationLoop(() => {
   const now = performance.now()
   const delta = Math.min((now - previous) / 1000, 0.05)
   previous = now
   current?.update?.(delta)
-  controls.update()
+  if (showcase.isRunning()) {
+    if (!showcase.update(delta)) recorder?.stop()
+  } else {
+    controls.update()
+  }
   void renderer.render(scene, camera)
 })
