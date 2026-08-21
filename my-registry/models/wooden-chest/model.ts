@@ -1,19 +1,19 @@
 /**
  * @medieval-kit/wooden-chest
  *
- * Altı tahtalı sandık — ortaçağın baskın sandık biçimi. Korsan filmlerindeki
- * fıçı kapaklı kasa aslında çok daha geç bir şey; dönemin sandığı düz kapaklı,
- * iki uç tahtası yere kadar inip ayağı oluşturan, önü demir kayışlarla
- * kuşatılmış bir kutudur.
+ * The six-board chest — the dominant chest form of the middle ages. The
+ * barrel-lidded coffer of pirate films is actually a far later thing; the chest
+ * of the period is a flat-lidded box whose two end boards run down to the floor
+ * to form the feet, its front girded with iron straps.
  *
- * Kitin ilk EYLEMLİ modeli. Kapağın açılması `configure()` işi değil: sandığın
- * kimliği değişmiyor, sadece sahnedeki hâli değişiyor. Protokolün `actions`
- * alanı tam olarak bunun için var.
+ * The kit's first model with ACTIONS. Opening the lid is not a `configure()`
+ * job: the chest's identity does not change, only its state in the scene does.
+ * The protocol's `actions` field exists for exactly this.
  *
- * Kapağın arkasındaki asıl mesele parçaların kardeş olması: kapak döndüğünde
- * üstündeki demir kayışlar ve kilit kancası da dönmek zorunda. Ayrı parça
- * olsalardı havada asılı kalırlardı. Bu yüzden hepsi tek parçanın `extras`
- * gövdeleri — anlam bölünmüyor, sadece materyal bölünüyor.
+ * The real issue behind the lid is that the parts must be siblings: when the
+ * lid turns, the iron straps on it and the lock hasp have to turn with it. Were
+ * they separate parts they would hang in mid-air. That is why they are all
+ * `extras` bodies of a single part — the meaning is not split, only the material.
  */
 import { Color } from 'three'
 
@@ -29,15 +29,15 @@ import {
 } from '../core/index.ts'
 
 export interface WoodenChestConfig {
-  /** Genişlik — uzun kenar (metre). */
+  /** Width — the long side (metres). */
   readonly width: number
-  /** Kapak kapalıyken toplam yükseklik (metre). */
+  /** Total height with the lid closed (metres). */
   readonly height: number
-  /** Derinlik (metre). */
+  /** Depth (metres). */
   readonly depth: number
-  /** Ön ve arka yüzdeki dikey demir kayış sayısı. */
+  /** Number of vertical iron straps on the front and back faces. */
   readonly bandCount: number
-  /** Kapağın tam açıkken yaptığı açı (derece). */
+  /** The angle the lid makes when fully open (degrees). */
   readonly openAngle: number
   readonly seed: number
 }
@@ -54,22 +54,22 @@ export const woodenChestDefaults: WoodenChestConfig = {
 export type WoodenChestParts = 'body' | 'lid' | 'bands' | 'lock'
 
 export interface WoodenChestActions {
-  /** Hedef durumu belirler. Hareket `update()` çağrıldıkça ilerler. */
+  /** Sets the target state. The motion advances as `update()` is called. */
   setOpen(open: boolean): void
-  /** Aç ↔ kapat. Yeni HEDEF durumu döner. */
+  /** Open ↔ close. Returns the new TARGET state. */
   toggle(): boolean
-  /** Hedef durum — hareket bitmiş olmayabilir. */
+  /** The target state — the motion may not have finished. */
   isOpen(): boolean
-  /** Hareketin anlık ilerlemesi: 0 kapalı, 1 tam açık. */
+  /** Instantaneous progress of the motion: 0 closed, 1 fully open. */
   openness(): number
-  /** Hareketi atlayıp hedefe anında oturtur. */
+  /** Skips the motion and snaps straight to the target. */
   snap(): void
 }
 
 export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
-  // Kapağın durumu inşanın DIŞINDA tutuluyor. `configure()` sandığı yeniden
-  // kursa bile kapak açık kalmalı — yoksa genişliği değiştirmek kapağı
-  // çarpardı.
+  // The lid state is kept OUTSIDE the build. Even when `configure()` rebuilds
+  // the chest the lid has to stay open — otherwise changing the width would
+  // slam it shut.
   let target = 0
   let progress = 0
 
@@ -87,22 +87,22 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
       }
 
       const half = config.height / 2
-      // Tahta kalınlığı EN KÜÇÜK ölçüye bağlı. Yalnız derinliğe bağlamak,
-      // derin bir sandığı kalın tahtalı yapıyordu — gerçek sandık tahtası
-      // sandığın boyutundan bağımsız olarak ~2 cm'dir.
+      // Board thickness follows the SMALLEST dimension. Tying it to the depth
+      // alone gave a deep chest thick boards — a real chest board is ~2 cm
+      // regardless of how big the chest is.
       const board = Math.min(config.width * 0.5, config.height, config.depth) * 0.055
       const lidThickness = config.height * 0.075
       const footHeight = config.height * 0.14
       const bodyTop = half - lidThickness
       const bodyFloor = -half + footHeight
       const wallHeight = bodyTop - bodyFloor
-      const strap = board * 0.3                   // demir kayış kalınlığı
+      const strap = board * 0.3                   // iron strap thickness
 
-      // --- GÖVDE ---------------------------------------------------------
+      // --- BODY ----------------------------------------------------------
       const bodyPieces = []
 
-      // Uç tahtaları: sandığın taşıyıcıları. Aşağıda ikiye ayrılıp ayak
-      // oluyorlar — altı tahtalı sandığı tanınır yapan detay bu.
+      // End boards: the chest's load bearers. Down below they split in two and
+      // become the feet — the detail that makes a six-board chest recognisable.
       for (const side of [-1, 1]) {
         const x = side * (config.width / 2 - board / 2)
         bodyPieces.push(chamferedBoxGeometry(
@@ -114,8 +114,8 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
           oak(0.02),
         ))
 
-        // Ayaklar. Uç tahtasının İÇİNE doğru uzatılıyorlar: üst yüzleri katı
-        // malzemenin içinde kalsın ki hiçbir yüz çifti aynı düzleme oturmasın.
+        // The feet. They are extended INTO the end board: their top faces stay
+        // inside solid material so that no pair of faces ends up coplanar.
         const footDepth = config.depth * 0.3
         for (const end of [-1, 1]) {
           bodyPieces.push(boxGeometry(
@@ -126,8 +126,8 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         }
       }
 
-      // Ön ve arka tahtalar: uç tahtalarının arasına giriyor ve uçlarından
-      // biraz onların içine batıyor (z-fighting kuralı).
+      // Front and back boards: they fit between the end boards and sink a
+      // little way into them at their ends (the z-fighting rule).
       for (const face of [1, -1]) {
         bodyPieces.push(chamferedBoxGeometry(
           [config.width - board * 1.3, board],
@@ -139,16 +139,16 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         ))
       }
 
-      // Taban: dört duvara da batıyor.
+      // Floor: it sinks into all four walls.
       bodyPieces.push(boxGeometry(
         [config.width - board * 1.3, board, config.depth - board * 1.3],
         [0, bodyFloor + board * 0.6, 0],
         oak(-0.08),
       ))
 
-      // --- KAPAK ---------------------------------------------------------
-      // Menteşe: arka üst kenar. Kapak geometrisi BU NOKTAYA GÖRE yazılıyor,
-      // anchor oraya taşınıyor, `rotation.x` artık kapağı açıyor.
+      // --- LID -----------------------------------------------------------
+      // Hinge: the top rear edge. The lid geometry is written RELATIVE TO THAT
+      // POINT, the anchor is moved there, and `rotation.x` now opens the lid.
       const overhang = board * 0.85
       const lidDepth = config.depth + overhang
       const lid = mergeColoured([chamferedBoxGeometry(
@@ -160,10 +160,10 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         oak(0.06),
       )])
 
-      // --- DEMİR ---------------------------------------------------------
-      // Kayışlar gövdede biter, kapakta devam eder. Kapalıyken tek parça gibi
-      // okunur, açılınca menteşe hattından ayrılır — gerçek kayış menteşenin
-      // kendisi zaten budur.
+      // --- IRON ----------------------------------------------------------
+      // The straps end on the body and continue on the lid. Closed they read as
+      // a single piece, open they part along the hinge line — that is exactly
+      // what a real strap hinge is.
       const count = Math.max(0, Math.round(config.bandCount))
       const strapWidth = config.width * 0.055
       const bandXs = Array.from({ length: count }, (_, i) =>
@@ -172,10 +172,11 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
       const bandPieces = []
       const lidIron = []
 
-      // Ön yüzün ortası KİLİDİN yeri. Gerçek sandıkta oraya kayış konmaz —
-      // aynalık zaten o işi görür. Kural hem doğru hem de bir hata sınıfını
-      // kökten kapatıyor: kayışla kilit köprüsü aynı yerde olduğunda üst
-      // yüzleri belli ölçülerde aynı düzleme oturup titriyordu.
+      // The middle of the front face is the LOCK's place. On a real chest no
+      // strap goes there — the escutcheon already does that job. The rule is
+      // both correct and closes off a whole class of bug at the root: with the
+      // strap and the lock bridge in the same place, at certain dimensions
+      // their top faces became coplanar and shimmered.
       const lockSpan = config.width * 0.075 + strapWidth * 0.7
       const clearsLock = (x: number): boolean => Math.abs(x) > lockSpan
 
@@ -184,8 +185,8 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         for (const face of [1, -1]) {
           if (face > 0 && !front) continue
           const z = face * (config.depth / 2 + strap * 0.2)
-          // Gövde kayışı: tahtanın Y aralığının tamamen İÇİNDE kalıyor,
-          // yoksa alt ve üst yüzleri tahtanınkiyle eş düzlem oluyor.
+          // Body strap: it stays entirely WITHIN the board's Y range, otherwise
+          // its bottom and top faces end up coplanar with the board's.
           bandPieces.push(boxGeometry(
             [strapWidth, wallHeight - board * 0.9, strap],
             [x, bodyFloor + wallHeight / 2, z],
@@ -194,13 +195,13 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         }
 
         if (front) {
-          // Kapak kayışı: üstten arkaya doğru uzanıp menteşe hattında biter.
+          // Lid strap: it reaches from the top towards the back and ends on the hinge line.
           lidIron.push(boxGeometry(
             [strapWidth, strap, lidDepth * 0.92],
             [x, lidThickness + strap * 0.3, lidDepth * 0.46],
             ironTint(random, 0.02),
           ))
-          // Ön kenardan aşağı kıvrılan uç.
+          // The end that curls down over the front edge.
           lidIron.push(boxGeometry(
             [strapWidth, lidThickness * 1.5, strap],
             [x, lidThickness * 0.35, lidDepth - strap * 0.2],
@@ -209,12 +210,13 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         }
       }
 
-      // Menteşe silindirleri TAM olarak yerel orijinde durmalı: dönme ekseni
-      // orası. Bir tık kaydırmak yeterdi ki kapak açılırken menteşe de bir yay
-      // çizsin — gerçek menteşe kendi ekseninde döner, yer değiştirmez.
+      // The hinge cylinders must sit EXACTLY at the local origin: that is the
+      // axis of rotation. One nudge off was enough for the hinge to sweep an arc
+      // of its own as the lid opened — a real hinge turns on its own axis, it
+      // does not travel.
       //
-      // Altıgen prizmanın düz yüzleri de eğiliyor: yatay duran bir yüz kapağın
-      // alt yüzüyle aynı düzleme oturup titriyordu.
+      // The hexagonal prism's flat faces are tilted too: a face lying horizontal
+      // became coplanar with the lid's underside and shimmered.
       const barrel = strap * 1.45
       for (const x of bandXs) {
         const pin = prismGeometry(barrel, barrel, strapWidth * 1.2, 6, [0, 0, 0],
@@ -225,7 +227,8 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         lidIron.push(pin)
       }
 
-      // Uç tahtalarına da birer dikey kayış — sandık her yönden demirli olsun.
+      // A vertical strap on each end board as well — the chest should be ironed
+      // from every side.
       for (const side of [-1, 1]) {
         bandPieces.push(boxGeometry(
           [strap, wallHeight * 0.78, config.depth * 0.16],
@@ -234,9 +237,9 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         ))
       }
 
-      // --- KİLİT ---------------------------------------------------------
-      // Aynalık (escutcheon) gövdede, kanca (hasp) kapakta. İkisi ayrı yerde
-      // olmak zorunda: biri sabit, diğeri kapakla birlikte kalkıyor.
+      // --- LOCK ----------------------------------------------------------
+      // The escutcheon on the body, the hasp on the lid. The two have to be in
+      // separate places: one is fixed, the other rises with the lid.
       const plateHeight = config.height * 0.19
       const lockZ = config.depth / 2 + strap * 0.2
       const lock = mergeColoured([
@@ -248,7 +251,7 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
           [0, bodyTop - plateHeight * 0.62, lockZ],
           ironTint(random, 0.05),
         ),
-        // Kancanın geçtiği köprü.
+        // The bridge the hasp passes through.
         boxGeometry(
           [config.width * 0.05, strap * 2.2, strap * 2.6],
           [0, bodyTop - plateHeight * 0.32, lockZ + strap * 0.9],
@@ -256,7 +259,7 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         ),
       ])
 
-      // Kanca: kapağın ön kenarından aşağı sarkıp köprünün üstüne oturur.
+      // Hasp: it hangs down from the lid's front edge and seats over the bridge.
       lidIron.push(boxGeometry(
         [config.width * 0.075, plateHeight * 0.62, strap * 1.2],
         [0, lidThickness * 0.5 - plateHeight * 0.31, lidDepth + strap * 0.35],
@@ -292,11 +295,11 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
 
     update: (dt, { parts, getConfig }) => {
       if (progress === target) return
-      // Üstel yaklaşma: kare süresinden BAĞIMSIZ. `progress += diff * k` gibi
-      // saf bir lerp 30 fps'te 120 fps'ten yavaş açardı.
+      // Exponential approach: INDEPENDENT of frame time. A naive lerp such as
+      // `progress += diff * k` would open slower at 30 fps than at 120 fps.
       progress += (target - progress) * (1 - Math.exp(-9 * Math.max(0, dt)))
-      // Üstel yaklaşma hedefe hiç varmaz; eşiğe gelince oturtuluyor ki
-      // `openness()` gerçekten 1 dönebilsin.
+      // An exponential approach never actually arrives; at the threshold it is
+      // snapped so that `openness()` can really return 1.
       if (Math.abs(target - progress) < 0.0015) progress = target
       parts.lid.anchor.rotation.x = -(getConfig().openAngle * Math.PI / 180) * progress
     },

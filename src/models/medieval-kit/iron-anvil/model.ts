@@ -1,11 +1,11 @@
 /**
  * @medieval-kit/iron-anvil
  *
- * Örsün silueti dövme sürecinin kendisidir: geniş bir kaide, dara bir bel,
- * üstte geniş bir yüz, bir yanda sivrilen boynuz. Geometri neredeyse tamamen
- * kutu — karakteri veren şey oranlar.
+ * An anvil's silhouette is the forging process itself: a wide base, a narrow
+ * waist, a broad face on top, a horn tapering off to one side. The geometry is
+ * almost entirely boxes — what gives it character is the proportions.
  *
- * Kitin ilk "yer kuran" parçası: tek başına bir demirci köşesi önerir.
+ * The kit's first "place-making" piece: on its own it suggests a smith's corner.
  */
 import { Color } from 'three'
 
@@ -19,13 +19,13 @@ import {
 } from '../core/index.ts'
 
 export interface IronAnvilConfig {
-  /** Toplam yükseklik (metre). Gerçek bir örs kütüğüyle birlikte ~0.75 m olur. */
+  /** Total height (metres). With a real anvil stump it comes to ~0.75 m. */
   readonly height: number
-  /** Üst yüzün uzunluğu (metre). */
+  /** Length of the top face (metres). */
   readonly faceLength: number
-  /** Üst yüzün genişliği (metre). */
+  /** Width of the top face (metres). */
   readonly faceWidth: number
-  /** Boynuzun yüzden ne kadar uzadığı, yüz uzunluğunun oranı olarak. */
+  /** How far the horn reaches past the face, as a ratio of the face length. */
   readonly hornReach: number
   readonly seed: number
 }
@@ -58,7 +58,7 @@ export function createModel(overrides: Partial<IronAnvilConfig> = {}) {
       const bodyHeight = config.height * 0.3
       const waistHeight = config.height - baseHeight - bodyHeight
 
-      // Kaide: en geniş parça, aşağı doğru hafif yayvan.
+      // Base: the widest piece, splaying out slightly toward the bottom.
       const baseLength = config.faceLength * 0.58
       const baseWidth = config.faceWidth * 1.5
       const base = mergeColoured([
@@ -72,7 +72,7 @@ export function createModel(overrides: Partial<IronAnvilConfig> = {}) {
       ),
       ])
 
-      // Bel: örsü örs yapan dar boğaz.
+      // Waist: the narrow throat that makes an anvil an anvil.
       const waist = chamferedBoxGeometry(
         [baseLength * 0.5, baseWidth * 0.46],
         [baseLength * 0.5, baseWidth * 0.46],
@@ -82,13 +82,14 @@ export function createModel(overrides: Partial<IronAnvilConfig> = {}) {
         shade(),
       )
 
-      // Gövde: belden yukarı doğru genişler ve üstte çelik plakayı taşır.
+      // Body: widens upward from the waist and carries the steel plate on top.
       //
-      // Örs gerçekten iki metalden yapılır: dövme demir gövdenin üstüne sert
-      // çelik bir plaka kaynatılır. Çekiç hep o plakaya iner, o yüzden yıllar
-      // içinde ayna gibi parlar; gövde ise oksitli ve mat kalır. Modelde bunu
-      // ayrı bir parça + ayrı materyal yuvası olarak veriyoruz, çünkü fark
-      // renkte değil PÜRÜZLÜLÜKTE ve vertex color pürüzlülük taşıyamaz.
+      // An anvil really is made of two metals: a hard steel plate is welded on
+      // top of the wrought iron body. The hammer always lands on that plate, so
+      // over the years it polishes like a mirror; the body stays oxidised and
+      // matte. In the model we give this as a separate part + separate material
+      // slot, because the difference is not in colour but in ROUGHNESS, and
+      // vertex colour cannot carry roughness.
       const plateHeight = config.height * 0.055
       const bodyY = half - bodyHeight / 2
       const body = mergeColoured([
@@ -102,9 +103,9 @@ export function createModel(overrides: Partial<IronAnvilConfig> = {}) {
         ),
       ])
 
-      // Plaka gövdeye BATIRILIYOR: kendi kalınlığının yarısı kadar içeri
-      // giriyor, ayrıca dört yanda azıcık taşıyor. İkisi birlikte hiçbir yüz
-      // çiftinin aynı düzleme oturmamasını garanti ediyor (z-fighting kuralı).
+      // The plate is SUNK into the body: it goes in by half its own thickness
+      // and also overhangs a touch on all four sides. Together those guarantee
+      // that no pair of faces ends up coplanar (the z-fighting rule).
       const face = mergeColoured([
         chamferedBoxGeometry(
           [config.faceLength * 0.628, config.faceWidth * 1.012],
@@ -116,9 +117,9 @@ export function createModel(overrides: Partial<IronAnvilConfig> = {}) {
         ),
       ])
 
-      // Boynuz: gövdeden yatay çıkan, ucu sivrilen koni. Dikey bir daralan kutu
-      // üretip Z ekseni etrafında çeyrek tur çevirmek, ayrı bir primitive
-      // yazmaktan daha az kod ve aynı sonuç.
+      // Horn: a cone leaving the body horizontally, tapering to a point. Making
+      // a vertical tapering box and turning it a quarter turn about the Z axis
+      // is less code than writing a separate primitive, and the same result.
       const reach = config.faceLength * config.hornReach
       const horn = chamferedBoxGeometry(
         [config.faceWidth * 0.92, config.faceWidth * 0.86],
@@ -129,8 +130,8 @@ export function createModel(overrides: Partial<IronAnvilConfig> = {}) {
         shade(0.04),
       )
       horn.rotateZ(-Math.PI / 2)
-      // Gövdenin İÇİNE gir: uç yüzü katı parçanın içinde kalsın ki hiçbir yüzey
-      // gövdeyle aynı düzleme oturmasın (z-fighting kuralı).
+      // Reach INTO the body: keep the end face inside the solid piece so that no
+      // surface ends up coplanar with the body (the z-fighting rule).
       horn.translate(config.faceLength * 0.31 + reach / 2 - config.faceWidth * 0.35, bodyY + bodyHeight * 0.12, 0)
 
       return {

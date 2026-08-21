@@ -1,10 +1,10 @@
 /**
- * dist-viewer/ çıktısını tek dosyalık, kendi kendine yeten bir HTML'e indirger.
+ * Reduces the dist-viewer/ output to a single self-contained HTML file.
  *
- * Artifact sayfaları katı bir CSP altında çalışır: harici host'a istek yok.
- * Tek istisna Google Fonts. Bu yüzden JS ve CSS gömülü olmak zorunda.
+ * Artifact pages run under a strict CSP: no requests to external hosts. The
+ * one exception is Google Fonts. So the JS and CSS have to be inlined.
  *
- * Çalıştır:
+ * Run:
  *   bunx vite build --config vite.viewer.config.ts
  *   bun scripts/build-artifact.ts
  */
@@ -15,8 +15,8 @@ import { fileURLToPath } from 'node:url'
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const distRoot = join(projectRoot, 'dist-viewer')
 
-// Sadece gerçekten kullanılan ağırlıklar. Google Fonts her ağırlığı tembel
-// yükler; istemediğiniz ağırlıkları istemek boşuna CSS büyütür.
+// Only the weights actually used. Google Fonts loads every weight lazily;
+// asking for weights you do not want just inflates the CSS for nothing.
 const FONTS =
   'https://fonts.googleapis.com/css2?family=Archivo:wght@400;700' +
   '&family=IBM+Plex+Mono:wght@400;500;600&display=swap'
@@ -24,11 +24,11 @@ const FONTS =
 const css = await readFile(join(distRoot, 'viewer.css'), 'utf8')
 const js = await readFile(join(distRoot, 'viewer.js'), 'utf8')
 
-// Gömülü script içindeki bir `</script` dizisi HTML ayrıştırıcısını erken
-// kapatırdı. Bu kaçış JavaScript anlamını değiştirmez.
+// A `</script` sequence inside the inlined script would close the HTML parser
+// early. This escape does not change the JavaScript meaning.
 const safeJs = js.replaceAll('</script', String.raw`<\/script`)
 
-const html = `<title>vibe3d Model Tezgahı</title>
+const html = `<title>vibe3d Model Workbench</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="${FONTS}" />
@@ -45,5 +45,5 @@ const output = join(distRoot, 'artifact.html')
 await writeFile(output, html, 'utf8')
 
 const kb = (value: number) => `${(value / 1024).toFixed(0)} KB`
-console.log(`dist-viewer/artifact.html yazıldı`)
-console.log(`  CSS ${kb(css.length)} · JS ${kb(js.length)} · toplam ${kb(html.length)}`)
+console.log(`dist-viewer/artifact.html written`)
+console.log(`  CSS ${kb(css.length)} · JS ${kb(js.length)} · total ${kb(html.length)}`)

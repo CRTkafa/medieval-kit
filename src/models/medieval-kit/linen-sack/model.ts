@@ -1,16 +1,18 @@
 /**
  * @medieval-kit/linen-sack
  *
- * Ağzı iple bağlanmış tahıl çuvalı. Depo, değirmen, pazar tezgâhı, at arabası —
- * kitin en çok yere yakışan parçalarından.
+ * Grain sack with its mouth tied off by a cord. Storeroom, mill, market stall,
+ * cart — one of the kit's most widely placeable pieces.
  *
- * Çuvalı çuval yapan şey, içindeki şeyin biçimini ALMASI. Bu yüzden gövde
- * silindir değil: dipte tahılın ağırlığıyla yayvanlaşıyor, ortada şişiyor,
- * ağza doğru toplanıyor. Sonra `roughenGeometry` yüzeyi bozuyor, çünkü dolu
- * bir çuvalın hiçbir yeri düz olmaz.
+ * What makes a sack a sack is that it TAKES THE SHAPE of what is inside it. So
+ * the body is not a cylinder: it spreads out at the bottom under the weight of
+ * the grain, bulges in the middle, and gathers towards the mouth. Then
+ * `roughenGeometry` breaks up the surface, because nothing about a full sack
+ * is flat.
  *
- * Dip köşeleri ayrı bir mesele: gerçek çuval dört köşesinden büzülür ve o
- * köşeler kulak gibi dışarı çıkar. Onlar olmadan model bir vazoya benziyordu.
+ * The bottom corners are a separate matter: a real sack pulls in at its four
+ * corners and those corners stick out like ears. Without them the model looked
+ * like a vase.
  */
 import type { BufferGeometry } from 'three'
 
@@ -27,15 +29,15 @@ import {
 } from '../core/index.ts'
 
 export interface LinenSackConfig {
-  /** Toplam yükseklik (metre). */
+  /** Total height (metres). */
   readonly height: number
-  /** En geniş yerin yarıçapı (metre). */
+  /** Radius at the widest point (metres). */
   readonly radius: number
-  /** Ne kadar dolu. 1 = tıka basa, 0.4 = yarı boş ve sarkık. */
+  /** How full it is. 1 = packed solid, 0.4 = half empty and slumped. */
   readonly fill: number
-  /** Ağzın üstünde kalan bez payı, yüksekliğin oranı olarak. */
+  /** Cloth left above the mouth, as a fraction of the height. */
   readonly collar: number
-  /** Dipteki büzülme kulakları. */
+  /** Gathered ears at the bottom. */
   readonly ears: number
   readonly seed: number
 }
@@ -60,14 +62,15 @@ export function createModel(overrides: Partial<LinenSackConfig> = {}) {
       const tint = createTinter(random)
       const half = config.height / 2
       const fill = Math.max(0.15, Math.min(1, config.fill))
-      // Ağız boğumunun yeri: dolu çuvalda yukarıda, boş çuvalda aşağıda kalır.
+      // Where the neck sits: high on a full sack, low on an empty one.
       const neckY = half - config.height * config.collar
       const bodyTop = neckY - config.height * 0.06
 
-      // --- Gövde ----------------------------------------------------------
-      // Profil doluluğa bağlı: az dolu bir çuval hem alçalır hem yanlara
-      // yayılır. Tek bir `fill` sayısının siluetin tamamını değiştirmesi,
-      // aynı modelden dolu ve yarı boş iki çuval çıkarabilmek demek.
+      // --- Body -----------------------------------------------------------
+      // The profile depends on the fill: an under-filled sack both drops and
+      // spreads sideways. Letting a single `fill` number change the whole
+      // silhouette means one model can produce both a full and a half-empty
+      // sack.
       const wide = config.radius * (0.72 + fill * 0.36)
       const profile: Level[] = [
         { y: -half, radius: wide * 0.72 },
@@ -80,24 +83,25 @@ export function createModel(overrides: Partial<LinenSackConfig> = {}) {
       const body = latheGeometry(profile, 9, [0, 0, 0], tint('cloth', -0.06, 1.3), {
         colourTop: tint('cloth', 0.05, 1.3),
       })
-      // Bez sert değil: yüzey bozulması burada dokunun kendisi.
+      // Cloth is not rigid: here the surface break-up is the texture itself.
       roughenGeometry(body, config.radius * 0.05, { salt: 21, scaleY: 0.7 })
 
       const pieces: BufferGeometry[] = [body]
 
-      // --- Dip kulakları ---------------------------------------------------
-      // Çuval dikişten büzülür ve köşeleri dışarı fırlar. Onlar olmadan
-      // silindir bir vazo çıkıyor.
+      // --- Bottom ears ------------------------------------------------------
+      // A sack gathers at the seam and its corners jut outwards. Without them
+      // the cylinder comes out as a vase.
       const ears = Math.max(0, Math.round(config.ears))
       for (let i = 0; i < ears; i += 1) {
         const angle = (i / ears) * Math.PI * 2 + jitter(random, 0.12)
         const reach = wide * (0.3 + random() * 0.16)
         const ear = boxGeometry(
           [reach, config.height * 0.05, config.radius * 0.2],
-          [reach * 0.36, 0, 0],   // kökü gövdenin İÇİNDE kalsın
+          [reach * 0.36, 0, 0],   // keep the root INSIDE the body
           tint('cloth', -0.1, 1.2),
         )
-        // Önce yönlendir, sonra taşı — ters sıra kulağı yörüngeye savurur.
+        // Orient first, then translate — the reverse order flings the ear off
+        // into orbit.
         ear.rotateZ(-0.22 + jitter(random, 0.1))
         ear.rotateY(-angle)
         ear.translate(
@@ -108,9 +112,9 @@ export function createModel(overrides: Partial<LinenSackConfig> = {}) {
         pieces.push(ear)
       }
 
-      // --- Ağız payı -------------------------------------------------------
-      // Bağın ÜSTÜNDE kalan, dışa devrilen bez. Çuvalı kapalı bir torbadan
-      // ayıran şey bu: bağlanmış bir ağzın hep fazlası olur.
+      // --- Mouth allowance ---------------------------------------------------
+      // The cloth left ABOVE the tie, flopping outwards. This is what separates
+      // a sack from a sealed bag: a tied mouth always has some cloth to spare.
       const collarPieces: BufferGeometry[] = []
       const flare: Level[] = [
         { y: neckY - config.height * 0.02, radius: config.radius * 0.3 },
@@ -125,7 +129,7 @@ export function createModel(overrides: Partial<LinenSackConfig> = {}) {
       roughenGeometry(collar, config.radius * 0.035, { salt: 22, scaleY: 0.6 })
       collarPieces.push(collar)
 
-      // --- İp ---------------------------------------------------------------
+      // --- Cord ---------------------------------------------------------------
       const cord = bandGeometry(config.radius * 0.29, neckY, config.height * 0.035,
         config.radius * 0.045, 9, tint('cloth', -0.24, 0.8), { inner: true })
 

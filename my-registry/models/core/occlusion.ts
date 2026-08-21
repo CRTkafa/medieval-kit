@@ -1,31 +1,31 @@
 import type { BufferGeometry } from 'three'
 
 /**
- * Vertex renklerine pişmiş ortam kapanması (ambient occlusion).
+ * Ambient occlusion baked into vertex colours.
  *
- * Neden doku değil bu: bitmap doku üç şey getirirdi — UV koordinatları
- * (geometrimizde yok), registry'nin taşıması gereken görüntü dosyaları, ve
- * kitin kimliğinin değişmesi. Lowpoly + düz gölgeleme + vertex renk tutarlı
- * bir stil; yarım yamalak doku onu bozar.
+ * Why this and not a texture: a bitmap texture would bring three things — UV
+ * coordinates (our geometry has none), image files the registry would have to
+ * carry, and a change to the kit's identity. Lowpoly + flat shading + vertex
+ * colour is a coherent style; a half-hearted texture breaks it.
  *
- * Bunun yerine yüzeyin KENDİ biçiminden karartma üretiyoruz: bir nokta ne
- * kadar çok komşu yüzeyle çevriliyse o kadar az gökyüzü görür. Sonuç, oyuk ve
- * temas noktalarında koyulaşma — tahtaların arası, çemberin altı, kütüklerin
- * değdiği yer. Modeller birden "kullanılmış" görünüyor ve maliyeti sıfır
- * bellek, sıfır doku.
+ * Instead we derive the darkening from the surface's OWN shape: the more
+ * neighbouring surfaces surround a point, the less sky it sees. The result is
+ * darkening in cavities and at contact points — between the boards, under the
+ * hoop, where the logs touch. The models suddenly look "used" and it costs
+ * zero memory, zero textures.
  *
- * Yöntem: üçgen ağırlık merkezlerinden bir ızgara kuruluyor, sonra her vertex
- * için kendi normal yarıküresindeki komşu yoğunluğu ölçülüyor. Işın izleme
- * yok — bu ölçekte (yüzlerce üçgen) gereksiz pahalı olurdu ve fark ihmal
- * edilebilir.
+ * Method: a grid is built from the triangle centroids, then for each vertex
+ * the neighbour density within its own normal hemisphere is measured. No ray
+ * tracing — at this scale (hundreds of triangles) it would be needlessly
+ * expensive and the difference is negligible.
  */
 
 export interface OcclusionOptions {
-  /** Komşu aranan yarıçap. Verilmezse modelin boyutundan türetilir. */
+  /** Radius searched for neighbours. Derived from the model's size if omitted. */
   readonly radius?: number
-  /** En koyu noktanın ne kadar karartılacağı. 0 = kapalı. */
+  /** How much the darkest point is darkened. 0 = off. */
   readonly strength?: number
-  /** Doygunluğa ulaşılan komşu ağırlığı. Büyütmek karartmayı yumuşatır. */
+  /** Neighbour weight where saturation is reached. Raising it softens the darkening. */
   readonly saturation?: number
 }
 
@@ -36,7 +36,7 @@ interface Sample {
   readonly area: number
 }
 
-/** Basit uzamsal ızgara: yarıçap içindeki örnekleri hızlı bulmak için. */
+/** Simple spatial grid: for quickly finding the samples within a radius. */
 class Grid {
   readonly #cells = new Map<string, Sample[]>()
   readonly #size: number
@@ -55,7 +55,7 @@ class Grid {
     return `${Math.floor(x / this.#size)},${Math.floor(y / this.#size)},${Math.floor(z / this.#size)}`
   }
 
-  /** Verilen noktanın çevresindeki 27 hücrenin örnekleri. */
+  /** The samples of the 27 cells surrounding the given point. */
   near(x: number, y: number, z: number): Sample[] {
     const cx = Math.floor(x / this.#size)
     const cy = Math.floor(y / this.#size)
@@ -74,11 +74,12 @@ class Grid {
 }
 
 /**
- * Verilen geometrilerin BİRLİKTE kapanmasını hesaplar ve renklerine işler.
+ * Computes the occlusion of the given geometries TOGETHER and writes it into
+ * their colours.
  *
- * Hepsi bir arada değerlendirilmek zorunda: bir tahtanın koyulaştığı yer
- * komşu direğin yüzeyidir, kendi yüzeyi değil. Tek tek işlemek temas
- * noktalarını tamamen kaçırırdı.
+ * They all have to be evaluated as one: the place where a board darkens is the
+ * surface of the neighbouring post, not its own surface. Processing them one
+ * by one would miss the contact points entirely.
  */
 export function bakeOcclusion(
   geometries: readonly BufferGeometry[],
@@ -87,7 +88,7 @@ export function bakeOcclusion(
   const strength = options.strength ?? 0.42
   if (strength <= 0 || geometries.length === 0) return
 
-  // --- 1. Örnekler: her üçgenin ağırlık merkezi, alanıyla ağırlıklı ---
+  // --- 1. Samples: each triangle's centroid, weighted by its area ---
   const samples: Sample[] = []
   let minX = Infinity, minY = Infinity, minZ = Infinity
   let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity
@@ -124,21 +125,23 @@ export function bakeOcclusion(
   if (samples.length === 0) return
 
   const extent = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1e-6)
-  // Yarıçap ölçekten türetiliyor ama MUTLAK bir tavanı var. Tavan olmadan
-  // 4.89 m'lik bir çit 0.69 m'lik bir yarıçap alıyor ve "komşu" tanımı
-  // anlamını yitiriyor: her şey her şeyin komşusu oluyor, kapanma temas
-  // noktalarını göstermek yerine modelin tamamına düz bir karartma sürüyor.
+  // The radius is derived from the scale but has an ABSOLUTE ceiling. Without
+  // the ceiling a 4.89 m fence gets a 0.69 m radius and the definition of
+  // "neighbour" loses its meaning: everything is everything's neighbour, and
+  // instead of showing the contact points the occlusion smears a flat
+  // darkening over the whole model.
   //
-  // Fiziksel anlamı da bunu söylüyor: bir yüzeyi gölgeleyen şey ona YAKIN
-  // olandır. Yarım metre öteki bir direk, tahtanın arasındaki gölgeyi
-  // yapmıyor.
+  // The physical meaning says the same thing: what shades a surface is what is
+  // NEAR it. A post half a metre away is not making the shadow between the
+  // boards.
   const radius = options.radius ?? Math.min(0.16, Math.max(0.015, extent * 0.14))
   const grid = new Grid(samples, radius)
-  // Doygunluk modelin ölçeğiyle orantılı olmalı: yarıçap büyüdükçe kapsanan
-  // alan da büyür, sabit bir eşik küçük modelleri kapkara yapardı.
+  // Saturation has to be proportional to the model's scale: as the radius
+  // grows so does the area it covers, and a fixed threshold would turn small
+  // models pitch black.
   const saturation = options.saturation ?? radius * radius * 1.9
 
-  // --- 2. Her vertex için komşu yoğunluğu ---
+  // --- 2. Neighbour density for each vertex ---
   for (const geometry of geometries) {
     const position = geometry.getAttribute('position')
     const colour = geometry.getAttribute('color')
@@ -155,11 +158,12 @@ export function bakeOcclusion(
         const dx = sample.x - px, dy = sample.y - py, dz = sample.z - pz
         const distance = Math.hypot(dx, dy, dz)
         if (distance < 1e-6 || distance > radius) continue
-        // Yalnızca vertex'in BAKTIĞI yarıküredeki komşular onu kapatır.
+        // Only neighbours in the hemisphere the vertex FACES occlude it.
         const facing = (dx * nx + dy * ny + dz * nz) / distance
         if (facing <= 0) continue
-        // Uzaklaştıkça etkisi azalır; kare yasası yerine yumuşak düşüş, çünkü
-        // amaç fiziksel doğruluk değil okunur bir oyuk gölgesi.
+        // The effect fades with distance; a soft falloff instead of the
+        // inverse-square law, because the goal is not physical accuracy but a
+        // readable cavity shadow.
         weight += sample.area * facing * (1 - distance / radius)
       }
 

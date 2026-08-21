@@ -1,20 +1,20 @@
 /**
  * @medieval-kit/leather-book
  *
- * Deri kaplı, tokalı el yazması. Masa, raf, sandık içi, kürsü.
+ * Leather-bound manuscript with a clasp. Table, shelf, inside a chest, lectern.
  *
- * Modelin bütün meselesi SAYFA YIĞINI. Kitabı kitap yapan şey kapağı değil,
- * kapaktan taşan ve düzgün olmayan kâğıt kütlesi. Onu düz bir kutu olarak
- * vermek, kapağı ne kadar iyi yaparsan yap, tuğla gibi duruyor.
+ * The whole point of the model is the PAGE BLOCK. What makes a book a book is
+ * not its cover but the uneven mass of paper spilling past that cover. Give it
+ * as a flat box and it reads like a brick no matter how good the cover is.
  *
- * İki dönem ayrıntısı geometriye yön verdi:
+ * Two period details drove the geometry:
  *
- *   - Sayfalar KÂĞIT DEĞİL tirşe (parşömen), yani hayvan derisi. Bu yüzden
- *     kalın, sararmış ve dalgalı. `roughenGeometry` yığının kenarına o
- *     dalgalanmayı veriyor.
- *   - Kitap kapalı DURMAZ: tirşe nemi çekip kabarır. Bu yüzden gerçek el
- *     yazmalarında toka vardır — süs değil, işlev. Toka olmadan model
- *     dönemsizleşiyor.
+ *   - The pages are NOT PAPER but vellum (parchment), i.e. animal skin. That
+ *     makes them thick, yellowed and wavy. `roughenGeometry` puts that
+ *     waviness on the edge of the block.
+ *   - The book DOES NOT stay shut: vellum draws in moisture and swells. That
+ *     is why real manuscripts have a clasp — function, not ornament. Without
+ *     the clasp the model loses its period.
  */
 import type { BufferGeometry } from 'three'
 
@@ -29,15 +29,15 @@ import {
 } from '../core/index.ts'
 
 export interface LeatherBookConfig {
-  /** Kapak genişliği (metre). */
+  /** Cover width (metres). */
   readonly width: number
-  /** Kapak boyu (metre). */
+  /** Cover length (metres). */
   readonly length: number
-  /** Kapalı kitabın toplam kalınlığı (metre). */
+  /** Total thickness of the closed book (metres). */
   readonly thickness: number
-  /** Sırttaki kabartma bant sayısı. */
+  /** Number of raised bands on the spine. */
   readonly bands: number
-  /** Toka sayısı. */
+  /** Number of clasps. */
   readonly clasps: number
   readonly seed: number
 }
@@ -65,10 +65,11 @@ export function createModel(overrides: Partial<LeatherBookConfig> = {}) {
       const halfWidth = config.width / 2
       const spineX = -halfWidth
 
-      // --- Kapaklar ----------------------------------------------------------
-      // Sadece iki tahta değil: sırt onları saran tek parça deri. O yüzden
-      // sırt, kapakların yan yüzeyleriyle aynı düzlemde DEĞİL, onları biraz
-      // aşıyor — hem gerçek ciltçilik hem de eş düzlem yüzden kaçınma.
+      // --- Covers ------------------------------------------------------------
+      // Not just two boards: the spine is the single piece of leather wrapping
+      // them. So the spine is NOT coplanar with the side faces of the boards,
+      // it overshoots them slightly — both real bookbinding and coplanar-face
+      // avoidance.
       const cover: BufferGeometry[] = []
       for (const side of [-1, 1]) {
         cover.push(chamferedBoxGeometry(
@@ -81,7 +82,7 @@ export function createModel(overrides: Partial<LeatherBookConfig> = {}) {
         ))
       }
 
-      // Sırt: kapakları saran, dışa doğru kavisli deri.
+      // Spine: the leather wrapping the boards, curved outwards.
       const spine = chamferedBoxGeometry(
         [config.thickness * 1.06, config.length * 1.01],
         [config.thickness * 1.06, config.length * 1.01],
@@ -90,14 +91,14 @@ export function createModel(overrides: Partial<LeatherBookConfig> = {}) {
         [0, 0, 0],
         tint('leather', -0.06, 0.9),
       )
-      // Dikey kutu olarak kurulup yatırılıyor: SIRA önemli, orijinde döndür,
-      // sonra taşı.
+      // Built as an upright box and laid down: ORDER matters, rotate at the
+      // origin, then translate.
       spine.rotateZ(Math.PI / 2)
       spine.translate(spineX + config.width * 0.03, 0, 0)
       cover.push(spine)
 
-      // Sırt bantları: cilt dikişinin altında kalan iplerin yaptığı kabartma.
-      // El yazmasını basılı kitaptan ayıran en okunur işaret bu.
+      // Spine bands: the ridges raised by the cords sitting under the binding
+      // stitch. The most readable sign separating manuscript from printed book.
       const bandCount = Math.max(0, Math.round(config.bands))
       for (let i = 0; i < bandCount; i += 1) {
         const t = (i + 1) / (bandCount + 1)
@@ -109,8 +110,8 @@ export function createModel(overrides: Partial<LeatherBookConfig> = {}) {
         cover.push(band)
       }
 
-      // --- Sayfa yığını -------------------------------------------------------
-      // Kapaktan üç yönde taşıyor (sırt hariç) ve kenarları düzensiz.
+      // --- Page block ---------------------------------------------------------
+      // Spills past the cover on three sides (not the spine) with ragged edges.
       const pages = chamferedBoxGeometry(
         [config.width * 1.035, config.length * 1.03],
         [config.width * 1.03, config.length * 1.025],
@@ -119,17 +120,18 @@ export function createModel(overrides: Partial<LeatherBookConfig> = {}) {
         [config.width * 0.018, 0, 0],
         tint('cloth', 0.09, 0.7),
       )
-      // Tirşe düz değil: kenardaki dalgalanma yığını kâğıt yığını yapıyor.
+      // Vellum is not flat: the waviness at the edge is what makes the block
+      // read as a stack of leaves.
       roughenGeometry(pages, config.thickness * 0.035, { salt: 31, scaleY: 0.35 })
 
-      // --- Tokalar -------------------------------------------------------------
+      // --- Clasps ---------------------------------------------------------------
       const claspCount = Math.max(0, Math.round(config.clasps))
       const claspPieces: BufferGeometry[] = []
       for (let i = 0; i < claspCount; i += 1) {
         const t = claspCount === 1 ? 0.5 : 0.25 + (i / (claspCount - 1)) * 0.5
         const z = (t - 0.5) * config.length * 0.62
-        // Ön yüzden kıvrılıp arkaya geçen şerit: üç parçadan kuruluyor çünkü
-        // tek bir kutu kitabın kenarını saramaz.
+        // A strap that curls from the front face round to the back: built from
+        // three pieces, because a single box cannot wrap the book's edge.
         claspPieces.push(boxGeometry(
           [config.width * 0.2, config.thickness * 0.035, config.length * 0.075],
           [halfWidth * 0.86, half - boardThickness * 0.35, z + jitter(random, 0.002)],

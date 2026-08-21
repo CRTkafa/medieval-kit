@@ -1,21 +1,22 @@
 /**
  * @medieval-kit/log-pile
  *
- * Kesilmiş odun yığını. Kitin en ucuz modellerinden ve sahne değeri en
- * yükseklerinden: bir duvar dibine koyduğun anda orası "yaşanan bir yer" olur.
+ * A pile of cut firewood. One of the cheapest models in the kit and one of the
+ * highest in scene value: put it at the foot of a wall and that spot instantly
+ * becomes "somewhere people live".
  *
- * Yığını yığın yapan üç şey:
- *   - Kütük ucu (damar kesiti) kabuktan çok daha açıktır. Yığına bakınca ilk
- *     gördüğün şey o açık daireler.
- *   - Hiçbir kütük komşusuyla aynı çapta, boyda, açıda ya da dönüşte değildir.
- *   - Ve en önemlisi: her kütük ALTINDAKİLERE OTURUR.
+ * Three things make a pile a pile:
+ *   - The log end (the grain cross-section) is far lighter than the bark. Those
+ *     pale circles are the first thing you see when you look at the pile.
+ *   - No log matches its neighbour in diameter, length, angle or roll.
+ *   - And most importantly: every log RESTS ON THE ONES BELOW IT.
  *
- * O sonuncusu iki denemede birden yanlıştı. Önce sabit satır yüksekliği
- * kullandım, sonra "en kalın kütüğe göre" hesapladım — ikisinde de kalın
- * kütükler alttakinin içine giriyor, ince olanlar havada kalıyordu. Doğrusu
- * her kütük için gerçek temas yüksekliğini çözmek: iki dairenin teğet olduğu
- * nokta. Aşağıdaki `restingHeight` tam olarak bunu yapıyor ve yığın artık
- * kendiliğinden oturuyor — hangi yarıçap gelirse gelsin.
+ * That last one was wrong in two separate attempts. First I used a fixed row
+ * height, then I computed it "from the thickest log" — in both cases the thick
+ * logs sank into the ones underneath and the thin ones hung in mid-air. The
+ * right answer is to solve the real contact height for each log: the point
+ * where two circles are tangent. `restingHeight` below does exactly that, and
+ * the pile now settles by itself — whatever radii come along.
  */
 import { Color, type BufferGeometry } from 'three'
 
@@ -30,17 +31,17 @@ import {
 } from '../core/index.ts'
 
 export interface LogPileConfig {
-  /** Kaç sıra. */
+  /** How many rows. */
   readonly rows: number
-  /** Alt sıradaki kütük sayısı. */
+  /** Number of logs in the bottom row. */
   readonly perRow: number
-  /** Kütük uzunluğu (metre). */
+  /** Log length (metres). */
   readonly logLength: number
-  /** Ortalama kütük yarıçapı (metre). */
+  /** Average log radius (metres). */
   readonly logRadius: number
-  /** Kalınlık çeşitliliği. 0 = hepsi aynı çapta. */
+  /** Thickness variety. 0 = all the same diameter. */
   readonly variation: number
-  /** Piramit gibi mi (1) yoksa düz istif mi (0). */
+  /** Pyramid-shaped (1) or a straight stack (0). */
   readonly taperRows: number
   readonly seed: number
 }
@@ -64,12 +65,12 @@ interface Placed {
 }
 
 /**
- * Yarıçapı `r` olan, `x` konumundaki bir kütüğün oturacağı yükseklik.
+ * The height at which a log of radius `r` at position `x` will come to rest.
  *
- * Altındaki her kütükle teğet olduğu yüksekliği hesaplayıp en yükseğini alır;
- * hiçbirine değmiyorsa yere oturur. İki dairenin teğet olması demek merkezleri
- * arası mesafenin yarıçaplar toplamına eşit olması demek, yani dikey mesafe
- * √((r₁+r₂)² − Δx²).
+ * Computes the height at which it is tangent to each log below it and takes the
+ * highest; if it touches none of them it rests on the ground. Two circles being
+ * tangent means the distance between their centres equals the sum of the radii,
+ * so the vertical distance is √((r₁+r₂)² − Δx²).
  */
 function restingHeight(x: number, r: number, below: readonly Placed[], ground: number): number {
   let y = ground + r
@@ -111,12 +112,12 @@ export function createModel(overrides: Partial<LogPileConfig> = {}) {
         const radii = Array.from({ length: inRow },
           () => config.logRadius * (1 - spread + random() * spread * 2))
 
-        // Yatayda komşu kütükler teğet: aralık iki yarıçapın toplamı. Sabit
-        // aralık kullanmak kalın olanları birbirine sokuyordu.
+        // Horizontally, neighbouring logs are tangent: the gap is the sum of
+        // the two radii. A fixed gap drove the thick ones into each other.
         const gaps = radii.slice(0, -1).map((r, i) => r + radii[i + 1]!)
         const rowWidth = gaps.reduce((sum, w) => sum + w, 0)
-        // Üst sıralar alttakilerin OLUĞUNA otursun diye kaydırılıyor; kayma
-        // yönü dönüşümlü, yoksa yığın tek yana yatıyor.
+        // Upper rows are offset so they drop into the GROOVE of the row below;
+        // the offset direction alternates, otherwise the pile leans one way.
         const shift = (row % 2 === 1 ? 1 : -1) * config.logRadius * 0.5
           + jitter(random, config.logRadius * 0.1)
 
@@ -132,14 +133,16 @@ export function createModel(overrides: Partial<LogPileConfig> = {}) {
         for (const log of placed) {
           const length = config.logLength * (0.86 + random() * 0.28)
 
-          // Gövde: uçları kapatılmıyor, damar kesiti ayrı diskler. Böylece
-          // kabuk ve kesit birbirinden çok farklı renk alabiliyor.
+          // Body: the ends are left uncapped, the grain cross-section is a
+          // separate pair of discs. That lets bark and end take very different
+          // colours.
           //
-          // KRİTİK: hiçbir yerde `log.r`'yi AŞMAMALI. Önceki hâlde uçlar
-          // `log.r * (1 ± 0.05)` idi, yani %5'e kadar şişmanlıyordu; yerleşim
-          // ise `log.r` ile hesaplandığı için komşular uçlarında %10'a kadar
-          // iç içe giriyordu. Kütük artık yalnızca İNCELİYOR — hem hata
-          // kapanıyor hem gerçek kütük zaten uca doğru incelir.
+          // CRITICAL: it must NEVER EXCEED `log.r` anywhere. Previously the
+          // ends were `log.r * (1 ± 0.05)`, i.e. they fattened by up to 5%;
+          // since the layout is computed from `log.r`, neighbours intersected
+          // by up to 10% at their ends. A log now only ever TAPERS IN — which
+          // closes the bug and matches a real log, which narrows towards the
+          // end anyway.
           const taperA = 1 - random() * 0.1
           const taperB = 1 - random() * 0.1
           const profile: Level[] = [
@@ -155,9 +158,9 @@ export function createModel(overrides: Partial<LogPileConfig> = {}) {
           const capA = headGeometry(profile.at(-1)!.radius, length / 2, 7, 'up', grain, 3, 0.07)
           const capB = headGeometry(profile[0]!.radius, -length / 2, 7, 'down', grain, 3, 0.07)
 
-          // Her kütük kendi ekseninde rastgele dönük: hepsinin fasetleri aynı
-          // açıda olunca yığın mekanik görünüyor, üstelik yan yana gelenlerin
-          // yüzeyleri paralel kalıp çakışabiliyordu.
+          // Each log is rolled randomly about its own axis: with every facet at
+          // the same angle the pile looks mechanical, and on top of that
+          // adjacent logs kept parallel faces that could z-fight.
           const roll = random() * Math.PI * 2
           const tilt = jitter(random, 0.04)
           for (const [target, geometry] of [[bark, body], [ends, capA], [ends, capB]] as const) {

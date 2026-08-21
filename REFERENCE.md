@@ -1,35 +1,36 @@
-# vibe3d — çalışma notları
+# vibe3d — working notes
 
-Bu klasördeki her şeyin ne işe yaradığı, vibe3d'nin nasıl çalıştığı ve kendi
-asset pack'inizi nasıl üreteceğiniz.
+What everything in this folder is for, how vibe3d works, and how to build your
+own asset pack.
 
-Üst kaynak: <https://github.com/vibe-stack/vibe3d> · Dokümanlar:
-<https://vibe-stack.github.io/vibe3d/#/docs> · Lisans: MIT
+Upstream: <https://github.com/vibe-stack/vibe3d> · Docs:
+<https://vibe-stack.github.io/vibe3d/#/docs> · License: MIT
 
 ---
 
-## 1. vibe3d ne DEĞİL, ne
+## 1. What vibe3d is NOT, and what it is
 
-**Değil:** bir 3D model kütüphanesi, bir AI model üreteci, bir motor.
+**Not:** a 3D model library, an AI model generator, an engine.
 
-**Ne:** shadcn/ui'ın 3D karşılığı — bir *kaynak dağıtım protokolü*. Model
-indirmiyorsunuz; **modeli üreten TypeScript kodunu** kendi projenize kopyalıyor
-ve sahipleniyorsunuz. `node_modules` sınırı yok, patch'lemek yok; dosya sizin,
-açıp değiştirirsiniz.
+**What it is:** the 3D counterpart of shadcn/ui — a *source distribution
+protocol*. You don't download models; you copy **the TypeScript code that
+generates the model** into your own project and own it. No `node_modules`
+boundary, no patching; the file is yours, open it and change it.
 
-Sistem dört katmandan oluşuyor:
+The system has four layers:
 
-| Katman | Paket | Sorumluluk |
+| Layer | Package | Responsibility |
 | --- | --- | --- |
-| Protokol | `@vibe3djs/schema` | `models.json`, `registry.json`, lock şemaları (Zod) |
-| Çözümleme | `@vibe3djs/registry` | kaynak sağlayıcılar, bağımlılık grafiği, güvenli kurulum |
-| Doğrulama | `@vibe3djs/conformance` | şema + yol güvenliği + hash denetimi |
-| Arayüz | `vibe3d` (CLI) | `init`, `add`, `view`, `list`, `diff`, `remove`, `doctor` |
+| Protocol | `@vibe3djs/schema` | `models.json`, `registry.json`, lock schemas (Zod) |
+| Resolution | `@vibe3djs/registry` | source providers, dependency graph, safe install |
+| Validation | `@vibe3djs/conformance` | schema + path safety + hash check |
+| Interface | `vibe3d` (CLI) | `init`, `add`, `view`, `list`, `diff`, `remove`, `doctor` |
 
-`@scifi-kit` bunların hiçbiri değil — **protokolün ilk referans registry'si**.
-Yani sci-fi olması bir tesadüf; platform stil hakkında hiçbir varsayım yapmıyor.
+`@scifi-kit` is none of these — it is **the protocol's first reference
+registry**. Its being sci-fi is an accident; the platform makes no assumption
+about style.
 
-### Adresleme
+### Addressing
 
 ```
 @scifi-kit/pressure-gauge
@@ -37,8 +38,8 @@ Yani sci-fi olması bir tesadüf; platform stil hakkında hiçbir varsayım yapm
 └───────────── registry namespace
 ```
 
-Namespace **npm paket adı değildir**. Fiziksel kaynağa `models.json` üzerinden
-bağlanır:
+A namespace is **not an npm package name**. It binds to a physical source
+through `models.json`:
 
 ```json
 "registries": {
@@ -47,125 +48,131 @@ bağlanır:
 }
 ```
 
-Bu ayrım sayesinde yayıncı depolamayı değiştirebilir (npm → başka scope → shard'lı
-paketler) ve tüketicinin kullandığı adres aynı kalır. Desteklenen kaynaklar:
-`npm:`, `file:`, `https://`. (`github:` şemada var ama henüz "planned but not
-available yet" hatası veriyor.)
+Thanks to this separation the publisher can change storage (npm → another scope
+→ sharded packages) while the address the consumer uses stays the same.
+Supported sources: `npm:`, `file:`, `https://`. (`github:` exists in the schema
+but currently throws a "planned but not available yet" error.)
 
-### Güvenlik modeli
+### Security model
 
-CLI, registry npm paketini `node_modules`'a **kurmaz** ve lifecycle script'lerini
-**çalıştırmaz**. `pacote` ile tarball'ı geçici bir dizine açar, manifest'i Zod ile
-doğrular, mutlak yol / `..` sızmasını reddeder, sadece çözümlenmiş item'ların
-bildirdiği dosyaları yazar, sonra geçici dizini siler.
+The CLI does **not install** the registry npm package into `node_modules` and
+does **not run** its lifecycle scripts. It unpacks the tarball into a temporary
+directory with `pacote`, validates the manifest with Zod, rejects absolute paths
+and `..` escapes, writes only the files declared by the resolved items, then
+deletes the temporary directory.
 
 ---
 
-## 2. Bu klasörde ne var
+## 2. What is in this folder
 
 ```
-models.json                      sizin yapılandırmanız (elle düzenlenir)
-models.lock.json                 CLI'ın makbuzu (elle düzenlenmez)
-index.html · vite.config.ts      oyun alanı uygulaması
-src/main.ts                      sahne + renderer + render döngüsü (SİZE ait)
-src/lib/vibe3d/                  `init`in kurduğu evrensel sözleşmeler
+models.json                      your configuration (edited by hand)
+models.lock.json                 the CLI's receipt (never edited by hand)
+index.html · vite.config.ts      the playground application
+src/main.ts                      scene + renderer + render loop (YOURS)
+src/lib/vibe3d/                  the universal contracts `init` installs
   model.ts                         ModelInstance, PartHandle, MaterialBindings
-  ownership.ts                     ResourceScope (kaynak sahipliği)
-  materials.ts                     MaterialSource arayüzü
-src/lib/vibe3d/scifi-kit/generator/   @scifi-kit/core — 2.100 satır prosedürel araç
-src/viewer.ts · src/viewer.css   model inceleyici (WebGPU, gökyüzü, gölge)
-src/catalog.ts                   inceleyicinin kataloğu — meta.ts'ten TÜRETİLİR
-src/glb.ts                       GLB dışa aktarımı (viewer ve CLI ortak kullanır)
-src/models/scifi-kit/pressure-gauge/  kurulu sci-fi modeli
-src/models/medieval-kit/…             kurulu KENDİ modelleriniz (27 model)
+  ownership.ts                     ResourceScope (resource ownership)
+  materials.ts                     the MaterialSource interface
+src/lib/vibe3d/scifi-kit/generator/   @scifi-kit/core — 2,100 lines of procedural tools
+src/viewer.ts · src/viewer.css   the model viewer (WebGPU, sky, shadow)
+src/catalog.ts                   the viewer's catalog — DERIVED from meta.ts
+src/glb.ts                       GLB export (shared by viewer and CLI)
+src/models/scifi-kit/pressure-gauge/  the installed sci-fi model
+src/models/medieval-kit/…             your OWN installed models (27 models)
 my-registry/
-  meta.ts                          katalog metadata'sının TEK kaynağı
-  build.ts                         registry.json üreticisi
-  models/core/                     kitin paylaşılan sözlüğü
-  models/<id>/model.ts             modellerin kaynağı
-  drafts/                          registry'ye girmeyen taslaklar
+  meta.ts                          the SINGLE source of catalog metadata
+  build.ts                         the registry.json generator
+  models/core/                     the kit's shared vocabulary
+  models/<id>/model.ts             the models' source
+  drafts/                          drafts that stay out of the registry
 scripts/
-  verify-model.ts                  tarayıcısız conformance doğrulaması
-  verify-glb.ts                    GLB gidiş-dönüş doğrulaması
-  zfight.ts                        eş düzlem yüz tespiti
-  render.ts                        çevrimdışı yazılım rasterleyici → PNG
-  export-glb.ts                    kitin tamamını GLB'ye aktarır
-  catalog-table.ts                 REFERENCE.md'deki model tablosunu üretir
-  build-artifact.ts                inceleyiciyi tek dosyaya paketler
+  verify-model.ts                  browserless conformance validation
+  verify-glb.ts                    GLB round-trip validation
+  zfight.ts                        coplanar face detection
+  render.ts                        offline software rasterizer → PNG
+  export-glb.ts                    exports the whole kit to GLB
+  catalog-table.ts                 generates the model table in REFERENCE.md
+  build-artifact.ts                bundles the viewer into a single file
 ```
 
-`models.json` ↔ `models.lock.json` ayrımı kasıtlı: birincisi **yapılandırma**
-(sizin), ikincisi **kurulum durumu** (CLI'ın). Lock her dosyanın kurulum anındaki
-sha256'sını tutar; `vibe3d diff` bununla yerel değişikliklerinizi tespit eder ve
-`add`/`update` düzenlediğiniz dosyaların **üzerine yazmaz** (`--overwrite` demedikçe).
+The `models.json` ↔ `models.lock.json` split is deliberate: the first is
+**configuration** (yours), the second is **install state** (the CLI's). The lock
+holds the sha256 of every file at install time; `vibe3d diff` uses it to detect
+your local changes, and `add`/`update` **do not overwrite** files you have
+edited (unless you say `--overwrite`).
 
-### Çalıştırma
+### Running
 
 ```bash
-bun run dev                    # oyun alanı — iki registry, tek proje
-bun run typecheck              # kurulu kaynak gerçekten derleniyor mu
+bun run dev                    # playground — two registries, one project
+bun run typecheck              # does the installed source really compile
 
-bun my-registry/build.ts       # registry.json üret
-bunx vibe3d add @medieval-kit --overwrite   # kendi kitini kendine kur
+bun my-registry/build.ts       # generate registry.json
+bunx vibe3d add @medieval-kit --overwrite   # install your own kit into yourself
 
-bun scripts/verify-model.ts    # geometri, protokol, metadata, eylemler
-bun scripts/verify-glb.ts      # dışa aktar → geri oku → karşılaştır
-bun scripts/render.ts          # renders/_sheet.png — modellere BAK
-bun scripts/export-glb.ts      # glb/ altına kitin tamamı
+bun scripts/verify-model.ts    # geometry, protocol, metadata, actions
+bun scripts/verify-glb.ts      # export → read back → compare
+bun scripts/render.ts          # renders/_sheet.png — LOOK at the models
+bun scripts/export-glb.ts      # the whole kit under glb/
 ```
 
-Model üzerinde çalışırken sıra hep aynı: **kaynağı düzenle → derle → kendine
-kur → doğrula → render et.** Ortadaki iki adımı atlamak, `src/models/` altındaki
-kurulu kopyanın eski kalmasına yol açıyor ve doğrulama eski kodu sınıyor.
+When working on a model the order is always the same: **edit the source →
+build → install into yourself → validate → render.** Skipping the two middle
+steps leaves the installed copy under `src/models/` stale, and validation then
+tests the old code.
 
-> **WebGPU gerekir.** `@scifi-kit` modelleri TSL düğüm materyalleri (`colorNode`,
-> `attribute(...)`) kullanıyor, bu yüzden `WebGPURenderer` şart. Kendi
-> `@medieval-kit` modeliniz düz `MeshStandardMaterial` kullanıyor — WebGL yeter.
+> **WebGPU required.** The `@scifi-kit` models use TSL node materials
+> (`colorNode`, `attribute(...)`), so `WebGPURenderer` is mandatory. Your own
+> `@medieval-kit` model uses plain `MeshStandardMaterial` — WebGL is enough.
 
-> **`three` vs `three/webgpu` tuzağı.** Bunlar ayrı bundle'lar ve her ikisi de
-> çekirdek sınıfların kendi kopyasını içerir. Karıştırırsanız "Multiple instances
-> of Three.js" uyarısı alır, `instanceof` kontrolleri iki kopya arasında bozulur.
-> `vite.config.ts` içinde `three` → `three/webgpu` takma adıyla çözdük. Regex
-> (`/^three$/`) şart; düz string önek eşleşmesi yapıp `three/addons/...` yolunu da
-> bozardı.
+> **The `three` vs `three/webgpu` trap.** These are separate bundles and both
+> contain their own copy of the core classes. Mix them and you get the "Multiple
+> instances of Three.js" warning, and `instanceof` checks break between the two
+> copies. We solved it with a `three` → `three/webgpu` alias in
+> `vite.config.ts`. The regex (`/^three$/`) is mandatory; a plain string prefix
+> match would also break the `three/addons/...` path.
 
 ---
 
-## 3. Modeller nasıl üretiliyor
+## 3. How the models are generated
 
-Kısa cevap: **prosedürel TypeScript**. GLB/FBX indirilmiyor, mesh runtime'da
-koddan doğuyor. GLB sadece *çıktı* (dışa aktarım), *girdi* değil.
+Short answer: **procedural TypeScript**. No GLB/FBX is downloaded, the mesh is
+born from code at runtime. GLB is only *output* (export), never *input*.
 
-### 3.1 Boru hattı
+### 3.1 The pipeline
 
-`@scifi-kit/core` (`src/lib/vibe3d/scifi-kit/generator/`) beş aşamalı bir hat:
+`@scifi-kit/core` (`src/lib/vibe3d/scifi-kit/generator/`) is a five-stage
+pipeline:
 
-1. **`primitives.ts`** (867 satır) — `prism`, `extrudeProfile`, `filletRing`,
-   `flatPlate`, `groove`, `cylinder`. Bunlar Three.js'in kutu/silindirinden farklı:
-   köşe pahları (chamfer), teğetsel fileto halkaları ve pah bantları boyunca
-   paylaşılan normaller üretiyorlar. "AI ürünü gibi durmayan" hard-surface
-   görünümü buradan geliyor.
-2. **`profile.ts`** — 2B profil üretimi: `rect`, `octagon`, `stepEdge`,
-   `offsetProfile`, `mirrorProfile`. Önce kesit çizilir, sonra extrude edilir.
-3. **`materials.ts`** — `MaterialLibrary` + `mountMaterialSource`. Materyaller
-   `MAT-03/GRAPHITE-800` gibi semantik kimliklerle alınır, projede override edilebilir.
-4. **`wear.ts`** (524 satır) — işin sırrı burada. `bakeOcclusion` ve
-   `bakeSurfaceAttributes`, parçalar hâlâ ayrıyken komşuluk ve yüzey kimliğini
-   **vertex attribute'larına** (`aMask`, `aColor`, `aSurface`, `aWearDir`, `aPlane`)
-   yazar. Sonra `createWearMaterial` tek bir TSL düğüm grafiğiyle boya
-   dökülmesi, çizik ve kir üretir. Koddaki yorum niyeti net anlatıyor: fraktal
-   gürültü kasıtlı olarak kullanılmamış, çünkü izotropik gürültü yumuşak bulut
-   verir ve bulut hasar değil sis gibi okunur.
-5. **`batching.ts` + `glb.ts`** — `mergeStaticByMaterial` statik parçaları
-   materyal başına tek çizime indirir; `exportStaticGlb` prosedürel aşınmayı
-   standart PBR verisine *bake* ederek taşınabilir GLB üretir.
+1. **`primitives.ts`** (867 lines) — `prism`, `extrudeProfile`, `filletRing`,
+   `flatPlate`, `groove`, `cylinder`. These differ from Three.js's box/cylinder:
+   they produce corner chamfers, tangential fillet rings and shared normals
+   along the chamfer bands. The hard-surface look that "doesn't look
+   AI-generated" comes from here.
+2. **`profile.ts`** — 2D profile generation: `rect`, `octagon`, `stepEdge`,
+   `offsetProfile`, `mirrorProfile`. The cross-section is drawn first, then
+   extruded.
+3. **`materials.ts`** — `MaterialLibrary` + `mountMaterialSource`. Materials are
+   fetched by semantic ids like `MAT-03/GRAPHITE-800` and can be overridden in the project.
+4. **`wear.ts`** (524 lines) — the trick lives here. `bakeOcclusion` and
+   `bakeSurfaceAttributes` write adjacency and surface identity into **vertex
+   attributes** (`aMask`, `aColor`, `aSurface`, `aWearDir`, `aPlane`) while the
+   parts are still separate. Then `createWearMaterial` produces paint chipping,
+   scratches and grime with a single TSL node graph. The comment in the code
+   states the intent plainly: fractal noise is deliberately avoided, because
+   isotropic noise gives a soft cloud and a cloud reads as fog, not damage.
+5. **`batching.ts` + `glb.ts`** — `mergeStaticByMaterial` reduces the static
+   parts to one draw call per material; `exportStaticGlb` *bakes* the procedural
+   wear into standard PBR data to produce a portable GLB.
 
-Sıra kritik ve `modeling-rules.md`'de kural 9 olarak yazılı: **kur, bake et,
-sonra birleştir.** Komşuluk verisi ancak nesneler ayrıyken türetilebilir.
+The order is critical and is written down as rule 9 in `modeling-rules.md`:
+**assemble, bake, then merge.** Adjacency data can only be derived while the
+objects are still separate.
 
-### 3.2 Bir modelin anatomisi
+### 3.2 The anatomy of a model
 
-`src/models/scifi-kit/pressure-gauge/model.ts` (539 satır) tipik bir örnek:
+`src/models/scifi-kit/pressure-gauge/model.ts` (539 lines) is a typical example:
 
 ```ts
 export function createModel() {
@@ -173,120 +180,123 @@ export function createModel() {
   const root = new Group(); root.name = 'pressure-gauge'
 
   addMount(root, materials); addHousing(root, materials)
-  const needlePivot = addFace(root, materials)      // hareketli parça
+  const needlePivot = addFace(root, materials)      // the moving part
   addSideIndicator(root, materials); addConnector(root, materials)
 
-  bakeOcclusion(root)                    // 1) komşuluk → attribute
+  bakeOcclusion(root)                    // 1) adjacency → attribute
   bakeSurfaceAttributes(root, profiles)
-  const wearMaterial = createWearMaterial(...)      // 2) tek TSL materyali
+  const wearMaterial = createWearMaterial(...)      // 2) a single TSL material
 
-  root.remove(needlePivot)               // 3) hareketli parçayı batch dışına al
-  mergeStaticByMaterial(root, ...)       //    statik olanı düzleştir
+  root.remove(needlePivot)               // 3) take the moving part out of the batch
+  mergeStaticByMaterial(root, ...)       //    flatten the static ones
   root.add(needlePivot)
 
   return { root, update, triggerPressureTest, dispose }
 }
 ```
 
-Ölçüm sonucu (`bun scripts/verify-model.ts`): **10 mesh, 10.830 üçgen**, 8 materyal,
-5.7 × 7.4 × 2.71 m. `update()` tam **bir** düğümü döndürüyor (ibre pivotu).
+Measured result (`bun scripts/verify-model.ts`): **10 meshes, 10,830
+triangles**, 8 materials, 5.7 × 7.4 × 2.71 m. `update()` rotates exactly **one**
+node (the needle pivot).
 
-### 3.3 Runtime sözleşmesi
+### 3.3 The runtime contract
 
-`src/lib/vibe3d/model.ts` küçük ve kasıtlı olarak öyle:
+`src/lib/vibe3d/model.ts` is small and deliberately so:
 
-- **`root` kimliği ömür boyu sabit.** `configure()` topolojiyi yeniden kurabilir
-  ama kökü değiştiremez — sahne ebeveynliği, editör seçimi, dış referanslar
-  hayatta kalsın diye.
-- **Semantik `parts`** — anonim mesh sırasına bağımlılık yok. `anchor` sabit,
-  `content` yeniden kurulabilir. Tüketicinin `anchor`'a eklediği ışık/etiket
-  rebuild'i atlatır.
-- **`materials.get/override/reset`** — çözümleme sırası: örnek override → proje
-  override → kit varsayılanı.
-- **Sahiplik**: model kendi kaynağını tam bir kez dispose eder, **tüketicinin
-  verdiği materyale asla dokunmaz**, `dispose()` idempotenttir.
-- **Sahne, renderer, kamera ve render döngüsü SİZE ait.** `src/main.ts`'e bakın.
+- **`root` identity is fixed for life.** `configure()` may rebuild the topology
+  but cannot swap the root — so that scene parenting, editor selection and
+  external references survive.
+- **Semantic `parts`** — no dependence on anonymous mesh order. `anchor` is
+  fixed, `content` is rebuildable. A light or label the consumer attached to
+  `anchor` survives a rebuild.
+- **`materials.get/override/reset`** — resolution order: instance override →
+  project override → kit default.
+- **Ownership**: the model disposes its own resources exactly once, **never
+  touches a material the consumer supplied**, and `dispose()` is idempotent.
+- **The scene, renderer, camera and render loop are YOURS.** See `src/main.ts`.
 
-`configure()` pahalıdır — kullanıcı ayarı içindir, kare başına animasyon için
-değil. Sürekli hareket `actions` + `update(dt)` ile yapılır.
+`configure()` is expensive — it is for user settings, not for per-frame
+animation. Continuous motion is done with `actions` + `update(dt)`.
 
-### 3.4 Modeller nasıl *yazılıyor* (asıl "generate" kısmı)
+### 3.4 How the models are *written* (the actual "generate" part)
 
-Elle. Ama yapılandırılmış bir AI döngüsüyle: **`vibe-model` skill'i**.
+By hand. But with a structured AI loop: **the `vibe-model` skill**.
 
 ```bash
-bunx vibe-model          # .agents/skills/vibe-model kurar
+bunx vibe-model          # installs .agents/skills/vibe-model
 ```
 
-Döngü:
+The loop:
 
 ```
-model kaynağı → deterministik preview → bağımsız görsel kritik
+model source → deterministic preview → independent visual critique
       ▲                                        │
-      └──────────── en yüksek etkili düzeltme ─┘
+      └──────────── highest-impact fix ────────┘
 ```
 
-Kurallar (`.agents/skills/vibe-model/SKILL.md`): kritik eden ajana **sadece**
-brief, referans görseli ve mevcut render verilir (kodu görmez). Ajan bir benzerlik
-skoru ve **en fazla üç** öncelikli düzeltme döndürür. Sırasıyla siluet ve oranlar,
-ana kütleler ve negatif alan, ayırt edici işaretler, materyal/değer okunuşu
-puanlanır. **85'te dur**; iki kez plato yaparsa ya da 10 iterasyonu geçerse dur —
-plato, temsili ya da referansı değiştirmek gerektiğinin kanıtıdır.
+The rules (`.agents/skills/vibe-model/SKILL.md`): the critiquing agent is given
+**only** the brief, the reference image and the current render (it never sees
+the code). The agent returns a similarity score and **at most three** prioritized
+fixes. Silhouette and proportions, main masses and negative space,
+distinguishing marks, and material/value reading are scored in that order.
+**Stop at 85**; stop as well if it plateaus twice or exceeds 10 iterations — a
+plateau is proof that the representation or the reference has to change.
 
-`references/modeling-rules.md` 17 sert kural içeriyor. En pahalı olanlar:
+`references/modeling-rules.md` contains 17 hard rules. The most expensive ones:
 
-- Pahları algısal role göre bütçele — varsayılan **tek** faset; ikinciyi sadece
-  silueti taşıyan kütlelere ver.
-- Halka içe doğru inset edildiğinde **sarım yönünün değiştiğini varsay**;
-  ilk üçgenin kenar çapraz çarpımını beklenen normalle karşılaştır.
-- Pahları etkilenen yarı-boyutun ~%60'ının altında tut.
-- Fiziksel özellikleri **dünya biriminde** boyutlandır — pah, dikiş, cıvata,
-  boşluk. Bunları host parçanın yüzdesi olarak ölçekleme.
-- Uygulanan her katman için boşluk hesapla; bu metre ölçekli kitte en az
-  **0.015 birim** ve gerçek kameradan doğrula (z-fighting).
+- Budget chamfers by perceptual role — the default is a **single** facet; give a
+  second one only to masses that carry the silhouette.
+- **Assume the winding direction flips** when a ring is inset inward; compare
+  the edge cross product of the first triangle against the expected normal.
+- Keep chamfers below ~60% of the affected half-dimension.
+- Size physical features **in world units** — chamfer, seam, bolt, gap. Do not
+  scale these as a percentage of the host part.
+- Compute the clearance for every layer you apply; in this meter-scale kit that
+  is at least **0.015 units**, and verify it from a real camera (z-fighting).
 
 ---
 
-## 4. Kendi asset pack'inizi üretmek
+## 4. Building your own asset pack
 
-**Bu klasörde bunu zaten yaptık.** `my-registry/` çalışan, doğrulanmış bir örnek.
+**We already did this in this folder.** `my-registry/` is a working, validated
+example.
 
-Bir registry, sonuçta **tek bir JSON dosyası**. Bağımlılık gerekmez.
+A registry is, in the end, **a single JSON file**. No dependencies required.
 
-### Adımlar
+### Steps
 
-**1) Kaynağı yaz** — `my-registry/models/<model-id>/model.ts`
+**1) Write the source** — `my-registry/models/<model-id>/model.ts`
 
-Kanonik import'ları kullanın; kurulum sırasında yeniden yazılırlar:
+Use the canonical imports; they are rewritten during install:
 
-| Yazdığınız | Kurulunca olur |
+| What you write | What it becomes once installed |
 | --- | --- |
 | `@vibe3d/model.ts` | `@/lib/vibe3d/model.ts` |
 | `@models/...` | `@/models/...` |
 
-Bu yüzden registry, tüketicinin klasör düzenini varsaymak zorunda kalmaz.
+This is why the registry never has to assume the consumer's folder layout.
 
-**2) Manifest'i derle** — `my-registry/build.ts`
+**2) Build the manifest** — `my-registry/build.ts`
 
-Her dosya için `{ path, target, content, hash }`. `target` içinde `{models}` ve
-`{vibe3d}` yer tutucuları tüketicinin `models.json`'ındaki `paths` ile değişir.
-`defaultItem` zorunlu ve var olmalı.
+For every file `{ path, target, content, hash }`. The `{models}` and `{vibe3d}`
+placeholders inside `target` are replaced with the `paths` from the consumer's
+`models.json`. `defaultItem` is mandatory and must exist.
 
 ```bash
 bun my-registry/build.ts
 ```
 
-**3) Doğrula** — resmi conformance denetimi
+**3) Validate** — the official conformance check
 
 ```bash
 bunx vibe3d registry validate my-registry/dist/registry.json
 # Conformant @medieval-kit · 2 items · 1 files · MIT
 ```
 
-Şema, bağımlılık kapanışı, güvenli hedef yolları, çift yazım ve hash tazeliği
-kontrol edilir.
+Schema, dependency closure, safe target paths, double writes and hash freshness
+are all checked.
 
-**4) Bağla ve kur**
+**4) Link and install**
 
 ```jsonc
 // models.json
@@ -294,11 +304,12 @@ kontrol edilir.
 ```
 
 ```bash
-bunx vibe3d add @medieval-kit/wooden-barrel --dry-run   # önce göster
+bunx vibe3d add @medieval-kit/wooden-barrel --dry-run   # show it first
 bunx vibe3d add @medieval-kit/wooden-barrel
 ```
 
-**5) Yayınla** — `package.json`'a `vibe3d.registry` alanını koyup npm'e gönderin:
+**5) Publish** — put the `vibe3d.registry` field in `package.json` and push to
+npm:
 
 ```json
 {
@@ -309,29 +320,29 @@ bunx vibe3d add @medieval-kit/wooden-barrel
 }
 ```
 
-Kullanıcılar `models.json`'a `"source": "npm:@medieval-kit/registry"` yazıp aynı
-CLI ile kurar. **Kimseden izin almanıza gerek yok** — vibe3d deposuna dokunmadan
-kendi registry'nizi yayınlayabilirsiniz. Mimari doküman bunu açık bir hedef olarak
-yazıyor.
+Users write `"source": "npm:@medieval-kit/registry"` in their `models.json` and
+install with the same CLI. **You do not need anyone's permission** — you can
+publish your own registry without touching the vibe3d repository. The
+architecture document states this as an explicit goal.
 
-### Boyut uyarısı
+### Size warning
 
-`registry.json` tüm kaynağı gömülü tutar. `@scifi-kit/registry@0.0.1` → **1.8 MB
-JSON**, 404 KB tarball. npm tek item için bile tarball'ın tamamını indirir. Mimari
-doküman ilerisi için koleksiyon bazlı shard'lamayı öngörüyor
-(`@scifi-kit/industrial`, `@scifi-kit/medical`…) — adres aynı kalır, fiziksel
-paket değişir.
+`registry.json` keeps all the source embedded. `@scifi-kit/registry@0.0.1` →
+**1.8 MB of JSON**, a 404 KB tarball. npm downloads the entire tarball even for
+a single item. The architecture document foresees collection-based sharding for
+the future (`@scifi-kit/industrial`, `@scifi-kit/medical`…) — the address stays
+the same, the physical package changes.
 
 ---
 
-## 5. Lowpoly medieval — evet, sorunsuz
+## 5. Lowpoly medieval — yes, no problem
 
-Bu bir varsayım değil: `@medieval-kit` çalışıyor, doğrulandı ve şu anda **27
-model + 1 lib** içeriyor. Tablo `bun scripts/catalog-table.ts` ile modellerin
-kendisinden üretiliyor — elle yazılmış bir liste ilk eklenen modelde bayatlıyor,
-nitekim bir kez bayatlamıştı da.
+This is not an assumption: `@medieval-kit` works, is validated and currently
+contains **27 models + 1 lib**. The table is generated from the models
+themselves with `bun scripts/catalog-table.ts` — a hand-written list goes stale
+on the first model you add, and in fact it had gone stale once.
 
-| Model | Kategori | Üçgen | Parça | Ölçü (m) | Materyal yuvaları | Eylemli |
+| Model | Category | Triangles | Parts | Size (m) | Material slots | Animated |
 | --- | --- | ---: | ---: | --- | --- | :-: |
 | `wooden-chest` | Furniture | 552 | 4 | 0.86×0.51×0.48 | oak, iron | ✔ |
 | `wooden-barrel` | Props | 806 | 3 | 0.82×1.05×0.81 | oak, iron |  |
@@ -361,359 +372,380 @@ nitekim bir kez bayatlamıştı da.
 | `wooden-shovel` | Tools | 468 | 3 | 0.27×1.20×0.08 | oak, iron, steel |  |
 | `wooden-pitchfork` | Tools | 338 | 3 | 0.25×1.56×0.11 | oak, iron, steel |  |
 
-Toplam **15 425 üçgen**. Kitin tamamı bir sahnede, bütçesi tek bir orta
-karmaşıklıktaki karakter modelinden az.
+**15,425 triangles** in total. The whole kit in one scene has a budget smaller
+than a single medium-complexity character model.
 
-### 5.1 Tek kaynak: `my-registry/meta.ts`
+### 5.1 One source: `my-registry/meta.ts`
 
-Başlık, açıklama, kategori, etiketler, kaydırıcı aralıkları, parça adları ve
-materyal yuvaları TEK yerde duruyor. Oradan iki tüketici besleniyor:
-`build.ts` (registry.json üretirken) ve `src/catalog.ts` (viewer'ın kaydırıcı
-ve açıklamaları).
+Title, description, category, tags, slider ranges, part names and material slots
+all live in ONE place. Two consumers feed from it: `build.ts` (when generating
+registry.json) and `src/catalog.ts` (the viewer's sliders and descriptions).
 
-Önceden ikisi ayrı ayrı elle yazılıyordu ve on yedinci modelde ayrışmışlardı.
-Şimdi ayrışması imkânsız değil ama SESSİZ olması imkânsız:
-`verify-model.ts` her modelde metadata ile gerçeği karşılaştırıyor —
+Previously the two were written out by hand separately, and by the seventeenth
+model they had diverged. Divergence is not impossible now, but being SILENT
+about it is: `verify-model.ts` compares metadata against reality on every model —
 
-- `meta.controls` anahtarlarının hepsi modelin config alanı mı,
-- `meta.parts` modelin gerçek parça adlarıyla aynı mı,
-- bildirilen her yuva çözümleniyor mu,
-- ve daha önemlisi: **hiçbir mesh bildirilmemiş bir yuva kullanmıyor mu.**
+- are all the `meta.controls` keys really fields of the model's config,
+- is `meta.parts` the same as the model's real part names,
+- does every declared slot resolve,
+- and, more important: **does no mesh use an undeclared slot.**
 
-Son madde asıl olan. Fazladan bildirim sadece gürültü; EKSİK bildirim ise
-tüketicinin `materials.override()` ile ulaşamayacağı gizli bir materyal demek,
-yani registry sözleşmesinin ihlali. Bu kontrol eklendiği gün dört modelde
-gerçek bir sapma yakaladı (`steel` yuvası eklenmiş ama bildirilmemişti).
+The last item is the real one. An extra declaration is only noise; a MISSING
+declaration means a hidden material the consumer cannot reach with
+`materials.override()`, which is a violation of the registry contract. The day
+this check was added it caught a real drift in four models (a `steel` slot had
+been added but not declared).
 
-### 5.2 Materyal sözlüğü — on bir yuva
+### 5.2 The material vocabulary — eleven slots
 
-| Yuva | Ne | Neden ayrı |
+| Slot | What | Why separate |
 | --- | --- | --- |
-| `oak` | kereste | — |
-| `iron` | dövme demir, oksitli ve mat | `steel`den ayrı: fark renkte değil PÜRÜZLÜLÜKTE ve vertex color pürüzlülük taşıyamaz |
-| `steel` | kullanımdan parlamış çelik | örsün yüzü, küreğin ağzı, çatalın ucu |
-| `brass` | tunç ve bakır | çan, sikke |
-| `straw` | saman, hasır, süpürge teli | balyanın "meşe" bildirmesi tüketiciye söylenmiş bir yalan olurdu |
-| `cloth` | keten, çuval bezi, ip | — |
-| `leather` | işlenmiş deri | — |
-| `glass` | üflemeli cam | saydam, `depthWrite` KAPALI, `DoubleSide` |
-| `produce` | meyve ve sebze kabuğu | samanla aynı pürüzlülüğü verseydim elma kuru ot gibi görünürdü |
-| `ember` | alev | `MeshBasicMaterial` — ışık almaz, yayar |
-| `char` | kömür, zift | — |
+| `oak` | timber | — |
+| `iron` | forged iron, oxidized and matte | separate from `steel`: the difference is not in color but in ROUGHNESS, and vertex color cannot carry roughness |
+| `steel` | steel polished by use | the anvil face, the shovel blade, the pitchfork tip |
+| `brass` | bronze and copper | the bell, coins |
+| `straw` | straw, wicker, broom bristle | a bale declaring "oak" would be a lie told to the consumer |
+| `cloth` | linen, sackcloth, rope | — |
+| `leather` | worked leather | — |
+| `glass` | blown glass | transparent, `depthWrite` OFF, `DoubleSide` |
+| `produce` | fruit and vegetable skin | if I had given it the same roughness as straw an apple would look like dry hay |
+| `ember` | flame | `MeshBasicMaterial` — it does not receive light, it emits |
+| `char` | charcoal, pitch | — |
 
-`ember` iki yerde kural olarak da işliyor: kapanma ve alaca pişirilirken bu
-yuvadaki gövdeler tamamen atlanıyor. Sebebi basit — aydınlatılmayan bir
-materyalde vertex rengi son renktir, karartmak alevi söndürür. Kural
-`kit.ts`'te yuvanın kendisine bağlı, model başına bir bayrağa değil, ki
-unutulması mümkün olmasın.
+`ember` also works as a rule in two places: bodies in this slot are skipped
+entirely while occlusion and mottle are baked. The reason is simple — on an
+unlit material the vertex color is the final color, and darkening it puts the
+flame out. The rule lives in `kit.ts` bound to the slot itself, not to a
+per-model flag, so that it cannot be forgotten.
 
-### 5.3 `core`'un sözlüğü
+### 5.3 `core`'s vocabulary
 
-**Geometri üreteçleri** (`geometry.ts`) — hepsi indekssiz, hepsi vertex renkli,
-dolayısıyla düz gölgeleme bedava geliyor:
+**Geometry generators** (`geometry.ts`) — all non-indexed, all vertex-colored,
+so flat shading comes for free:
 
-`boxGeometry`, `taperedBoxGeometry`, `chamferedBoxGeometry` (44 üçgen, kendi
-kendini düzelten kenar/köşe sarımıyla), `prismGeometry`, `latheGeometry`,
-`staveGeometry`, `bandGeometry` (isteğe bağlı iç yüzle), `headGeometry`,
+`boxGeometry`, `taperedBoxGeometry`, `chamferedBoxGeometry` (44 triangles, with
+self-correcting edge/corner winding), `prismGeometry`, `latheGeometry`,
+`staveGeometry`, `bandGeometry` (with an optional inner face), `headGeometry`,
 `arcBarGeometry`, `dishedSheetGeometry`, `flipGeometry`, `mergeColoured`.
 
-**Deformasyon** — sonradan eklendi ve modelleri "üretilmiş" olmaktan çıkaran
-şey oldu:
+**Deformation** — added later, and it is what stopped the models looking
+"generated":
 
-- `bendGeometry(geometry, curvature)` düz bir gövdeyi yay hâline sarar. Gerçek
-  bir yay eşlemesi, "her noktayı yüksekliğiyle orantılı döndür" değil — o
-  yaklaşım gövdeyi uzatıp inceltiyordu. Yaba dişleri, maşrapa kulpu, çapa ağzı
-  ve tabelanın kıvrımı bunu kullanıyor.
-- `roughenGeometry(geometry, amount)` yüzeyi düzensizleştirir. Kritik nokta:
-  kayma miktarı KONUMDAN türetiliyor. Geometriler indekssiz, yani bir noktada
-  üç-dört köşe kopyası var; bağımsız oynatmak yüzeyi yırtıyordu. Konum karması
-  aynı noktadaki bütün kopyalara aynı kaymayı veriyor.
+- `bendGeometry(geometry, curvature)` wraps a straight body into an arc. A real
+  arc mapping, not "rotate every point in proportion to its height" — that
+  approach stretched and thinned the body. The pitchfork tines, the tankard
+  handle, the hoe blade and the curve of the sign use it.
+- `roughenGeometry(geometry, amount)` makes the surface irregular. The critical
+  point: the displacement amount is derived FROM POSITION. The geometries are
+  non-indexed, so a single point has three or four vertex copies; moving them
+  independently tore the surface. A position hash gives every copy at the same
+  point the same displacement.
 
-**Yüzey pişirme** — kit çapında, `createKitModel` içinde otomatik:
+**Surface baking** — kit-wide, automatic inside `createKitModel`:
 
-- `bakeOcclusion` (`occlusion.ts`) vertex renklerine ortam kapanması işler.
-  Yüzeyin KENDİ biçiminden karartma üretiyor: bir nokta ne kadar çok komşu
-  yüzeyle çevriliyse o kadar az gökyüzü görür. Tahtaların arası, çemberin altı,
-  kütüklerin değdiği yer koyulaşıyor.
-- `mottleGeometry` yüzey alacası işler ve bu, **"doku ne olacak?" sorusunun bu
-  kitteki cevabı.** Bitmap doku üç şey isterdi: UV koordinatları (geometrimizde
-  yok), registry'nin taşıması gereken görüntü dosyaları, ve kitin kimliğinin
-  değişmesi. Yerine yüzeyin konumundan türeyen bir leke deseni var; leke
-  büyüklüğü modelin ölçeğinden, ŞİDDETİ ise yuvadan geliyor —
+- `bakeOcclusion` (`occlusion.ts`) bakes ambient occlusion into the vertex
+  colors. It derives the darkening from the surface's OWN shape: the more
+  neighboring faces surround a point, the less sky it sees. The gaps between
+  staves, the underside of a hoop, the place where logs touch all go darker.
+- `mottleGeometry` bakes surface mottle, and this is **this kit's answer to the
+  question "what about textures?".** A bitmap texture would want three things:
+  UV coordinates (our geometry has none), image files the registry would have to
+  carry, and a change to the kit's identity. Instead there is a blotch pattern
+  derived from the surface position; the blotch size comes from the model's
+  scale, the INTENSITY from the slot —
 
   ```
   straw 1.35 · cloth 1.15 · oak 1.00 · char 0.85 · leather 0.70
   iron  0.50 · brass 0.35 · steel 0.22 · glass 0.15 · ember 0
   ```
 
-  Kural malzemenin fiziğinden: bir yüzey ne kadar cilalıysa o kadar tek renk
-  olur, çünkü göze giden ışık pigmentten değil yansımadan gelir.
+  The rule comes from the physics of the material: the more polished a surface
+  is, the more single-colored it becomes, because the light that reaches the eye
+  comes from the reflection, not the pigment.
 
-  Dürüst sınırı: benekler köşelerde örnekleniyor, yani çözünürlüğü üçgen
-  yoğunluğu belirliyor. Sandığın büyük ön paneli iki üçgen, dolayısıyla orada
-  alaca neredeyse görünmüyor. Çare üçgeni bölmek, o da lowpoly bütçesini yer.
+  The honest limit: the speckles are sampled at the vertices, so triangle
+  density determines their resolution. The chest's large front panel is two
+  triangles, so the mottle is almost invisible there. The remedy is to subdivide
+  the triangle, and that eats the lowpoly budget.
 
-**İskele** (`kit.ts`) — `createKitModel` her modelin aynı sözleşmeyi kurmasını
-sağlıyor: kaynak sahipliği, materyal çözümleme ve override, sabit anchor +
-değiştirilebilir content, kimliği bozmayan `configure()`, idempotent
-`dispose()`. Model yazmak artık sadece geometri üretmek.
+**Scaffolding** (`kit.ts`) — `createKitModel` makes every model set up the same
+contract: resource ownership, material resolution and override, a fixed anchor +
+replaceable content, a `configure()` that does not break identity, an idempotent
+`dispose()`. Writing a model is now just generating geometry.
 
-### 5.4 Parça = bir ANLAM, bir mesh değil
+### 5.4 A part is a MEANING, not a mesh
 
-`BuiltPart` üç alan taşıyor ve ikisi sonradan geldi:
+`BuiltPart` carries three fields and two of them came later:
 
-- `geometry` + `slot` — parçanın ana gövdesi.
-- **`extras`** — aynı parçaya ait, BAŞKA yuva kullanan gövdeler. Parçalar
-  root'un kardeş çocukları, yani biri hareket ettiğinde diğerleri onu takip
-  edemez. Sandığın kapağı hem meşe tahta hem demir kayış hem kilit kancasıdır
-  ve üçü birlikte dönmek zorunda; ayrı parça olsalardı kapak açılırken kayışlar
-  havada kalırdı. Bölünen şey anlam değil, sadece materyal.
-- **`origin`** — parçanın kendi dönme merkezi. Verildiğinde anchor oraya
-  konumlanıyor ve geometrinin o noktaya göre yazıldığı varsayılıyor. Sandık
-  kapağının menteşe etrafında dönmesi için gereken tek şey bu.
+- `geometry` + `slot` — the part's main body.
+- **`extras`** — bodies belonging to the same part that use a DIFFERENT slot.
+  Parts are sibling children of the root, so when one of them moves the others
+  cannot follow it. The chest's lid is oak board and iron strap and lock hasp at
+  once, and the three have to rotate together; as separate parts the straps
+  would hang in mid-air while the lid opened. What is split is not the meaning,
+  only the material.
+- **`origin`** — the part's own center of rotation. When given, the anchor is
+  placed there and the geometry is assumed to be written relative to that point.
+  This is the only thing needed to make the chest lid rotate around its hinge.
 
-`origin` bir incelik getiriyor: kapanma MONTAJ uzayında hesaplanmalı. Kendi
-orijininde yazılmış bir kapak, gövdenin yanında değil içinde duruyormuş gibi
-görünür ve yanlış yerleri karartır. `kit.ts` bu yüzden pişirmeden önce hepsini
-yerine taşıyıp sonra geri alıyor.
+`origin` brings a subtlety: occlusion has to be computed in ASSEMBLY space. A
+lid written in its own origin looks as if it stood inside the body rather than
+beside it, and darkens the wrong places. That is why `kit.ts` moves everything
+into place before baking and moves it back afterwards.
 
-### 5.5 Eylemler ve animasyon
+### 5.5 Actions and animation
 
-Beş model hareketli ve dördü farklı bir mekanik gösteriyor:
+Five models move and four of them demonstrate a different mechanic:
 
-| Model | Eylem | Mekanik |
+| Model | Action | Mechanic |
 | --- | --- | --- |
-| `wooden-chest` | `setOpen` / `toggle` / `openness` / `snap` | üstel yaklaşma — kare hızından bağımsız |
-| `pitch-torch` | `setLit` / `isLit` | uyumsuz frekanslı sinüs toplamı |
-| `iron-lantern` | `setLit` / `isLit` | aynı, ama daha yavaş: cam alevi rüzgârdan korur |
-| `bronze-bell` | `ring` / `still` / `strikes` | iki bağımsız sarkaç |
-| `tavern-sign` | `push` / `still` / `lean` | yumuşak sarkaç, uzun salınım |
+| `wooden-chest` | `setOpen` / `toggle` / `openness` / `snap` | exponential approach — independent of frame rate |
+| `pitch-torch` | `setLit` / `isLit` | sum of sines at incommensurate frequencies |
+| `iron-lantern` | `setLit` / `isLit` | the same, but slower: the glass shields the flame from wind |
+| `bronze-bell` | `ring` / `still` / `strikes` | two independent pendulums |
+| `tavern-sign` | `push` / `still` / `lean` | soft pendulum, long swing |
 
-Ayrım mimari dokümanda yazılı ve önemli: `configure()` topolojiyi yeniden kurar
-ve **pahalıdır**, kullanıcı ayarı içindir. Kare başına değişen her şey
-`update()` içinde olmalı. Kapağı açmak sandığın KİMLİĞİNİ değiştirmiyor,
-dolayısıyla `configure()` işi değil.
+The distinction is written in the architecture document and it matters:
+`configure()` rebuilds the topology and is **expensive**, it is for user
+settings. Everything that changes per frame must happen inside `update()`.
+Opening the lid does not change the chest's IDENTITY, so it is not
+`configure()`'s job.
 
-Üç kural bütün hareketli modellerde geçerli:
+Three rules hold for every moving model:
 
-1. **Durum inşanın DIŞINDA tutulur.** `configure()` çağrılınca kapak
-   çarpmamalı, çan susmamalı. Açı ve faz kapanışta yaşıyor, `build()` içinde
-   değil.
-2. **`Math.random()` yok.** Alev titremesi bile deterministik: iki uyumsuz
-   frekanslı sinüsün toplamı. Aynı tohumlu iki meşale ayrışmıyor.
-3. **Kare hızından bağımsızlık.** Sandık `p += (hedef − p)·(1 − e^(−k·dt))`
-   kullanıyor; saf bir lerp 30 fps'te 120 fps'ten yavaş açardı. Test bunu iki
-   farklı adım sayısıyla aynı süreyi geçirip karşılaştırarak doğruluyor.
+1. **State is kept OUTSIDE the build.** When `configure()` is called the lid
+   must not slam and the bell must not go quiet. The angle and the phase live in
+   the closure, not inside `build()`.
+2. **No `Math.random()`.** Even the flame flicker is deterministic: the sum of
+   two sines at incommensurate frequencies. Two torches with the same seed do
+   not drift apart.
+3. **Frame-rate independence.** The chest uses
+   `p += (target − p)·(1 − e^(−k·dt))`; a naive lerp would open more slowly at
+   30 fps than at 120. The test verifies this by running the same duration with
+   two different step counts and comparing.
 
-Çan kitin en karmaşık parçası ve öğrettiği şey şu: **çanı çalan şey çanın
-sallanması değil, tokmağın GERİDE KALMASI.** İlk denemede tokmağı çanın
-`extras` gövdesi yapmıştım — çan sallanıyor, hiçbir şey olmuyordu. Şimdi ikisi
-ayrı parça, aynı eksende ama farklı sönümlemeyle salınıyor; aradaki fark vuruşu
-üretiyor ve `actions.strikes()` sayacını artırıyor. Model SES ÇALMIYOR: sahnenin
-ses sistemi hakkında varsayım yapmaya hakkı yok, ihtiyacı olan sayacı okur.
+The bell is the most complex piece in the kit and what it teaches is this:
+**what rings a bell is not the bell swinging, it is the clapper LAGGING
+BEHIND.** On the first attempt I made the clapper an `extras` body of the bell —
+the bell swung and nothing happened. Now the two are separate parts, swinging on
+the same axis but with different damping; the difference between them produces
+the strike and increments the `actions.strikes()` counter. The model PLAYS NO
+SOUND: it has no right to make assumptions about the scene's audio system,
+whoever needs it reads the counter.
 
-### 5.6 Z-fighting: hizalı yüz yapma, kasıtlı içiçe geç
+### 5.6 Z-fighting: do not make aligned faces, interpenetrate on purpose
 
-İki yüzey aynı düzlemde, aynı yöne bakıyor ve alanları örtüşüyorsa hangisinin
-önde olduğu derinlik tamponunun kayan nokta hassasiyetine kalır. Kamera
-oynadıkça kazanan değişir ve yüzey titrer.
+If two surfaces are in the same plane, face the same direction and their areas
+overlap, which one is in front is left to the floating-point precision of the
+depth buffer. As the camera moves the winner changes and the surface flickers.
 
-Sandığın (crate) ilk hâli tam bu hataya düşmüştü: dikmeler, yan tahtalar ve
-kapak tahtalarının hepsi dış yüzeyini `±width/2` düzlemine koyuyordu — **96
-çakışan yüz.** Çözüm bir "epsilon kaydırma" değil, gerçek marangozluk:
+The first version of the crate fell into exactly this trap: the posts, the side
+boards and the lid boards all put their outer surface on the `±width/2` plane —
+**96 coincident faces.** The fix was not an "epsilon nudge" but real carpentry:
 
-- **Dikmeler tahtalardan dışarı taşıyor** — yan tahtalar dikmelerin arkasına
-  çekili, dış yüzleri farklı düzlemde.
-- **Kapak ve taban çerçeveden sarkıyor.**
-- **Dikmeler kapak ve tabanın İÇİNE giriyor**, uçları katı parçanın içinde
-  kaldığı için hiçbir düzlemle hizalanmıyor.
-- **Tahtalar birbirine küt ekleniyor** (butt joint) — değiyorlar ama
-  örtüşmüyorlar. Kenar teması z-fighting üretmez.
-- **Kayışlar köşede birbirine varmadan bitiyor.**
+- **The posts stand proud of the boards** — the side boards are pulled behind
+  the posts, so their outer faces are on a different plane.
+- **The lid and the base overhang the frame.**
+- **The posts go INTO the lid and the base**, so their ends stay inside a solid
+  part and align with no plane at all.
+- **The boards are butt-joined** — they touch but they do not overlap. Edge
+  contact does not produce z-fighting.
+- **The straps stop before they meet each other at the corner.**
 
-Aynı disiplin yeni modellerde de bir sürü karar dayattı ve bazıları modeli
-daha DOĞRU yaptı:
+The same discipline forced a pile of decisions in the newer models too, and some
+of them made the model more CORRECT:
 
-- Ortaçağ sandığında ön yüzün ortasına kayış konmuyor, çünkü **orası kilidin
-  yeri.** Kural hem tarihsel olarak doğru hem de kayışla kilit köprüsünün
-  belirli ölçülerde aynı düzleme oturmasını kökten engelliyor.
-- Süpürgenin levhaları birbirine tam paralel duramaz — elle bağlanmış bir
-  demette hiçbir tel diğerine paralel değildir zaten.
-- Çanın yatakları kirişin ÜSTÜNE taşıyor; gerçek yatak da öyledir.
+- On a medieval chest no strap goes in the middle of the front face, because
+  **that is where the lock is.** The rule is both historically correct and rules
+  out at the root any chance of the strap and the lock bridge landing on the
+  same plane at certain dimensions.
+- The broom's sheaves cannot sit perfectly parallel to each other — in a
+  hand-tied bundle no bristle is parallel to another anyway.
+- The bell's bearings stand proud of the rail; a real bearing does the same.
 
-`scripts/zfight.ts` bunu ölçüyor ve `verify-model.ts` her modelde, üstelik
-birkaç farklı yapılandırmada birden çağırıyor. Ölçüt bounding box değil gerçek
-alan örtüşmesi: bir üçgenin ağırlık merkezi diğerinin içinde mi.
+`scripts/zfight.ts` measures this, and `verify-model.ts` calls it on every
+model, in several different configurations at that. The criterion is not the
+bounding box but real area overlap: is one triangle's centroid inside the other.
 
-### 5.7 Sarım denetimi
+### 5.7 Winding checks
 
-Elle yazılan geometride en sinsi hata ters sarım: yüz içten görünür hâle gelir
-ve bu ancak belirli bir kamera açısında fark edilir. Üç ayrı ölçüt var, çünkü
-hiçbiri tek başına yeterli değil:
+In hand-written geometry the sneakiest bug is inverted winding: the face becomes
+visible from the inside and it is only noticed at one particular camera angle.
+There are three separate criteria, because none of them is sufficient alone:
 
-**Radyal hizalama** — dönel gövdeler için. Dış kabuktaki her radyal yüzün
-normali eksenden dışa bakmalı. Yükseklik BANTLARI hâlinde ölçülüyor: konik
-gövdelerde tek bir yarıçap eşiği anlamsız.
+**Radial alignment** — for bodies of revolution. Every radial face's normal on
+the outer shell must point away from the axis. It is measured in height BANDS:
+on conical bodies a single radius threshold is meaningless.
 
-**İşaretli hacim** — kapalı katılar için. Σ a·(b×c)/6 sarım dışa bakıyorsa
-pozitif çıkar. Ama bu ölçüt yalnızca GENEL tersliği yakalıyor.
+**Signed volume** — for closed solids. Σ a·(b×c)/6 comes out positive if the
+winding faces outward. But this criterion only catches a GLOBAL inversion.
 
-**Kenar dengesi** — tek bir ters çevrilmiş yüzü yakalayan tek ölçüt. İşaretli
-hacim testi bunu kaçırdığı için eklendi: bir yüzü ters çevirdiğimde hacim
-0.058'den 0.039'a düşmüş ama pozitif kalmıştı.
+**Edge balance** — the only criterion that catches a single flipped face. It was
+added because the signed volume test missed it: when I flipped one face the
+volume fell from 0.058 to 0.039 but stayed positive.
 
-Üç incelik daha:
+Three more subtleties:
 
-- Tahtaların yan yüzeyleri TEĞETSEL, yani radyal çarpım onlar için tanımı
-  gereği ~0 ve işareti sadece gürültü. Ayıklanıyorlar ve **kaç tane
-  ayıklandığı raporlanıyor** — sessizce elenmiyorlar.
-- İçi boş gövdeler (çan) bilerek içe bakan bir kabuk taşıyor. Onlarda eşik
-  yükseltiliyor ki iç kabuk "dış kabuk" sanılmasın.
-- `bandGeometry` varsayılan olarak iç yüz üretmiyor (çember hep bir gövdeyi
-  sarar, iç yüz görünmez). Serbest duran bir halka — çuvalın ipi, balyanın bağı
-  — bu yüzden kapalı katı olmuyordu; `{ inner: true }` bunun için var.
+- The side surfaces of staves are TANGENTIAL, so the radial cross product is ~0
+  for them by definition and its sign is only noise. They are filtered out and
+  **how many were filtered is reported** — they are not silently dropped.
+- Hollow bodies (the bell) deliberately carry an inward-facing shell. For those
+  the threshold is raised so the inner shell is not taken for the "outer shell".
+- `bandGeometry` produces no inner face by default (a hoop always wraps a body,
+  the inner face is invisible). A free-standing ring — the sack's rope, the
+  bale's tie — was therefore not a closed solid; `{ inner: true }` exists for
+  that.
 
-### 5.8 Doğrulama: üç betik
+### 5.8 Validation: three scripts
 
 ```bash
-bun scripts/verify-model.ts   # ~500 kontrol · geometri, protokol, metadata, eylemler
-bun scripts/verify-glb.ts     # her modeli dışa aktarıp GERİ OKUR
-bun scripts/render.ts         # PNG kontak sayfası — modele BAKMAK için
+bun scripts/verify-model.ts   # ~500 checks · geometry, protocol, metadata, actions
+bun scripts/verify-glb.ts     # exports every model and READS IT BACK
+bun scripts/render.ts         # PNG contact sheet — for LOOKING at the model
 ```
 
-Yöntem baştan beri aynı: **her kontrol mutasyonla sınandı.** Sabote et,
-FAIL geldiğini gör, geri al, PASS geldiğini gör. Geçen bir test, çalıştığını
-kanıtlamaz.
+The method has been the same from the start: **every check was tested by
+mutation.** Sabotage it, see the FAIL, undo it, see the PASS. A test that passes
+does not prove it works.
 
-Bu disiplin iki kez kendini fena hâlde haklı çıkardı ve ikisinde de hata
-BENDEYDİ, testte değil:
+That discipline proved itself badly right twice, and both times the bug was
+MINE, not the test's:
 
-- Radyal test 17 yanlış pozitif veriyordu. Teşhis çıktım "0 negatif" diyordu
-  çünkü `toFixed(3)` `-0` üretiyor ve JavaScript'te `-0 < 0` yanlış.
-- Kütükler hâlâ birbirine giriyordu. "0 içiçe geçme" diye ölçtüğüm şey
-  YERLEŞİM matematiğiydi; oysa uçların yarıçapı `log.r · (1 ± 0.05)` idi ve
-  yerleşim `log.r` ile hesaplanıyordu. Yanlış şeyi doğrulamıştım.
+- The radial test was giving 17 false positives. My diagnostic output said "0
+  negatives" because `toFixed(3)` produces `-0` and in JavaScript `-0 < 0` is
+  false.
+- The logs were still interpenetrating. What I was measuring as "0
+  interpenetrations" was the LAYOUT math; but the radius of the ends was
+  `log.r · (1 ± 0.05)` while the layout was computed with `log.r`. I had
+  validated the wrong thing.
 
-`render.ts` en son eklendi ve eksik olan şeyi kapattı. Bütün doğrulama
-GEOMETRİKTİ: üçgen sayısı, sarım, eş düzlem, sınır kutusu. Hepsi gerçek hatalar
-yakaladı ama hiçbiri "bu kürek küreğe benzemiyor" diyemedi. O cümleyi kurabilmek
-için modele bakmak gerekiyor — betik tarayıcısız, GPU'suz bir yazılım
-rasterleyici: üçgenleri topluyor, kamerayla yansıtıyor, z-tamponuyla dolduruyor,
-PNG yazıyor. Kürek dördüncü kez, çapa üçüncü kez, saman balyası ikinci kez o
-görüntülere bakıldığı için yeniden yazıldı.
+`render.ts` was added last and it closed the thing that was missing. All the
+validation was GEOMETRIC: triangle count, winding, coplanarity, bounding box. It
+all caught real bugs but none of it could say "this shovel does not look like a
+shovel". To say that sentence you have to look at the model — the script is a
+software rasterizer with no browser and no GPU: it collects the triangles,
+projects them with a camera, fills them with a z-buffer, writes a PNG. The
+shovel was rewritten a fourth time, the hoe a third and the hay bale a second
+because of looking at those images.
 
-`--sweep` kipi bir parametrenin farklı değerlerini yan yana koyuyor:
+`--sweep` mode puts different values of one parameter side by side:
 
 ```bash
 bun scripts/render.ts --one wooden-hoe --sweep "bladeAngle=62|80|98|116|134"
 ```
 
-Çapanın ağız açısı böyle seçildi. 98° civarında ağız neredeyse yatay kalıyor ve
-3/4 açıdan bakan bir kameraya TAM KENARINDAN görünüyor — modelin en karakteristik
-yüzeyi siluetten siliniyor. 66° seçildi.
+That is how the hoe's blade angle was chosen. Around 98° the blade stays almost
+horizontal and is seen EDGE-ON by a camera looking from a 3/4 angle — the
+model's most characteristic surface disappears from the silhouette. 66° was
+chosen.
 
-### 5.9 GLB dışa aktarımı
+### 5.9 GLB export
 
-vibe3d'nin kendi inceleyicisinde olup bizde olmayan tek özellik buydu. Artık
-iki yerden çalışıyor ve **ikisi de aynı kodu** kullanıyor (`src/glb.ts`):
+This was the only feature vibe3d's own viewer had and we did not. It now works
+from two places and **both use the same code** (`src/glb.ts`):
 
 ```bash
-bun scripts/export-glb.ts                      # kitin tamamı → glb/
+bun scripts/export-glb.ts                      # the whole kit → glb/
 bun scripts/export-glb.ts --one wooden-chest
 ```
 
-Viewer'daki "GLB indir" düğmesi bit bit aynı dosyayı üretiyor. Toplu dışa
-aktarım onlarda yok ve asıl işe yarayan o: kiti Blender'a, Godot'ya ya da
-Unity'ye tek komutla götürüyor.
+The "Download GLB" button in the viewer produces a bit-for-bit identical file.
+Batch export is what they do not have and it is the one that actually earns its
+keep: it takes the kit to Blender, Godot or Unity with a single command.
 
-Renk bilgisi tamamen vertex color'da olduğu için glTF'e `COLOR_0` olarak
-gidiyor ve `baseColorFactor` beyaz kalıyor — dosyada hiç doku yok. Kitin bütün
-kimliği tek bir attribute'la seyahat ediyor.
+Because all the color information is in vertex colors it travels to glTF as
+`COLOR_0` and `baseColorFactor` stays white — there is no texture in the file at
+all. The kit's entire identity travels in a single attribute.
 
-TaşınMAYAN tek şey şader: `@scifi-kit`'in göstergesindeki aşınma bir TSL düğüm
-grafiği, yani kod, ve glTF kod taşımaz. Bu bir eksiklik değil — vertex color
-ile şader tabanlı yüzey arasındaki gerçek farkın kendisi.
+The one thing that does NOT travel is the shader: the wear on `@scifi-kit`'s
+gauge is a TSL node graph, i.e. code, and glTF does not carry code. This is not
+a shortcoming — it is the real difference between a vertex-color surface and a
+shader-based one.
 
 ---
 
-## 6. Katkı
+## 6. Contributing
 
-Depo MIT ve Bun workspace'i. `apps/*`, `packages/*`, `registries/*`.
+The repository is MIT and a Bun workspace. `apps/*`, `packages/*`,
+`registries/*`.
 
 ```bash
 git clone https://github.com/vibe-stack/vibe3d
 cd vibe3d && bun install
-bun run dev            # docs kataloğu — her modelin canlı önizlemesi
+bun run dev            # the docs catalog — a live preview of every model
 ```
 
-Sürümleme **Changesets** ile:
+Versioning is done with **Changesets**:
 
 ```bash
-bun run changeset                              # değişiklik niyetini yaz
-bun run build && bun run typecheck && bun test # release:check ile aynı
+bun run changeset                              # write down the intent of the change
+bun run build && bun run typecheck && bun test # the same as release:check
 ```
 
-Release workflow bir version PR'ı tutuyor ve merge sonrası paketleri bağımlılık
-sırasına göre yayınlıyor.
+The release workflow keeps a version PR open and, after the merge, publishes the
+packages in dependency order.
 
-### Katkı yolları, en kolaydan zora
+### Contribution paths, easiest to hardest
 
-1. **Kendi registry'nizi yayınlayın.** Depoya dokunmaz, izin gerekmez, ekosistemi
-   büyütür. `@scifi-kit` sadece *referans* registry.
-2. **`@scifi-kit`'e model ekleyin.** `assets/prototypes/<model-id>/model.ts`
-   ekleyin — `registries/scifi-kit/src/build.ts` `model.ts` içeren her klasörü
-   **otomatik keşfeder**, kayıt listesi yok. `vibe-model` döngüsünü izleyin,
-   `docs/templates/asset-spec-template.md` sözleşmesini doldurun.
-3. **Protokol boşluklarını kapatın.** Mimari dokümanda yazılı ama henüz
-   olmayanlar, doğrudan katkıya açık:
-   - `github:` sağlayıcısı (`source.ts` bugün açıkça "planned but not available
-     yet" fırlatıyor);
-   - `vibe3d registry init` / `build` / `test` komutları (mimaride var, CLI'da
-     sadece `validate` mevcut);
-   - üç yollu birleştirmesiz güvenli `update` çakışma akışı;
-   - runtime conformance (mevcut `checkRegistry` statik; "temiz fixture'a kur,
-     TypeScript derle, geçerli model örneği doğrula" adımları henüz yok).
+1. **Publish your own registry.** It does not touch the repository, needs no
+   permission, and grows the ecosystem. `@scifi-kit` is only the *reference*
+   registry.
+2. **Add a model to `@scifi-kit`.** Add `assets/prototypes/<model-id>/model.ts`
+   — `registries/scifi-kit/src/build.ts` **auto-discovers** every folder that
+   contains a `model.ts`, there is no registration list. Follow the `vibe-model`
+   loop and fill in the `docs/templates/asset-spec-template.md` contract.
+3. **Close the protocol gaps.** Things written in the architecture document but
+   not there yet, open to direct contribution:
+   - the `github:` provider (`source.ts` today explicitly throws "planned but
+     not available yet");
+   - the `vibe3d registry init` / `build` / `test` commands (present in the
+     architecture, only `validate` exists in the CLI);
+   - a safe `update` conflict flow without three-way merge;
+   - runtime conformance (the existing `checkRegistry` is static; the "install
+     into a clean fixture, compile TypeScript, validate a live model instance"
+     steps do not exist yet).
 
-Not: mimari dokümanın başlığı hâlâ *"Status: proposed architecture; not yet
-implemented"* diyor ama çekirdek büyük ölçüde gerçek. Bu boşluk da bir katkı
-fırsatı.
+Note: the architecture document's header still says *"Status: proposed
+architecture; not yet implemented"* but the core is largely real. That gap is a
+contribution opportunity too.
 
-### Şu anki durum
+### Current status
 
-npm'de yayınlanan `@scifi-kit/registry@0.0.1`: **110 model** (Industrial 76,
-Architecture 12, Streets 9, Military 7, Medical 6) + 2 lib + 1 kit. GitHub `main`
-daha ileride — `assets/prototypes/` altında ~180 klasör var (kargo/lojistik
-dalgası henüz yayınlanmamış). Tüm paketler `0.0.1`, 2026-08-11'de yayınlanmış;
-proje çok erken aşamada, yani katkı için zamanlama iyi.
+`@scifi-kit/registry@0.0.1` as published on npm: **110 models** (Industrial 76,
+Architecture 12, Streets 9, Military 7, Medical 6) + 2 libs + 1 kit. GitHub
+`main` is further ahead — there are ~180 folders under `assets/prototypes/` (the
+cargo/logistics wave is not published yet). All packages are at `0.0.1`,
+published on 2026-08-11; the project is at a very early stage, so the timing for
+contributing is good.
 
 ---
 
-## 7. Komut özeti
+## 7. Command summary
 
 ```bash
-# tüketici
+# consumer
 bunx vibe3d init
-bunx vibe3d list [sorgu]                 # katalog, alias: search
-bunx vibe3d view @scifi-kit/modular-wall # kurmadan incele
+bunx vibe3d list [query]                 # catalog, alias: search
+bunx vibe3d view @scifi-kit/modular-wall # inspect without installing
 bunx vibe3d add  @scifi-kit/modular-wall [--dry-run] [--overwrite]
-bunx vibe3d add  @scifi-kit              # defaultItem = tüm kit
-bunx vibe3d diff                         # yerel değişikliklerim ne
+bunx vibe3d add  @scifi-kit              # defaultItem = the whole kit
+bunx vibe3d diff                         # what are my local changes
 bunx vibe3d update @scifi-kit/modular-wall
 bunx vibe3d remove @scifi-kit/modular-wall [--force]
 bunx vibe3d doctor
 
-# registry yazarı
+# registry author
 bunx vibe3d registry validate ./my-registry/dist/registry.json
 
-# bu depo
-bun my-registry/build.ts                    # registry.json üret
-bun scripts/verify-model.ts                 # tam doğrulama
-bun scripts/verify-glb.ts                   # GLB gidiş-dönüş
+# this repository
+bun my-registry/build.ts                    # generate registry.json
+bun scripts/verify-model.ts                 # full validation
+bun scripts/verify-glb.ts                   # GLB round-trip
 bun scripts/render.ts [--one <id>] [--ids a,b] [--sweep "k=v1|v2"] [--size N]
 bun scripts/export-glb.ts [--one <id>] [--out dir]
-bun scripts/catalog-table.ts                # doküman tablosu
+bun scripts/catalog-table.ts                # the document's table
 
-# yazarlık skill'leri
+# authoring skills
 bunx vibe-model    [--global] [doctor] [--force]
 bunx vibe-terrain
 ```

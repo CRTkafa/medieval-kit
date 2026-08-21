@@ -1,9 +1,10 @@
 /**
- * REFERENCE.md'deki model tablosunu üretir.
+ * Generates the model table in REFERENCE.md.
  *
- * Elle yazılmış bir tablo ilk eklenen modelde bayatlıyor — nitekim bayatlamıştı
- * da: doküman "dört item" diyordu, kitte yirmi üç vardı. Tablo artık modellerin
- * KENDİSİNDEN okunuyor, dolayısıyla yanlış olması için modelin bozulması lazım.
+ * A hand-written table goes stale the moment the first model is added — and it
+ * had gone stale: the document said "four items" while the kit had twenty-three.
+ * The table is now read from the models THEMSELVES, so for it to be wrong the
+ * model itself has to be broken.
  *
  *   bun scripts/catalog-table.ts
  */
@@ -41,7 +42,7 @@ for (const id of Object.keys(CATALOG)) {
   )
 }
 
-console.log('| Model | Kategori | Üçgen | Parça | Ölçü (m) | Materyal yuvaları | Eylemli |')
+console.log('| Model | Category | Triangles | Parts | Size (m) | Material slots | Animated |')
 console.log('| --- | --- | ---: | ---: | --- | --- | :-: |')
 console.log(rows.join('\n'))
-console.log(`\n${rows.length} model · ${total} üçgen · ${slots.size} materyal yuvası`)
+console.log(`\n${rows.length} models · ${total} triangles · ${slots.size} material slots`)

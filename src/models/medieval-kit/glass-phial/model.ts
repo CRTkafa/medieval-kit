@@ -1,22 +1,23 @@
 /**
  * @medieval-kit/glass-phial
  *
- * Mantar tıpalı, mumla mühürlenmiş cam şişe. Simyacı rafı, şifacı çantası,
- * envanterde bir slot.
+ * Cork-stoppered, wax-sealed glass bottle. Alchemist's shelf, healer's bag, a
+ * slot in the inventory.
  *
- * Kitin `glass` yuvasını kullanan ikinci modeli ve camın asıl sınandığı yer:
- * fenerde cam bir KAFESİN paneliydi, burada kabın kendisi. İki sonucu var —
+ * The kit's second model to use the `glass` slot, and where the glass is really
+ * tested: in the lantern it was a panel of a CAGE, here it is the vessel
+ * itself. That has two consequences —
  *
- *   - İçerik cam kabuğun İÇİNDE ayrı bir gövde. `ember` yuvasında, yani ışık
- *     almıyor kendi rengini veriyor: dibi karanlık bir sıvı, iksir değil kirli
- *     su gibi duruyordu.
- *   - Sıvı yüzeyi düz bir disk. Camın içinden bakınca o düz çizgi "burası
- *     dolu" diyen tek işaret; küresel bir sıvı gövdesi yüzeysiz kalıyor ve
- *     şişe boş görünüyor.
+ *   - The contents are a separate body INSIDE the glass shell. In the `ember`
+ *     slot, so it takes no light and supplies its own colour: a liquid that
+ *     went dark at the bottom looked like dirty water, not a potion.
+ *   - The liquid surface is a flat disc. Seen through the glass that straight
+ *     line is the only mark saying "this is full"; a spherical liquid body has
+ *     no surface and the bottle looks empty.
  *
- * Dönem notu: berrak, renksiz cam çok geç bir şey. Dönemin camı demir
- * safsızlığından yeşilimsi ve kabarcıklıydı; palette `glass` rengi bu yüzden
- * yeşile çalıyor.
+ * Period note: clear, colourless glass is a very late thing. Glass of the
+ * period was greenish and bubbly from iron impurity; that is why the `glass`
+ * colour in the palette leans green.
  */
 import { Color, type BufferGeometry } from 'three'
 
@@ -32,23 +33,24 @@ import {
 } from '../core/index.ts'
 
 export interface GlassPhialConfig {
-  /** Tıpa dâhil toplam yükseklik (metre). */
+  /** Total height, stopper included (metres). */
   readonly height: number
-  /** Gövdenin en geniş yarıçapı (metre). */
+  /** Widest radius of the body (metres). */
   readonly radius: number
-  /** Boyun uzunluğu, yüksekliğin oranı olarak. */
+  /** Neck length, as a fraction of the height. */
   readonly neck: number
-  /** Doluluk. 0 boş, 1 ağzına kadar. */
+  /** Fill level. 0 empty, 1 up to the brim. */
   readonly fill: number
   /**
-   * Sıvının rengi, renk çemberi üzerinde 0–1.
+   * Colour of the liquid, 0–1 around the colour wheel.
    *
-   * Sabit bir renk yerine parametre olmasının sebebi kitin geri kalanıyla aynı:
-   * tek bir modelden kırmızı şifa, yeşil zehir ve mavi mana iksiri çıkabilmeli.
-   * Palete üç ayrı renk eklemek aynı şeyi daha katı biçimde yapardı.
+   * The reason it is a parameter and not a fixed colour is the same as in the
+   * rest of the kit: one model has to yield red healing, green poison and blue
+   * mana potions. Adding three separate colours to the palette would do the
+   * same thing in a more rigid way.
    */
   readonly hue: number
-  /** Mum mühür var mı (0/1). */
+  /** Whether there is a wax seal (0/1). */
   readonly seal: number
   readonly seed: number
 }
@@ -78,9 +80,9 @@ export function createModel(overrides: Partial<GlassPhialConfig> = {}) {
       const bodyBottom = -half
       const neckRadius = config.radius * 0.36
 
-      // --- Şişe ---------------------------------------------------------------
-      // Üflemeli cam: dipte hafif içe çekik (pontil izi), gövde küresel, omuz
-      // dar boyna hızlıca daralıyor, ağızda dışa devrilmiş bir dudak.
+      // --- Bottle ---------------------------------------------------------------
+      // Blown glass: slightly pushed in at the base (pontil mark), round body,
+      // shoulder narrowing fast into the neck, a lip flared out at the mouth.
       const profile: Level[] = [
         { y: bodyBottom + config.height * 0.02, radius: config.radius * 0.5 },
         { y: bodyBottom + config.height * 0.06, radius: config.radius * 0.86 },
@@ -89,20 +91,20 @@ export function createModel(overrides: Partial<GlassPhialConfig> = {}) {
         { y: bodyTop, radius: config.radius * 0.5 },
         { y: bodyTop + neckLength * 0.34, radius: neckRadius },
         { y: half - config.height * 0.05, radius: neckRadius * 0.96 },
-        { y: half - config.height * 0.02, radius: neckRadius * 1.28 },  // dudak
+        { y: half - config.height * 0.02, radius: neckRadius * 1.28 },  // lip
       ]
       const bottle = latheGeometry(profile, 9, [0, 0, 0], tint('glass', -0.02, 0.4), {
         colourTop: tint('glass', 0.06, 0.4),
-        capTop: false,   // ağız AÇIK: tıpa oraya oturuyor
+        capTop: false,   // mouth OPEN: the stopper sits there
       })
-      // Üflemeli cam kusursuz simetrik değildir; sapma çok küçük tutuluyor
-      // çünkü saydam bir yüzeyde büyük düzensizlik buzlu cam gibi okunuyor.
+      // Blown glass is never perfectly symmetric; the deviation is kept tiny
+      // because on a transparent surface big irregularity reads as frosted glass.
       roughenGeometry(bottle, config.radius * 0.02, { salt: 41 })
 
-      // --- İçerik -------------------------------------------------------------
-      // Sıvı seviyesi doluluktan hesaplanıyor ve gövdenin O YÜKSEKLİKTEKİ
-      // yarıçapına oturuyor — sabit bir yarıçap kullanmak sıvıyı camdan
-      // taşırıyor ya da ortada asılı bırakıyordu.
+      // --- Contents -------------------------------------------------------------
+      // The liquid level is computed from the fill and sits on the body's radius
+      // AT THAT HEIGHT — using a fixed radius either spilled the liquid out
+      // through the glass or left it hanging in mid-air.
       const fill = Math.max(0, Math.min(1, config.fill))
       let liquid: BufferGeometry | undefined
       if (fill > 0.02) {
@@ -123,9 +125,10 @@ export function createModel(overrides: Partial<GlassPhialConfig> = {}) {
           return profile.at(-1)!.radius * 0.88
         }
         inner.push({ y: surfaceY, radius: radiusAt(surfaceY) })
-        // Sıvı `ember` yuvasında, yani IŞIK ALMIYOR: vertex rengi doğrudan
-        // ekrana giden son renk. Bu bir tercih — camın arkasındaki bir sıvı
-        // sahnenin ışığına göre kararınca iksir değil kirli su gibi duruyordu.
+        // The liquid is in the `ember` slot, so it TAKES NO LIGHT: the vertex
+        // colour is the final colour that goes to the screen. A choice — a
+        // liquid behind glass darkened by the scene's light looked like dirty
+        // water, not a potion.
         const hue = ((config.hue % 1) + 1) % 1
         const deep = new Color().setHSL(hue, 0.78, 0.36)
         const bright = new Color().setHSL((hue + 0.03) % 1, 0.72, 0.58)
@@ -135,13 +138,13 @@ export function createModel(overrides: Partial<GlassPhialConfig> = {}) {
         )])
       }
 
-      // --- Tıpa ---------------------------------------------------------------
+      // --- Stopper -------------------------------------------------------------
       const stopper: BufferGeometry[] = [prismGeometry(
         neckRadius * 1.02, neckRadius * 1.24, config.height * 0.11, 8,
         [0, half - config.height * 0.035, 0], tint('oak', 0.08),
       )]
       if (config.seal >= 0.5) {
-        // Mum mühür: tıpayı ve şişe ağzını birlikte saran halka.
+        // Wax seal: the hoop wrapping stopper and bottle mouth together.
         stopper.push(bandGeometry(
           neckRadius * 1.36, half - config.height * 0.035, config.height * 0.055,
           neckRadius * 0.24, 8, tint('charHot', -0.1, 0.6), { inner: true },

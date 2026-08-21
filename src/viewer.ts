@@ -30,7 +30,7 @@ import './viewer.css'
 import { CATALOG, REGISTRIES, type Entry, type ParamGroup, type ParamSpec } from './catalog.ts'
 import { exportGlb } from './glb.ts'
 
-/* -------------------------------------------------------------------- iskele */
+/* ----------------------------------------------------------------- scaffold */
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 
@@ -38,7 +38,7 @@ app.innerHTML = `
   <aside class="rail">
     <header class="brand">
       <span class="brand-mark">vibe3d</span>
-      <span class="brand-sub">kaynak registry inceleyici</span>
+      <span class="brand-sub">source registry inspector</span>
     </header>
     ${REGISTRIES.map((registry) => `
       <section class="block">
@@ -59,45 +59,45 @@ app.innerHTML = `
       </section>
     `).join('')}
     <section class="block">
-      <p class="block-label">Okuma</p>
+      <p class="block-label">Readout</p>
       <dl class="readout">
-        <dt>mesh</dt><dd data-readout="meshes">—</dd>
-        <dt>üçgen</dt><dd data-readout="triangles" class="accent">—</dd>
-        <dt>materyal</dt><dd data-readout="materials">—</dd>
-        <dt>boyut</dt><dd data-readout="size">—</dd>
+        <dt>meshes</dt><dd data-readout="meshes">—</dd>
+        <dt>triangles</dt><dd data-readout="triangles" class="accent">—</dd>
+        <dt>materials</dt><dd data-readout="materials">—</dd>
+        <dt>size</dt><dd data-readout="size">—</dd>
         <dt>backend</dt><dd data-readout="backend">—</dd>
       </dl>
     </section>
     <section class="block" data-params-block>
-      <p class="block-label">Yapılandırma</p>
+      <p class="block-label">Configuration</p>
       <div class="params" data-params></div>
     </section>
     <section class="block" data-parts-block>
-      <p class="block-label">Parçalar<span class="block-note">tıkla: yalnız onu göster</span></p>
+      <p class="block-label">Parts<span class="block-note">click: show only this one</span></p>
       <div class="chips" data-parts></div>
     </section>
     <section class="block" data-slots-block>
-      <p class="block-label">Materyal yuvaları<span class="block-note">materials.override()</span></p>
+      <p class="block-label">Material slots<span class="block-note">materials.override()</span></p>
       <div class="slots" data-slots></div>
     </section>
     <section class="block">
-      <p class="block-label">Görünüm</p>
+      <p class="block-label">View</p>
       <div class="actions">
         <button class="action action-primary" type="button" data-action hidden></button>
         <button class="action" type="button" data-toggle="wireframe" aria-pressed="false">
-          <span>tel kafes</span><span class="state">kapalı</span>
+          <span>wireframe</span><span class="state">off</span>
         </button>
         <button class="action" type="button" data-toggle="spin" aria-pressed="true">
-          <span>otomatik döndür</span><span class="state">açık</span>
+          <span>auto-rotate</span><span class="state">on</span>
         </button>
         <button class="action" type="button" data-toggle="grid" aria-pressed="true">
-          <span>zemin ızgarası</span><span class="state">açık</span>
+          <span>ground grid</span><span class="state">on</span>
         </button>
         <button class="action" type="button" data-toggle="sky" aria-pressed="true">
-          <span>gökyüzü</span><span class="state">açık</span>
+          <span>sky</span><span class="state">on</span>
         </button>
         <button class="action" type="button" data-export>
-          <span>GLB indir</span><span class="state">↓</span>
+          <span>download GLB</span><span class="state">↓</span>
         </button>
       </div>
     </section>
@@ -108,7 +108,7 @@ app.innerHTML = `
       <span class="address" data-provenance-address></span>
       <span class="who" data-provenance-who></span>
     </div>
-    <span class="overlay hint">sürükle · tekerlek ile yakınlaş</span>
+    <span class="overlay hint">drag · wheel to zoom</span>
     <span class="overlay scale-note" data-scale></span>
   </main>
 `
@@ -136,50 +136,50 @@ function fatal(html: string): void {
 
 /* ------------------------------------------------------------------ renderer */
 
-// WebGPURenderer, navigator.gpu yoksa kendi WebGL2 backend'ine düşer. scifi-kit
-// modelinin TSL düğüm materyali her iki yolda da derlenir.
+// WebGPURenderer falls back to its own WebGL2 backend when navigator.gpu is
+// missing. The scifi-kit model's TSL node material compiles on both paths.
 const renderer = new WebGPURenderer({ canvas, antialias: true })
 try {
   await renderer.init()
 } catch (error) {
-  fatal(`<b>Renderer başlatılamadı.</b><span>${String(error)}</span>`)
+  fatal(`<b>Renderer could not be initialised.</b><span>${String(error)}</span>`)
   throw error
 }
 renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio, 2))
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = PCFSoftShadowMap
 
-const backend = navigator.gpu ? 'WebGPU' : 'WebGL2 (yedek)'
+const backend = navigator.gpu ? 'WebGPU' : 'WebGL2 (fallback)'
 readout('backend').textContent = backend
 
 const scene = new Scene()
 
-/* ------------------------------------------------------------- gökyüzü */
+/* ---------------------------------------------------------------- sky */
 
 /**
- * Gökyüzü kubbesi: tepede mavi, ufukta soluk, altta toprak.
+ * Sky dome: blue at the top, pale at the horizon, soil below.
  *
- * Aynı gradyan iki iş birden yapıyor. Görünen arka plan olmasının yanında
- * PMREM ile ortam haritasına çevriliyor, yani modeller onu YANSITIYOR. Demir
- * ancak bir şey yansıttığında demir gibi görünür; düz renk arka planda hep
- * gri boya gibi durur.
+ * The same gradient does two jobs at once. Besides being the visible
+ * background it is turned into an environment map through PMREM, so the models
+ * REFLECT it. Iron only looks like iron when it reflects something; against a
+ * flat colour background it always looks like grey paint.
  */
 const SKY_TOP = new Color(0x6fa3d8)
 const SKY_HORIZON = new Color(0xdae3ea)
 const SKY_GROUND = new Color(0x565042)
 
 /**
- * Gökyüzü: dikey gradyanlı bir equirectangular doku.
+ * Sky: an equirectangular texture with a vertical gradient.
  *
- * İlk denemem büyük bir küre meshiydi ve siyah çıkıyordu — küre yarıçapı 6,
- * kamera merkezden 2.3 uzakta, yani kubbenin arka yüzü 8.3'te kalıyor ve uzak
- * düzlem 7.1 olduğu için kırpılıyordu. Doku olarak verilince derinlik diye bir
- * mesele kalmıyor: arka plan hiçbir zaman kırpılmaz.
+ * My first attempt was a big sphere mesh and it came out black — sphere radius
+ * 6, camera 2.3 away from the centre, so the back face of the dome sits at 8.3
+ * and the far plane was 7.1, which clipped it. Handed over as a texture there
+ * is no depth question at all: the background is never clipped.
  *
- * Aynı doku iki iş yapıyor. Görünen arka plan olmasının yanında PMREM ile
- * ortam haritasına çevriliyor, yani modeller onu YANSITIYOR. Demir ancak bir
- * şey yansıttığında demir gibi görünür; düz renk arka planda hep gri boya
- * gibi durur.
+ * The same texture does two jobs. Besides being the visible background it is
+ * turned into an environment map through PMREM, so the models REFLECT it. Iron
+ * only looks like iron when it reflects something; against a flat colour
+ * background it always looks like grey paint.
  */
 function skyTexture(): DataTexture {
   const width = 8
@@ -187,10 +187,10 @@ function skyTexture(): DataTexture {
   const data = new Uint8Array(width * height * 4)
   const c = new Color()
   for (let y = 0; y < height; y += 1) {
-    // Equirect eşlemesinde doku satır 0 kürenin DİBİNE denk geliyor, tepesine
-    // değil. Ters yazınca gökyüzü aşağıda toprak yukarıda çıkıyordu; ölçüp
-    // düzelttim.
-    const t = (y / (height - 1)) * 2 - 1   // -1 dip, +1 tepe
+    // In equirect mapping texture row 0 lands on the BOTTOM of the sphere, not
+    // the top. Written the other way round the sky came out below and the soil
+    // above; I measured it and fixed it.
+    const t = (y / (height - 1)) * 2 - 1   // -1 bottom, +1 top
     if (t >= 0) c.copy(SKY_HORIZON).lerp(SKY_TOP, Math.pow(t, 0.6))
     else c.copy(SKY_HORIZON).lerp(SKY_GROUND, Math.pow(-t, 0.35))
     for (let x = 0; x < width; x += 1) {
@@ -215,15 +215,15 @@ const skyMap = skyTexture()
   const pmrem = new PMREMGenerator(renderer)
   scene.environment = pmrem.fromEquirectangular(sky).texture
   pmrem.dispose()
-  // Metal rengini neredeyse tamamen yansımadan alır. Ortam sönük kalırsa demir
-  // siyaha yakın çıkıyor; örste ölçtüm, [33,39,44] geliyordu.
+  // Metal takes nearly all its colour from reflection. If the environment stays
+  // dim, iron comes out near black; I measured it on the anvil, [33,39,44].
   scene.environmentIntensity = 1.35
 }
 
-/* --------------------------------------------------------------- ışıklar */
+/* ---------------------------------------------------------------- lights */
 
-// Ortam haritası yumuşak dolgu ışığını zaten veriyor; yönlü ışıkların işi
-// biçimi okutmak ve gölge düşürmek.
+// The environment map already provides the soft fill light; the job of the
+// directional lights is to read out the form and to cast shadows.
 const key = new DirectionalLight(0xfff2dd, 2.2)
 key.position.set(-6, 9, 7)
 key.castShadow = true
@@ -237,10 +237,11 @@ rim.position.set(5, 6, -8)
 scene.add(key, key.target, fill, rim)
 
 /**
- * Gölge düzlemi: sadece gölgeyi gösterir, kendisi görünmez.
+ * Shadow plane: shows only the shadow, is itself invisible.
  *
- * Modellerin nereye değdiğini gösteren tek şey bu. Havada duran bir parça
- * gölgesiyle ele veriyor — nitekim masanın gergisi tam böyle yakalanmıştı.
+ * The only thing that shows where the models touch down. A part left hanging in
+ * the air gives itself away by its shadow — that is exactly how the table's
+ * stretcher got caught.
  */
 const shadowCatcher = new Mesh(
   new PlaneGeometry(1, 1),
@@ -257,7 +258,7 @@ controls.autoRotateSpeed = 0.9
 
 let grid: GridHelper | undefined
 
-/* ------------------------------------------------------------------- durumlar */
+/* --------------------------------------------------------------------- state */
 
 let current: ReturnType<Entry['build']> | undefined
 let currentEntry: Entry | undefined
@@ -271,12 +272,12 @@ interface Survey {
   triangles: number
   materials: number
   size: Vector3
-  /** Sınır KUTUSUNUN merkezi — kadrajlamada kullanılır. */
+  /** Centre of the bounding BOX — used for framing. */
   centre: Vector3
-  /** Sınır küresinin merkezi ve yarıçapı — kamera mesafesi buradan çıkar. */
+  /** Centre and radius of the bounding sphere — camera distance comes from it. */
   sphereCentre: Vector3
   radius: number
-  /** Modelin en alt noktası; zemin ızgarası buraya oturur. */
+  /** Lowest point of the model; the ground grid sits here. */
   floor: number
 }
 
@@ -303,8 +304,8 @@ function survey(root: Object3D): Survey {
     triangles,
     materials: materials.size,
     size: box.getSize(new Vector3()),
-    // Kadraj kutu merkezine bakar, küre merkezine değil: asimetrik modellerde
-    // ikisi ayrışır ve küre merkezi görsel olarak kaymış görünür.
+    // Framing looks at the box centre, not the sphere centre: on asymmetric
+    // models the two diverge and the sphere centre looks visually off.
     centre: box.getCenter(new Vector3()),
     sphereCentre: sphere.center.clone(),
     radius: sphere.radius,
@@ -312,11 +313,11 @@ function survey(root: Object3D): Survey {
   }
 }
 
-// Tel kafes, `material.wireframe` ile DEĞİL, ayrı bir çizgi katmanıyla çiziliyor.
-// three'nin WebGPU backend'i bu modellerin indeksli geometrilerinde
-// material.wireframe için geçerli bir index buffer üretemiyor ve
-// `setIndexBuffer` hata veriyor. WireframeGeometry her iki backend'de de
-// çalışıyor ve gölgeli yüzeyin üstünde okunur bir topoloji katmanı veriyor.
+// The wireframe is drawn with a separate line layer, NOT with `material.wireframe`.
+// On the indexed geometries of these models three's WebGPU backend cannot
+// produce a valid index buffer for material.wireframe and `setIndexBuffer`
+// throws. WireframeGeometry works on both backends and gives a readable
+// topology layer on top of the shaded surface.
 const wireMaterial = new LineBasicMaterial({
   color: 0x5fc8e8,
   transparent: true,
@@ -327,18 +328,18 @@ const wireMaterial = new LineBasicMaterial({
 let wireOverlays: LineSegments[] = []
 
 /**
- * Yeni üretilen mesh'lere sahne ayarlarını uygular.
+ * Applies the scene settings to freshly built meshes.
  *
- * `configure()` her çağrıldığında model mesh'lerini YENİDEN kuruyor — anchor
- * kalıyor ama içerik gidiyor. Gölge bayrakları yalnızca `select()` içinde
- * atanıyordu, dolayısıyla bir kaydırıcıyı oynatmak modelin gölgesini sessizce
- * düşürüyordu. Bu iki işi tek yere toplamak, bir daha ayrışmalarını engelliyor.
+ * Every call to `configure()` REBUILDS the model meshes — the anchor stays but
+ * the contents go. The shadow flags were only being set inside `select()`, so
+ * moving a slider silently dropped the model's shadow. Collecting these two jobs
+ * in one place keeps them from drifting apart again.
  */
 function dressMeshes(root: Object3D): void {
   root.traverse((object) => {
     if (!(object instanceof Mesh)) return
-    // Hem düşürsün hem alsın: bir parçanın diğerine değip değmediği ancak
-    // böyle görünüyor.
+    // Cast and receive both: whether one part touches another is only visible
+    // this way.
     object.castShadow = true
     object.receiveShadow = true
   })
@@ -363,10 +364,11 @@ function applyWireframe(root: Object3D): void {
   }
 }
 
-/** Modeli, ölçeği ne olursa olsun kadraja oturtur. */
+/** Fits the model into frame whatever its scale. */
 function frame(info: Survey): void {
-  // Mesafe küre yarıçapından, hedef kutu merkezinden. Küre her yönde sığmayı
-  // garantiler; kutu merkezi ise gözün "ortalanmış" saydığı noktadır.
+  // Distance from the sphere radius, target from the box centre. The sphere
+  // guarantees it fits in every direction; the box centre is the point the eye
+  // counts as "centred".
   const distance = (info.radius * 1.15) / Math.sin((camera.fov * Math.PI) / 360)
   const direction = new Vector3(0.62, 0.42, 1).normalize()
   camera.position.copy(info.centre).addScaledVector(direction, distance)
@@ -377,8 +379,8 @@ function frame(info: Survey): void {
   controls.update()
 
 
-  // Gölge kamerası modelin ölçeğine göre daraltılıyor. Sabit bırakmak küçük
-  // modellerde gölgeyi piksel çorbasına çeviriyordu.
+  // The shadow camera is narrowed to the scale of the model. Leaving it fixed
+  // turned the shadow into pixel soup on small models.
   const reach = info.radius * 1.6
   const shadow = key.shadow.camera
   shadow.left = -reach
@@ -398,32 +400,32 @@ function rebuildGrid(info: Survey): void {
     scene.remove(grid)
     grid.geometry.dispose()
   }
-  // Izgara adımı modelin ölçeğine göre: 1 m, 0.5 m ya da 0.1 m.
+  // Grid step follows the scale of the model: 1 m, 0.5 m or 0.1 m.
   const span = Math.max(info.size.x, info.size.z)
   const stepSize = span > 4 ? 1 : span > 1.2 ? 0.5 : 0.1
   const divisions = Math.max(8, Math.ceil((span * 2.4) / stepSize))
   grid = new GridHelper(divisions * stepSize, divisions, 0x2a333e, 0x1a2029)
   grid.position.y = info.floor
-  // Gölge düzlemi ızgarayla aynı yükseklikte ama bir kıl altında: ikisi tam
-  // aynı düzlemde olsa birbiriyle z-fight yaparlardı.
+  // The shadow plane sits at the grid's height but a hair below it: exactly
+  // coplanar, the two would z-fight with each other.
   shadowCatcher.position.set(info.centre.x, info.floor - span * 0.0015, info.centre.z)
   shadowCatcher.scale.setScalar(Math.max(span * 4, 1))
   grid.visible = showGrid
   scene.add(grid)
-  scaleNote.textContent = `ızgara adımı ${stepSize} m`
+  scaleNote.textContent = `grid step ${stepSize} m`
 }
 
 /**
- * Parça paneli.
+ * Parts panel.
  *
- * Protokolün semantik parça fikri ancak GÖRÜNÜRSE bir şey ifade ediyor. Burada
- * her parça bir düğme: tıklamak onu YALNIZ BIRAKIYOR (solo), tekrar tıklamak
- * hepsini geri getiriyor. Bir modelin gerçekten "sandık gövdesi + kapak + kayış
- * + kilit" olduğunu anlamanın en hızlı yolu bu.
+ * The protocol's semantic part idea only means something if it is VISIBLE. Here
+ * every part is a button: clicking SOLOS it, clicking again brings them all
+ * back. This is the fastest way to grasp that a model really is "chest body +
+ * lid + strap + lock".
  *
- * Görünürlük ANCHOR üzerinde ayarlanıyor, mesh üzerinde değil — anchor
- * rebuild'i atlatan tek şey, dolayısıyla bir kaydırıcı oynatınca gizlenen
- * parça geri gelmiyor.
+ * Visibility is set on the ANCHOR, not on the mesh — the anchor is the only
+ * thing that survives a rebuild, so a hidden part does not come back when a
+ * slider is moved.
  */
 let soloPart: string | undefined
 
@@ -461,16 +463,18 @@ function renderParts(): void {
 }
 
 /**
- * Materyal yuvası paneli.
+ * Material slot panel.
  *
- * "Renk yapılandırma sistemi eklesek protokolü bozar mı?" sorusunun cevabı
- * burada görünüyor: BOZMAZ, çünkü zaten var. `materials.override()` yuvaya
- * yeni bir materyal veriyor ve materyalin `color`'ı vertex renkleriyle
- * ÇARPILIYOR — yani ton vermek modelin kendi varyasyonunu silmiyor, üstüne
- * biniyor. Protokole yeni bir alan eklemeye gerek yok.
+ * The answer to "would adding a colour configuration system break the
+ * protocol?" shows up here: IT WOULD NOT, because it is already there.
+ * `materials.override()` hands the slot a new material and that material's
+ * `color` is MULTIPLIED with the vertex colours — so tinting does not erase the
+ * model's own variation, it rides on top of it. No new field is needed in the
+ * protocol.
  *
- * Panelin ayrıca bir sahiplik iddiası var: verilen materyal TÜKETİCİNİN, model
- * onu `dispose()` etmiyor. Sıfırla düğmesi modelinkini geri getiriyor.
+ * The panel also makes an ownership claim: the material handed in belongs to the
+ * CONSUMER, the model does not `dispose()` it. The reset button brings back the
+ * model's own.
  */
 function renderSlots(): void {
   slotsHost.replaceChildren()
@@ -486,7 +490,7 @@ function renderSlots(): void {
     swatch.type = 'color'
     swatch.className = 'slot-swatch'
     swatch.value = inspect.slotColour(slot)
-    swatch.title = `${slot} yuvasını boya`
+    swatch.title = `tint the ${slot} slot`
 
     const name = document.createElement('span')
     name.className = 'slot-name'
@@ -496,13 +500,13 @@ function renderSlots(): void {
     reset.type = 'button'
     reset.className = 'slot-reset'
     reset.textContent = '↺'
-    reset.title = 'yuvayı modelin varsayılanına döndür'
+    reset.title = 'return the slot to the model default'
     reset.hidden = !inspect.isTinted(slot)
 
     swatch.addEventListener('input', () => {
       inspect.tintSlot(slot, swatch.value)
-      // Override yeniden inşa tetikliyor: yeni mesh'ler gölge bayraklarını ve
-      // tel kafesi geri almalı.
+      // The override triggers a rebuild: the new meshes have to get the shadow
+      // flags and the wireframe back.
       dressMeshes(current!.root)
       reset.hidden = false
       row.classList.add('tinted')
@@ -529,15 +533,15 @@ function renderParams(): void {
     const note = document.createElement('p')
     note.className = 'empty-note'
     note.textContent =
-      'Bu model yapılandırılabilir alan bildirmiyor — registry meta\'sında controls boş.'
+      'This model declares no configurable fields — controls is empty in the registry meta.'
     paramsHost.append(note)
     return
   }
 
   paramsBlock.hidden = false
 
-  // Model varsayılanlarıyla kuruluyor, dolayısıyla ilk okuma varsayılan
-  // değerlerdir. Kaydırıcıyı istediğin an oraya döndürebilmek için saklanıyor.
+  // The model is built with its defaults, so the first read gives the default
+  // values. Kept around so a slider can be sent back there at any moment.
   const defaults = { ...params.current() }
   const sliders = new Map<string, HTMLInputElement>()
 
@@ -554,7 +558,7 @@ function renderParams(): void {
   const resetAll = document.createElement('button')
   resetAll.type = 'button'
   resetAll.className = 'action reset-all'
-  resetAll.innerHTML = '<span>varsayılanlara dön</span><span class="state">↺</span>'
+  resetAll.innerHTML = '<span>back to defaults</span><span class="state">↺</span>'
   resetAll.addEventListener('click', () => {
     for (const [key, input] of sliders) {
       input.value = String(defaults[key])
@@ -586,9 +590,9 @@ function renderParams(): void {
 
     sliders.set(spec.key, slider)
 
-    // Etikete tıklayınca o alan varsayılanına döner.
+    // Clicking the label returns that field to its default.
     name.classList.add('resettable')
-    name.title = `varsayılan: ${defaults[spec.key]}`
+    name.title = `default: ${defaults[spec.key]}`
     name.addEventListener('click', () => {
       slider.value = String(defaults[spec.key])
       slider.dispatchEvent(new Event('input', { bubbles: true }))
@@ -603,8 +607,8 @@ function renderParams(): void {
     slider.addEventListener('input', () => {
       const raw = Number(slider.value)
       show(raw)
-      // Varsayılandan sapan alan işaretleniyor: hangisini değiştirdiğin
-      // bir bakışta görünsün.
+      // A field that departs from its default gets marked: which one you moved
+      // should be visible at a glance.
       name.classList.toggle('changed', raw !== defaults[spec.key])
       applyValue(spec.key, raw)
     })
@@ -616,7 +620,7 @@ function renderParams(): void {
 
 function writeReadout(info: Survey): void {
   readout('meshes').textContent = String(info.meshes)
-  readout('triangles').textContent = info.triangles.toLocaleString('tr-TR')
+  readout('triangles').textContent = info.triangles.toLocaleString('en-US')
   readout('materials').textContent = String(info.materials)
   readout('size').textContent =
     `${info.size.x.toFixed(2)} × ${info.size.y.toFixed(2)} × ${info.size.z.toFixed(2)} m`
@@ -625,7 +629,7 @@ function writeReadout(info: Survey): void {
 function paintTriangleBadges(): void {
   for (const [id, count] of triangleCounts) {
     const badge = app.querySelector<HTMLElement>(`[data-tris-for="${id}"]`)
-    if (badge) badge.textContent = `${count.toLocaleString('tr-TR')} △`
+    if (badge) badge.textContent = `${count.toLocaleString('en-US')} △`
   }
 }
 
@@ -669,22 +673,22 @@ function select(id: string): void {
   }
 }
 
-/* ------------------------------------------------------------------- olaylar */
+/* ------------------------------------------------------------------- events */
 
 for (const button of app.querySelectorAll<HTMLButtonElement>('[data-model]')) {
   button.addEventListener('click', () => select(button.dataset.model!))
 }
 
 /**
- * GLB indirme.
+ * GLB download.
  *
- * Dışa aktarım `src/glb.ts`'te ve aynı kod toplu dışa aktarımda da kullanılıyor
- * — yani buradaki düğmeyle `bun scripts/export-glb.ts` bit bit aynı dosyayı
- * üretiyor. İkisinin ayrışması, tarayıcıda çalışıp CLI'da çalışmayan (ya da
- * tersi) bir dışa aktarım demek olurdu.
+ * The export lives in `src/glb.ts` and the same code is used for the batch
+ * export too — so the button here and `bun scripts/export-glb.ts` produce a
+ * bit-for-bit identical file. The two drifting apart would mean an export that
+ * works in the browser but not in the CLI (or the other way round).
  *
- * Nesne URL'i indirme başladıktan SONRA bırakılıyor: hemen bırakmak bazı
- * tarayıcılarda indirmeyi yarıda kesiyor.
+ * The object URL is released AFTER the download has started: releasing it
+ * immediately cuts the download short in some browsers.
  */
 const exportButton = app.querySelector<HTMLButtonElement>('[data-export]')!
 const exportState = exportButton.querySelector<HTMLElement>('.state')!
@@ -707,7 +711,7 @@ exportButton.addEventListener('click', async () => {
     setTimeout(() => URL.revokeObjectURL(url), 4000)
     exportState.textContent = '✓'
   } catch (error) {
-    console.error('GLB dışa aktarımı başarısız:', error)
+    console.error('GLB export failed:', error)
     exportState.textContent = '✕'
   } finally {
     exportButton.disabled = false
@@ -717,7 +721,7 @@ exportButton.addEventListener('click', async () => {
 
 actionButton.addEventListener('click', () => {
   current?.action?.run()
-  // Etiket duruma bağlı olabilir (yak / söndür), o yüzden her tıklamada tazele.
+  // The label can depend on state (light / snuff), so refresh it on every click.
   if (current?.action) actionButton.textContent = current.action.label()
 })
 
@@ -735,24 +739,24 @@ function bindToggle(name: string, onChange: (on: boolean) => void, labels: [stri
 bindToggle('wireframe', (on) => {
   wireframe = on
   if (current) applyWireframe(current.root)
-}, ['açık', 'kapalı'])
+}, ['on', 'off'])
 
-bindToggle('spin', (on) => { controls.autoRotate = on }, ['açık', 'kapalı'])
+bindToggle('spin', (on) => { controls.autoRotate = on }, ['on', 'off'])
 
 bindToggle('grid', (on) => {
   showGrid = on
   if (grid) grid.visible = on
-}, ['açık', 'kapalı'])
+}, ['on', 'off'])
 
-// Gökyüzü kapalıyken düz koyu zemin: siluet okumak için daha iyi. Ortam
-// haritası açık kalıyor, yoksa metal kararırdı.
+// With the sky off, a flat dark ground: better for reading the silhouette. The
+// environment map stays on, otherwise the metal would go dark.
 bindToggle('sky', (on) => {
   scene.background = on ? skyMap : new Color(0x0b0e12)
   shadowCatcher.visible = on
-}, ['açık', 'kapalı'])
+}, ['on', 'off'])
 
-// ResizeObserver, `resize` olayından güvenilir: sekme gizliyken açılan ya da
-// düzeni sonradan oturan sayfalarda canvas 0x0 kalmıyor.
+// ResizeObserver is more reliable than the `resize` event: on pages opened with
+// the tab hidden, or whose layout settles later, the canvas does not stay 0x0.
 function resize(): void {
   const width = canvas.clientWidth
   const height = canvas.clientHeight
@@ -763,12 +767,12 @@ function resize(): void {
 }
 new ResizeObserver(resize).observe(canvas)
 
-/* --------------------------------------------------------------------- döngü */
+/* --------------------------------------------------------------------- loop */
 
 controls.autoRotate = true
 select('cart-wheel')
-// Seçili olmayan modellerin üçgen rozetleri için birer kez kurup ölç, sonra
-// bırak. Böylece listedeki her satır ne kadar ağır olduğunu baştan söylüyor.
+// For the triangle badges of the unselected models, build once, measure, then
+// drop. That way every row in the list says up front how heavy it is.
 for (const id of Object.keys(CATALOG)) {
   if (triangleCounts.has(id)) continue
   const probe = CATALOG[id]!.build()
@@ -779,11 +783,11 @@ paintTriangleBadges()
 resize()
 
 /**
- * Geliştirme kancası. Vite `import.meta.env.DEV` değerini üretim derlemesinde
- * `false`'a sabitleyip bu bloğu tamamen atıyor, yani yayınlanan sayfada yok.
+ * Development hook. Vite pins `import.meta.env.DEV` to `false` in a production
+ * build and drops this block entirely, so it is absent from the published page.
  *
- * Sekme arka plandayken requestAnimationFrame durduğu için otomatik testlerde
- * kare alınamıyordu; `renderOnce` o boşluğu kapatıyor.
+ * requestAnimationFrame stops while the tab is in the background, so automated
+ * tests could not get a frame; `renderOnce` closes that gap.
  */
 if (import.meta.env.DEV) {
   Object.assign(globalThis, {
@@ -802,12 +806,12 @@ if (import.meta.env.DEV) {
         }
       },
       /**
-       * Sahnedeki her mesh'in gerçek durumu.
+       * The real state of every mesh in the scene.
        *
-       * İki şeyi tarayıcıdan sınanabilir yapıyor ve ikisi de gerçek hatalardan
-       * doğdu: `configure()` sonrası gölge bayraklarının düşmesi (yeni
-       * mesh'lere atanmıyordu) ve `materials.override()`'ın gerçekten sahneye
-       * ulaşıp ulaşmadığı.
+       * Makes two things testable from the browser, and both came out of real
+       * bugs: shadow flags dropping after `configure()` (they were not being
+       * set on the new meshes) and whether `materials.override()` actually
+       * reaches the scene.
        */
       meshes: () => {
         const rows: Array<Record<string, unknown>> = []

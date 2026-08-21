@@ -1,18 +1,20 @@
 /**
- * Kurulan modelleri tarayıcı olmadan doğrular.
+ * Verifies the built models without a browser.
  *
- * Üç sınıf kontrol var:
+ * There are three classes of check:
  *
- *   1. Protokol — vibe3d'nin conformance listesinden gerçekten test
- *      edilebilenler: sonlu geometri, configure() sonrası kök ve anchor
- *      kimliğinin korunması, tüketici eklentisinin rebuild'i atlatması,
- *      materyal sahipliği, idempotent dispose().
- *   2. Sarım — elle yazılmış geometride ters sarım sessizce içten görünen
- *      yüzler bırakır. İki ölçüt var çünkü iki geometri türü var: dönel
- *      gövdeler için radyal hizalama, kapalı katılar için işaretli hacim.
- *   3. Z-fighting — aynı düzlemde, aynı yöne bakan, alanları örtüşen yüzeyler.
+ *   1. Protocol — the parts of vibe3d's conformance list that can actually be
+ *      tested: finite geometry, root and anchor identity preserved across
+ *      configure(), a consumer attachment surviving the rebuild, material
+ *      ownership, idempotent dispose().
+ *   2. Winding — in hand-written geometry a reversed winding quietly leaves
+ *      faces that are only visible from the inside. There are two criteria
+ *      because there are two kinds of geometry: radial alignment for bodies
+ *      of revolution, signed volume for closed solids.
+ *   3. Z-fighting — surfaces on the same plane, facing the same way, with
+ *      overlapping areas.
  *
- * Çalıştır: bun scripts/verify-model.ts
+ * Run: bun scripts/verify-model.ts
  */
 import { Box3, Mesh, MeshStandardMaterial, Vector3, type Object3D } from 'three/webgpu'
 
@@ -53,7 +55,7 @@ function expect(label: string, condition: boolean): void {
   if (!condition) failures.push(label)
 }
 
-/* ------------------------------------------------------------------ ölçüm */
+/* ------------------------------------------------------------ measurement */
 
 function inspect(root: Object3D) {
   let meshes = 0
@@ -96,17 +98,19 @@ function worldTriangles(root: Object3D): Array<[Vector3, Vector3, Vector3]> {
 }
 
 /**
- * Dönel gövdeler: dış kabuğun RADYAL yüzleri eksenden dışa bakmalı.
+ * Bodies of revolution: the RADIAL faces of the outer shell must face outward.
  *
- * "Dış kabuk" tanımı kritik. Tek bir yarıçap eşiği DARALAN gövdede çalışmaz:
- * koni biçimli bir kovada, duvarın üst kısmındaki İÇ yüzeyler bile alttaki dış
- * yüzeylerden geniş olur ve haklı olarak içe baktıkları hâlde "ters sarım"
- * sayılırlar. Bu yüzden karşılaştırma yüksekliğe göre yapılıyor: her üçgen,
- * kendi yükseklik bandındaki en büyük yarıçapla kıyaslanır.
+ * The definition of "outer shell" is critical. One radius threshold does not
+ * work on a TAPERING body: in a cone-shaped bucket even the INNER surfaces high
+ * on the wall are wider than the outer surfaces below, so they get counted as
+ * "reversed winding" even though they rightly face inwards. That is why the
+ * comparison is made by height: every triangle is compared against the largest
+ * radius in its own height band.
  *
- * Teğetsel yüzler (tahtaların yan yüzleri) bu ölçütle yargılanamaz — çarpım
- * tanımı gereği ~0'dır ve işareti sadece kayan nokta gürültüsü. Ayıklanır ve
- * kaç tane ayıklandığı raporlanır; sessizce elenmez.
+ * Tangential faces (the side faces of the staves) cannot be judged by this
+ * criterion — the product is ~0 by definition and its sign is nothing but
+ * floating point noise. They are filtered out and how many were filtered out is
+ * reported; they are not dropped silently.
  */
 function radialWinding(root: Object3D, shellRatio = 0.94) {
   const triangles = worldTriangles(root)
@@ -120,7 +124,7 @@ function radialWinding(root: Object3D, shellRatio = 0.94) {
     maxY = Math.max(maxY, m.y)
   }
 
-  // Yükseklik bantları: her bandın kendi en geniş yarıçapı var.
+  // Height bands: each band has its own widest radius.
   const BANDS = 12
   const span = Math.max(1e-9, maxY - minY)
   const bandOf = (y: number): number =>
@@ -154,11 +158,11 @@ function radialWinding(root: Object3D, shellRatio = 0.94) {
 }
 
 /**
- * Kapalı katılar: Σ a·(b×c)/6. Sarım dışa bakıyorsa pozitif çıkar.
+ * Closed solids: Σ a·(b×c)/6. Comes out positive if the winding faces outward.
  *
- * Sadece TAMAMEN kapalı modellerde geçerli. `bandGeometry` iç yüzeyi kasten
- * üretmiyor (görünmez, üçgen tasarrufu), o yüzden demir çember taşıyan
- * modellerde bu ölçüt kullanılamaz — onlarda radyal test var.
+ * Only valid on FULLY closed models. `bandGeometry` deliberately does not build
+ * the inner surface (invisible, saves triangles), so this criterion cannot be
+ * used on models carrying iron hoops — those get the radial test instead.
  */
 function signedVolume(root: Object3D): number {
   let v = 0
@@ -167,23 +171,23 @@ function signedVolume(root: Object3D): number {
 }
 
 /**
- * Kenar dengesi — tek bir ters yüzü yakalayan test.
+ * Edge balance — the test that catches a single reversed face.
  *
- * KAPALI bir yüzeyde her kenar iki yönde eşit sayıda geçer: komşu üçgenler
- * ortak kenarı ters yönlerde kullanır. Bir yüz ters çevrilirse o yüzün üç
- * kenarı dengeden çıkar.
+ * On a CLOSED surface every edge is traversed equally often in both directions:
+ * neighbouring triangles use the shared edge in opposite directions. Flip one
+ * face and that face's three edges fall out of balance.
  *
- * "Tekrarlanmasın" demek yanlış olurdu: kit modelleri ayrı katı cisimlerin
- * birleşimi ve küt ek yapan iki kutu aynı kenarı paylaşabilir — bu tasarım,
- * hata değil. Denge ise paylaşımdan etkilenmez, çünkü iki cisim o kenarı ters
- * yönlerde kullanır.
+ * Demanding "no edge may repeat" would have been wrong: kit models are unions
+ * of separate solids and two boxes making a butt joint can share the same edge
+ * — that is design, not a bug. Balance is unaffected by the sharing, because
+ * the two solids use that edge in opposite directions.
  *
- * Yalnızca kapalı modellerde geçerli: `bandGeometry` iç yüzeyi üretmediği için
- * sınır kenarları tek yönde kalır ve denge tanımı gereği bozulur.
+ * Only valid on closed models: `bandGeometry` does not build the inner surface,
+ * so its boundary edges stay one-directional and balance breaks by definition.
  *
- * Bu test işaretli hacmin boşluğunu kapatıyor — orada kutunun bir yüzü ters
- * çevrildiğinde hacim 0.058'den 0.039'a düşüyor ama pozitif kalıp testi
- * geçiyordu.
+ * This test closes the gap left by signed volume — there, flipping one face of
+ * the crate dropped the volume from 0.058 to 0.039 but it stayed positive and
+ * the test passed.
  */
 function edgeBalance(root: Object3D): { edges: number; unbalanced: number } {
   const counts = new Map<string, number>()
@@ -196,7 +200,7 @@ function edgeBalance(root: Object3D): { edges: number; unbalanced: number } {
     for (const [from, to] of [[ka, kb], [kb, kc], [kc, ka]] as const) {
       if (from === to) continue
       edges += 1
-      // Yönsüz anahtar; yön işaretle taşınıyor.
+      // Undirected key; the direction is carried by the sign.
       const forward = from < to
       const id = forward ? `${from}|${to}` : `${to}|${from}`
       counts.set(id, (counts.get(id) ?? 0) + (forward ? 1 : -1))
@@ -208,11 +212,11 @@ function edgeBalance(root: Object3D): { edges: number; unbalanced: number } {
 }
 
 /**
- * Modelin tam parmak izi: her mesh'in konum VE renk verisi.
+ * Full fingerprint of the model: the position AND color data of every mesh.
  *
- * İlk vertex'e bakmak yetmiyordu: çoğu modelde tohum konumu değil rengi
- * değiştirir (örs, merdiven, aletler), o yüzden ilk vertex her tohumda aynı
- * çıkıyordu ve test yanlış yere BAŞARISIZ diyordu.
+ * Looking at the first vertex was not enough: in most models the seed changes
+ * the color, not the position (anvil, ladder, tools), so the first vertex came
+ * out the same for every seed and the test cried FAIL in the wrong place.
  */
 function fingerprint(model: { root: Object3D }): string {
   let hash = 2166136261
@@ -232,7 +236,7 @@ function fingerprint(model: { root: Object3D }): string {
   return (hash >>> 0).toString(16)
 }
 
-/* --------------------------------------------------------- kit model testi */
+/* ---------------------------------------------------------- kit model test */
 
 interface KitModel {
   root: Object3D
@@ -251,31 +255,32 @@ interface Case {
   readonly parts: number
   readonly ownSlot: string
   readonly borrowSlot: string
-  /** Dönel gövde mi? */
+  /** Is it a body of revolution? */
   readonly radial?: boolean
   /**
-   * Radyal test hangi parçaya uygulansın. Verilmezse kök.
-   * Kovada gerekli: en geniş yarıçap KULPA ait, gövdeye değil — kök üzerinden
-   * ölçmek kulbun yaylarını "dış kabuk" sanıp anlamsız sonuç veriyor.
+   * Which part the radial test is applied to. Defaults to the root.
+   * Needed on the bucket: the widest radius belongs to the HANDLE, not the body
+   * — measuring via the root mistakes the handle's arcs for the "outer shell"
+   * and gives a meaningless result.
    */
   readonly radialPart?: string
   /**
-   * Dış kabuk sayılmak için en büyük yarıçapın hangi oranı yeterli.
-   * Konik gövdelerde düşürülmeli: kovada 0.94 sadece en üst halkayı yakalıyor
-   * ve test anlamlı bir örneklem göremiyor.
+   * What fraction of the largest radius is enough to count as outer shell.
+   * Must be lowered on conical bodies: on the bucket 0.94 catches only the
+   * topmost hoop and the test never sees a meaningful sample.
    */
   readonly shellRatio?: number
-  /** Tamamen kapalı katı mı? */
+  /** Is it a fully closed solid? */
   readonly closed?: boolean
-  /** Z-fight için ek yapılandırmalar. */
+  /** Extra configurations for z-fight. */
   readonly variants?: ReadonlyArray<Record<string, number>>
   /**
-   * Varsayılan yapılandırmada sınır kutusunun aşmaması gereken ölçüler.
+   * Dimensions the bounding box must not exceed in the default configuration.
    *
-   * Bu kontrol bir hata sınıfını yakalamak için var: `rotate` her zaman ORIGIN
-   * etrafında döner, dolayısıyla bir parçayı önce yerine koyup sonra
-   * döndürmek onu savurur. Çapada tam bu olmuştu — ağız boynu 0.23 m öne
-   * fırlamış, model 0.42 m derinliğe çıkmıştı ve hiçbir test itiraz etmemişti.
+   * This check exists to catch one class of bug: `rotate` always turns about
+   * the ORIGIN, so putting a part in place first and rotating it afterwards
+   * flings it away. That is exactly what happened on the hoe — the blade neck
+   * shot 0.23 m forward, the model grew to 0.42 m deep, and no test objected.
    */
   readonly maxSize?: readonly [number, number, number]
 }
@@ -343,9 +348,9 @@ const CASES: readonly Case[] = [
     variants: [{ handle: 0 }, { hoopCount: 0 }, { taper: 0.25 }],
     maxSize: [0.13, 0.2, 0.19] },
   { id: 'bronze-bell', make: as(createBell), patch: { diameter: 0.5, yoke: 1.8 },
-    // shellRatio yüksek: çan İÇİ BOŞ ve iç kabuğunun normalleri bilerek
-    // eksene bakıyor. Düşük bir eşik onu "dış kabuk" sanıp haklı olarak
-    // düşüyordu — burada ölçmek istediğimiz şey yalnızca dış yüzey.
+    // shellRatio is high: the bell is HOLLOW and its inner shell's normals
+    // deliberately face the axis. A lower threshold mistook it for the "outer
+    // shell" and rightly failed — what we want here is only the outer surface.
     parts: 3, ownSlot: 'iron', borrowSlot: 'brass', radial: true, radialPart: 'bell',
     shellRatio: 0.93, variants: [{ height: 0.6 }, { yoke: 1 }],
     maxSize: [0.52, 0.55, 0.42] },
@@ -382,9 +387,9 @@ console.log('\n@scifi-kit/pressure-gauge')
 {
   const gauge = createGauge()
   const r = inspect(gauge.root)
-  console.log(`  ${r.meshes} mesh · ${r.triangles} üçgen · ${r.size.join(' x ')} m`)
-  expect('geometri üretildi', r.meshes > 0 && r.triangles > 0)
-  expect('NaN/Infinity vertex yok', r.nonFinite === 0)
+  console.log(`  ${r.meshes} mesh · ${r.triangles} triangles · ${r.size.join(' x ')} m`)
+  expect('geometry produced', r.meshes > 0 && r.triangles > 0)
+  expect('no NaN/Infinity vertices', r.nonFinite === 0)
 
   const before = new Map<Object3D, number>()
   gauge.root.traverse((o) => before.set(o, o.rotation.z))
@@ -392,7 +397,7 @@ console.log('\n@scifi-kit/pressure-gauge')
   for (let i = 0; i < 30; i += 1) gauge.update(1 / 60)
   let animated = 0
   gauge.root.traverse((o) => { if (Math.abs(o.rotation.z - (before.get(o) ?? 0)) > 1e-6) animated += 1 })
-  expect('update() ibreyi hareket ettiriyor', animated === 1)
+  expect('update() moves the needle', animated === 1)
   gauge.dispose()
   gauge.dispose()
   expect('dispose() idempotent', true)
@@ -404,64 +409,64 @@ for (const testCase of CASES) {
   const model = testCase.make()
   const report = inspect(model.root)
   totalTriangles += report.triangles
-  console.log(`  ${report.meshes} mesh · ${report.triangles} üçgen · ${report.size.join(' x ')} m`)
+  console.log(`  ${report.meshes} mesh · ${report.triangles} triangles · ${report.size.join(' x ')} m`)
 
-  expect('geometri üretildi', report.meshes > 0 && report.triangles > 0)
-  expect('NaN/Infinity vertex yok', report.nonFinite === 0)
-  expect('sınırlar sonlu', report.size.every(Number.isFinite))
-  expect('lowpoly bütçesinde (< 2500 üçgen)', report.triangles < 2500)
+  expect('geometry produced', report.meshes > 0 && report.triangles > 0)
+  expect('no NaN/Infinity vertices', report.nonFinite === 0)
+  expect('bounds finite', report.size.every(Number.isFinite))
+  expect('within lowpoly budget (< 2500 triangles)', report.triangles < 2500)
   if (testCase.maxSize) {
     const over = report.size
       .map((value, i) => (value > testCase.maxSize![i]! ? `${'xyz'[i]}=${value}>${testCase.maxSize![i]}` : ''))
       .filter(Boolean)
-    expect(`ölçüler beklenen sınırlarda${over.length ? ' — AŞAN: ' + over.join(', ') : ''}`, over.length === 0)
+    expect(`dimensions within expected limits${over.length ? ' — EXCEEDS: ' + over.join(', ') : ''}`, over.length === 0)
   }
-  expect(`${testCase.parts} semantik parça`, Object.keys(model.parts).length === testCase.parts)
+  expect(`${testCase.parts} semantic parts`, Object.keys(model.parts).length === testCase.parts)
 
-  // --- Metadata modeli gerçekten anlatıyor mu? -----------------------------
+  // --- Does the metadata really describe the model? ------------------------
   //
-  // `my-registry/meta.ts` hem registry.json'a hem viewer kaydırıcılarına
-  // kaynaklık ediyor. Yani oradaki bir yalanın iki ayrı yerde sonucu var:
-  // registry tüketicisine yanlış sözleşme, viewer'a çalışmayan kaydırıcı.
+  // `my-registry/meta.ts` is the source for both registry.json and the viewer
+  // sliders. So a lie in there has consequences in two separate places: a wrong
+  // contract for the registry consumer, a dead slider in the viewer.
   //
-  // Bu kontrol daha önce derleyicinin yaptığı işin yerini alıyor ve ondan
-  // geniş: eskiden yalnızca kaydırıcı anahtarları denetleniyordu, artık parça
-  // adları ve materyal yuvaları da denetleniyor.
+  // This check takes over work the compiler used to do, and reaches further
+  // than it did: only the slider keys were checked before, now part names and
+  // material slots are checked too.
   if (testCase.id !== 'pressure-gauge') {
     const meta = MODEL_META[testCase.id]
-    expect('meta girdisi var', meta !== undefined)
+    expect('meta entry exists', meta !== undefined)
     if (meta) {
       const config = model.getConfig() as Record<string, unknown>
 
       const patchKeys = [testCase.patch, ...(testCase.variants ?? [])].flatMap(Object.keys)
       const strayPatch = [...new Set(patchKeys)].filter((key) => !(key in config))
-      expect(`test yamaları gerçek alanlara işaret ediyor${strayPatch.length ? ' — YOK: ' + strayPatch.join(', ') : ''}`,
+      expect(`test patches point at real fields${strayPatch.length ? ' — MISSING: ' + strayPatch.join(', ') : ''}`,
         strayPatch.length === 0)
 
       const strayControls = Object.keys(meta.controls).filter((key) => !(key in config))
-      expect(`meta.controls anahtarları config'te var${strayControls.length ? ' — YOK: ' + strayControls.join(', ') : ''}`,
+      expect(`meta.controls keys exist in config${strayControls.length ? ' — MISSING: ' + strayControls.join(', ') : ''}`,
         strayControls.length === 0)
 
       const declared = [...meta.parts].sort().join(',')
       const actual = Object.keys(model.parts).sort().join(',')
-      expect(`meta.parts modelin parçalarıyla aynı${declared === actual ? '' : ` — meta:${declared} model:${actual}`}`,
+      expect(`meta.parts matches the model's parts${declared === actual ? '' : ` — meta:${declared} model:${actual}`}`,
         declared === actual)
 
-      // Bildirilen her yuva GERÇEKTEN var olmalı...
+      // Every declared slot must REALLY exist...
       const unresolved = meta.materialSlots.filter((slot) => model.materials.get(slot) === undefined)
-      expect(`meta.materialSlots çözümleniyor${unresolved.length ? ' — ÇÖZÜLMEYEN: ' + unresolved.join(', ') : ''}`,
+      expect(`meta.materialSlots all resolve${unresolved.length ? ' — UNRESOLVED: ' + unresolved.join(', ') : ''}`,
         unresolved.length === 0)
 
-      // ...ve hiçbir mesh bildirilmemiş bir yuva kullanmamalı. Bu yön daha
-      // önemli: fazladan bildirim sadece gürültü, eksik bildirim tüketicinin
-      // override edemeyeceği gizli bir materyal demek.
+      // ...and no mesh may use an undeclared slot. This direction matters
+      // more: an extra declaration is only noise, a missing one means a hidden
+      // material the consumer cannot override.
       const used = new Set<string>()
       model.root.traverse((object: Object3D) => {
         const slot = (object.userData?.vibe3d as { materialSlot?: string } | undefined)?.materialSlot
         if (slot) used.add(slot)
       })
       const undeclared = [...used].filter((slot) => !meta.materialSlots.includes(slot))
-      expect(`her mesh bildirilmiş bir yuva kullanıyor${undeclared.length ? ' — BİLDİRİLMEMİŞ: ' + undeclared.join(', ') : ''}`,
+      expect(`every mesh uses a declared slot${undeclared.length ? ' — UNDECLARED: ' + undeclared.join(', ') : ''}`,
         undeclared.length === 0)
     }
   }
@@ -469,41 +474,41 @@ for (const testCase of CASES) {
 
   if (testCase.closed) {
     const balance = edgeBalance(model.root)
-    console.log(`  kenar dengesi: ${balance.edges} kenar · dengesiz: ${balance.unbalanced}`)
-    expect('kenar dengesi bozulmamış (ters yüz yok)', balance.unbalanced === 0)
+    console.log(`  edge balance: ${balance.edges} edges · unbalanced: ${balance.unbalanced}`)
+    expect('edge balance intact (no reversed face)', balance.unbalanced === 0)
   }
 
   if (testCase.radial) {
     const target = testCase.radialPart ? model.parts[testCase.radialPart]!.anchor : model.root
     const w = radialWinding(target, testCase.shellRatio ?? 0.94)
-    console.log(`  radyal dış yüz: ${w.radial} · ters sarım: ${w.inward} · teğetsel (atlandı): ${w.tangential}`)
-    expect('dış kabukta ters sarım yok', w.inward === 0)
-    expect('test anlamlı sayıda radyal yüz gördü', w.radial >= 20)
+    console.log(`  radial outer faces: ${w.radial} · reversed winding: ${w.inward} · tangential (skipped): ${w.tangential}`)
+    expect('no reversed winding on the outer shell', w.inward === 0)
+    expect('test saw a meaningful number of radial faces', w.radial >= 20)
   }
   if (testCase.closed) {
     const volume = signedVolume(model.root)
     const box = report.size[0] * report.size[1] * report.size[2]
-    console.log(`  işaretli hacim: ${volume.toFixed(5)} m³ (sınır kutusu ${box.toFixed(5)})`)
-    expect('işaretli hacim pozitif (sarım dışa bakıyor)', volume > 0)
-    expect('hacim sınır kutusundan küçük', volume < box)
+    console.log(`  signed volume: ${volume.toFixed(5)} m³ (bounding box ${box.toFixed(5)})`)
+    expect('signed volume positive (winding faces outward)', volume > 0)
+    expect('volume smaller than the bounding box', volume < box)
   }
 
   for (const variant of [{}, ...(testCase.variants ?? [])]) {
     const named = Object.keys(variant).length > 0
     const sample = named ? testCase.make(variant) : model
     const z = findZFighting(sample.root)
-    const label = named ? JSON.stringify(variant) : 'varsayılan'
-    console.log(`  z-fight ${label}: ${z.faces} yüz · eş düzlem ${z.coplanarGroups} · çakışma ${z.overlaps}`)
+    const label = named ? JSON.stringify(variant) : 'default'
+    console.log(`  z-fight ${label}: ${z.faces} faces · coplanar ${z.coplanarGroups} · overlaps ${z.overlaps}`)
     for (const s of z.samples) console.log(`      ${s}`)
-    expect(`z-fight yok ${label}`, z.overlaps === 0)
+    expect(`no z-fight ${label}`, z.overlaps === 0)
     if (named) sample.dispose()
   }
 
   const twinA = testCase.make({ seed: 21 })
   const twinB = testCase.make({ seed: 21 })
   const other = testCase.make({ seed: 22 })
-  expect('aynı tohum aynı geometri', fingerprint(twinA) === fingerprint(twinB))
-  expect('farklı tohum farklı model', fingerprint(twinA) !== fingerprint(other))
+  expect('same seed same geometry', fingerprint(twinA) === fingerprint(twinB))
+  expect('different seed different model', fingerprint(twinA) !== fingerprint(other))
   twinA.dispose()
   twinB.dispose()
   other.dispose()
@@ -511,15 +516,15 @@ for (const testCase of CASES) {
   const rootBefore = model.root
   const anchorName = Object.keys(model.parts)[0]!
   const anchorBefore = model.parts[anchorName]!.anchor
-  // Tüketici eklentisi rebuild'i atlatmalı — protokolün asıl vaadi bu.
+  // A consumer attachment must survive the rebuild — the protocol's real promise.
   const marker = new Mesh()
   marker.name = 'consumer-marker'
   anchorBefore.add(marker)
   expect('configure() rebuilt=true', model.configure(testCase.patch).rebuilt)
-  expect('kök nesne kimliği korundu', model.root === rootBefore)
-  expect('anchor nesne kimliği korundu', model.parts[anchorName]!.anchor === anchorBefore)
-  expect('tüketicinin taktığı nesne rebuild sonrası duruyor', anchorBefore.children.includes(marker))
-  expect('değişmeyen patch rebuilt=false', model.configure(testCase.patch).rebuilt === false)
+  expect('root object identity preserved', model.root === rootBefore)
+  expect('anchor object identity preserved', model.parts[anchorName]!.anchor === anchorBefore)
+  expect('consumer attachment still there after rebuild', anchorBefore.children.includes(marker))
+  expect('unchanged patch rebuilt=false', model.configure(testCase.patch).rebuilt === false)
 
   let ownDisposed = false
   ;(model.materials.get(testCase.ownSlot) as MeshStandardMaterial)
@@ -528,89 +533,89 @@ for (const testCase of CASES) {
   const borrowed = new MeshStandardMaterial({ name: 'consumer-owned' })
   borrowed.addEventListener('dispose', () => { borrowedDisposed = true })
   model.materials.override(testCase.borrowSlot, borrowed as never)
-  expect('override materyali geri okunuyor', model.materials.get(testCase.borrowSlot) === borrowed)
+  expect('override material reads back', model.materials.get(testCase.borrowSlot) === borrowed)
   model.dispose()
   model.dispose()
-  // Aynı yuvayı hem sahiplik hem ödünç testi için kullanan modellerde
-  // (tek materyalli örs) ilk kontrol anlamsız olur.
+  // On models that use the same slot for both the ownership and the borrowed
+  // test (the single-material anvil) the first check would be meaningless.
   if (testCase.ownSlot !== testCase.borrowSlot) {
-    expect('modelin kendi materyali dispose edildi', ownDisposed)
+    expect('the model disposed its own material', ownDisposed)
   }
-  expect('ödünç materyale dokunulmadı', !borrowedDisposed)
+  expect('borrowed material left untouched', !borrowedDisposed)
   expect('dispose() idempotent', true)
 }
 
 
-// --- Eylemler --------------------------------------------------------------
+// --- Actions ---------------------------------------------------------------
 //
-// Sandık kitin ilk eylemli modeli, dolayısıyla `actions` ve `update`
-// sözleşmesini burada tek seferde sınıyoruz. Eylem yapılandırma DEĞİL: kapağı
-// açmak sandığın kimliğini değiştirmez, o yüzden rebuild tetiklememeli ve
-// rebuild'den de sağ çıkmalı.
-console.log('\n@medieval-kit/wooden-chest eylemleri')
+// The chest is the kit's first model with actions, so we test the `actions` and
+// `update` contract here in one go. An action is NOT configuration: opening the
+// lid does not change the chest's identity, so it must not trigger a rebuild
+// and it must also survive one.
+console.log('\n@medieval-kit/wooden-chest actions')
 {
   const chest = createChest()
   const lid = chest.parts.lid.anchor
   const angle = chest.getConfig().openAngle * Math.PI / 180
 
-  expect('başlangıçta kapalı', !chest.actions.isOpen() && chest.actions.openness() === 0)
-  expect('başlangıçta kapak dönmemiş', lid.rotation.x === 0)
+  expect('closed to begin with', !chest.actions.isOpen() && chest.actions.openness() === 0)
+  expect('lid unrotated to begin with', lid.rotation.x === 0)
 
-  // Hedef ile ANLIK durum ayrı şeyler: setOpen sadece hedefi koyar.
+  // The target and the INSTANTANEOUS state are separate: setOpen only sets the target.
   chest.actions.setOpen(true)
-  expect('setOpen hedefi değiştirdi', chest.actions.isOpen())
-  expect('setOpen tek başına kapağı oynatmadı', lid.rotation.x === 0)
+  expect('setOpen changed the target', chest.actions.isOpen())
+  expect('setOpen on its own did not move the lid', lid.rotation.x === 0)
 
-  // Aynı süre iki farklı kare hızıyla: üstel yaklaşma toplam SÜREYE bağlı
-  // olmalı, kare SAYISINA değil. Saf bir `p += (hedef - p) * k` burada patlardı
-  // — 30 fps'te 120 fps'ten yavaş açardı.
+  // The same duration at two different frame rates: the exponential approach
+  // must depend on total TIME, not on frame COUNT. A naive `p += (target - p) * k`
+  // would blow up here — it would open slower at 30 fps than at 120 fps.
   const fast = createChest()
   const slow = createChest()
   fast.actions.setOpen(true)
   slow.actions.setOpen(true)
   for (let i = 0; i < 12; i += 1) fast.update(0.2 / 12)
   for (let i = 0; i < 3; i += 1) slow.update(0.2 / 3)
-  expect('hareket kare hızından bağımsız',
+  expect('motion independent of frame rate',
     Math.abs(fast.actions.openness() - slow.actions.openness()) < 1e-6)
-  expect('0.2 sn sonra yolun çoğu alındı', fast.actions.openness() > 0.8)
+  expect('most of the way covered after 0.2 s', fast.actions.openness() > 0.8)
   fast.dispose()
   slow.dispose()
 
   for (let i = 0; i < 120; i += 1) chest.update(1 / 60)
-  expect('yeterli süre sonra tam açık', chest.actions.openness() === 1)
-  expect('kapak açılma açısına ulaştı', Math.abs(lid.rotation.x + angle) < 1e-9)
+  expect('fully open after enough time', chest.actions.openness() === 1)
+  expect('lid reached the open angle', Math.abs(lid.rotation.x + angle) < 1e-9)
 
-  // Tüketicinin kapağa taktığı nesne kapakla birlikte dönmeli — kapağın üstüne
-  // konan bir şamdan kapak açılınca havada kalmamalı.
+  // An object the consumer attaches to the lid must turn with the lid — a
+  // candlestick set on the lid must not hang in mid-air when the lid opens.
   const candle = new Mesh()
   lid.add(candle)
   candle.position.set(0, 0.05, 0.1)
   lid.updateMatrixWorld(true)
   const lifted = new Vector3().setFromMatrixPosition(candle.matrixWorld)
-  expect('kapağa takılan nesne kapakla birlikte döndü', lifted.z < 0.06)
+  expect('object attached to the lid turned with it', lifted.z < 0.06)
 
-  // Rebuild kapağı çarpmamalı: açı inşanın DIŞINDA tutuluyor.
-  expect('eylem sonrası configure() rebuilt=true', chest.configure({ width: 1.05 }).rebuilt)
-  expect('rebuild sonrası kapak hâlâ açık', Math.abs(lid.rotation.x + angle) < 1e-9)
-  expect('rebuild sonrası nesne kapakta duruyor', lid.children.includes(candle))
+  // A rebuild must not clobber the lid: the angle is kept OUTSIDE the build.
+  expect('configure() rebuilt=true after an action', chest.configure({ width: 1.05 }).rebuilt)
+  expect('lid still open after the rebuild', Math.abs(lid.rotation.x + angle) < 1e-9)
+  expect('object still on the lid after the rebuild', lid.children.includes(candle))
 
   chest.actions.setOpen(false)
   chest.actions.snap()
-  expect('snap() hedefe anında oturttu', chest.actions.openness() === 0 && lid.rotation.x === 0)
-  expect('toggle() yeni durumu döndürüyor', chest.actions.toggle() === true)
+  expect('snap() landed on the target at once', chest.actions.openness() === 0 && lid.rotation.x === 0)
+  expect('toggle() returns the new state', chest.actions.toggle() === true)
 
-  // `extras`: kapak tek PARÇA ama iki materyal yuvası taşıyor.
+  // `extras`: the lid is a single PART but carries two material slots.
   const lidSlots = new Set<string>()
   chest.parts.lid.content.traverse((object: Object3D) => {
     const slot = (object.userData?.vibe3d as { materialSlot?: string } | undefined)?.materialSlot
     if (slot) lidSlots.add(slot)
   })
-  expect('kapak hem meşe hem demir gövde taşıyor', lidSlots.has('oak') && lidSlots.has('iron'))
+  expect('lid carries both an oak and an iron body', lidSlots.has('oak') && lidSlots.has('iron'))
 
-  // Eylemsiz modellerde `update` sessizce hiçbir şey yapmalı.
+  // On models without actions `update` must quietly do nothing.
   const plain = createBarrel()
   plain.update(0.016)
-  expect('eylemsiz modelde update() zararsız', Object.keys(plain.actions).length === 0)
+  expect('update() harmless on a model without actions', Object.keys(plain.actions).length === 0)
   plain.dispose()
 
   chest.dispose()
@@ -618,32 +623,33 @@ console.log('\n@medieval-kit/wooden-chest eylemleri')
 
 
 
-// --- Çanın mekaniği --------------------------------------------------------
+// --- Bell mechanics --------------------------------------------------------
 //
-// Kitin en karmaşık hareketi. Çanı çalan şey çanın SALLANMASI değil, tokmağın
-// GERİDE KALMASI — iki gövde aynı eksende ama farklı sönümlemeyle salınıyor ve
-// aradaki fark vuruşu üretiyor. Bu ayrımı test etmezsek, çan sallanırken hiç
-// vurmayan bir modeli fark etmeyiz (ilk denemede tam olarak öyle olmuştu).
-console.log('\n@medieval-kit/bronze-bell mekaniği')
+// The kit's most complex motion. What rings the bell is not the bell SWINGING
+// but the clapper LAGGING BEHIND — two bodies swing on the same axis with
+// different damping and the difference produces the strike. Without testing
+// that split we would not notice a model that swings but never strikes at all
+// (which is exactly what the first attempt did).
+console.log('\n@medieval-kit/bronze-bell mechanics')
 {
   const bell = createBell()
   const body = bell.parts.bell.anchor
   const clapper = bell.parts.clapper.anchor
 
-  expect('başlangıçta hareketsiz', !bell.actions.isRinging() && bell.actions.strikes() === 0)
-  expect('çalınmadan update() hiçbir şey yapmıyor',
+  expect('motionless to begin with', !bell.actions.isRinging() && bell.actions.strikes() === 0)
+  expect('update() does nothing until it is rung',
     (() => { for (let i = 0; i < 30; i += 1) bell.update(1 / 60); return body.rotation.z === 0 })())
 
   bell.actions.ring()
   for (let i = 0; i < 10; i += 1) bell.update(1 / 60)
-  expect('çalınca sallanmaya başladı', Math.abs(body.rotation.z) > 0.01)
+  expect('starts swinging once rung', Math.abs(body.rotation.z) > 0.01)
 
-  // Vuruş: yeterli süre salınan bir çan MUTLAKA vurmalı.
+  // The strike: a bell that swings long enough MUST strike.
   for (let i = 0; i < 180; i += 1) bell.update(1 / 60)
-  expect(`tokmak vurdu (${bell.actions.strikes()} vuruş)`, bell.actions.strikes() > 0)
+  expect(`clapper struck (${bell.actions.strikes()} strikes)`, bell.actions.strikes() > 0)
 
-  // Ve tokmak çandan BAĞIMSIZ olmalı: her an aynı açıda olsalardı hiç
-  // vurmazlardı. Bir tur boyunca aradaki en büyük farkı ölçüyoruz.
+  // And the clapper must be INDEPENDENT of the bell: at the same angle every
+  // instant they would never strike. We measure the largest gap over one run.
   let apart = 0
   bell.actions.still()
   bell.actions.ring()
@@ -651,28 +657,28 @@ console.log('\n@medieval-kit/bronze-bell mekaniği')
     bell.update(1 / 60)
     apart = Math.max(apart, Math.abs(clapper.rotation.z - body.rotation.z))
   }
-  expect(`tokmak çandan ayrışıyor (en çok ${apart.toFixed(3)} rad)`, apart > 0.05)
+  expect(`clapper diverges from the bell (at most ${apart.toFixed(3)} rad)`, apart > 0.05)
 
-  // Savrulma sınırı: yapılandırmadaki açıyı aşmamalı.
+  // Swing limit: it must not exceed the angle from the configuration.
   const limit = (bell.getConfig().swing * Math.PI) / 180
   let peak = 0
   for (let i = 0; i < 40; i += 1) { bell.actions.ring(); bell.update(1 / 60) }
   for (let i = 0; i < 200; i += 1) { bell.update(1 / 60); peak = Math.max(peak, Math.abs(body.rotation.z)) }
-  expect(`savrulma sınırı korundu (${peak.toFixed(3)} ≤ ${limit.toFixed(3)})`, peak <= limit + 1e-9)
+  expect(`swing limit held (${peak.toFixed(3)} ≤ ${limit.toFixed(3)})`, peak <= limit + 1e-9)
 
-  // Sönümlenme: bırakılan bir çan durmalı. Sonsuza kadar salınan bir sarkaç
-  // sahnede sonsuza kadar kare harcar.
+  // Damping: a bell left alone must come to rest. A pendulum that swings
+  // forever burns frames in the scene forever.
   for (let i = 0; i < 2400; i += 1) bell.update(1 / 60)
-  expect('kendiliğinden duruyor', !bell.actions.isRinging())
+  expect('comes to rest on its own', !bell.actions.isRinging())
 
   bell.actions.still()
-  expect('still() her şeyi sıfırlıyor',
+  expect('still() resets everything',
     body.rotation.z === 0 && clapper.rotation.z === 0 && !bell.actions.isRinging())
 
   bell.dispose()
 }
 
 
-console.log(`\nkit toplamı: ${CASES.length} model · ${totalTriangles} üçgen`)
-console.log(failures.length === 0 ? 'Tüm kontroller geçti.' : `${failures.length} kontrol BAŞARISIZ.`)
+console.log(`\nkit total: ${CASES.length} models · ${totalTriangles} triangles`)
+console.log(failures.length === 0 ? 'All checks passed.' : `${failures.length} checks FAILED.`)
 if (failures.length > 0) process.exitCode = 1

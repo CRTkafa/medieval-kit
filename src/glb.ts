@@ -1,46 +1,49 @@
 /**
- * GLB dışa aktarımı.
+ * GLB export.
  *
- * vibe3d'nin kendi inceleyicisinde olup bizde olmayan tek özellik buydu.
- * Burada iki yerden kullanılabilecek şekilde duruyor: viewer'daki "GLB indir"
- * düğmesi ve `scripts/export-glb.ts` toplu dışa aktarımı. İkincisi onlarda yok
- * ve asıl işe yarayan o — kiti Blender'a ya da bir oyun motoruna tek komutla
- * götürüyor.
+ * This was the one feature vibe3d's own inspector had and we did not. Here it
+ * sits so it can be used from two places: the "Download GLB" button in the
+ * viewer and the bulk export in `scripts/export-glb.ts`. They do not have the
+ * second one, and that is the one that actually earns its keep — it takes the
+ * kit into Blender or a game engine with a single command.
  *
- * Kitin renk bilgisi tamamen VERTEX COLOR'da ve glTF bunu COLOR_0 olarak
- * taşıyor, baseColorFactor beyaz kalıyor. Yani dosyada hiç doku yok; modelin
- * bütün kimliği tek bir attribute'la seyahat ediyor. `scripts/verify-glb.ts`
- * bunu her modelde dışa aktarıp GERİ OKUYARAK doğruluyor.
+ * The kit's colour information lives entirely in VERTEX COLOR and glTF carries
+ * it as COLOR_0, leaving baseColorFactor white. So there is no texture in the
+ * file at all; the model's whole identity travels in a single attribute.
+ * `scripts/verify-glb.ts` checks this by exporting every model and READING IT
+ * BACK.
  *
- * Bir şeyin BURADA OLMAMASI da kayda değer. Materyalleri dışa aktarım için
- * klasik eşdeğerlerine çevirmeye çalışan bir katman yazmıştım: `three/webgpu`
- * düğüm materyalleri kullanıyoruz ve GLTFExporter'ın onları tanımayıp sessizce
- * boş materyal yazmasından çekiniyordum. Ölçünce gördüm ki gereksiz —
- * `MeshStandardNodeMaterial` da `isMeshStandardMaterial` bayrağını taşıyor,
- * yani dışa aktarıcı onu zaten tanıyor. Kodu sildim; hiç tetiklenmeyen bir
- * güvenlik katmanı, güvenlik sağlamadığı gibi okuyanı da yanıltıyor.
+ * What is NOT here is also worth noting. I had written a layer that tried to
+ * convert the materials to their classic equivalents for export: we use
+ * `three/webgpu` node materials and I was worried GLTFExporter would not
+ * recognise them and would silently write an empty material. Once I measured,
+ * it turned out to be unnecessary — `MeshStandardNodeMaterial` carries the
+ * `isMeshStandardMaterial` flag too, so the exporter already recognises it. I
+ * deleted the code; a safety layer that never fires provides no safety and
+ * misleads whoever reads it.
  *
- * TaşınMAYAN tek şey şader: scifi-kit'in göstergesindeki aşınma bir TSL düğüm
- * grafiği, yani kod. glTF kod taşımaz. Bu bir eksiklik değil, vertex color ile
- * şader tabanlı yüzey arasındaki gerçek farkın kendisi.
+ * The one thing that does NOT travel is the shader: the wear on the scifi-kit
+ * gauge is a TSL node graph, which is code. glTF does not carry code. That is
+ * not a shortcoming, it is the real difference between vertex colour and a
+ * shader-based surface.
  */
 import { Mesh, type Object3D } from 'three/webgpu'
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js'
 
 export interface GlbOptions {
-  /** Dosyaya gömülecek ad. */
+  /** The name embedded in the file. */
   readonly name?: string
-  /** Mesh'lerin userData'sına eklenecek bilgi — model adresi, sürüm vb. */
+  /** Info added to the meshes' userData — model address, version and so on. */
   readonly extras?: Record<string, unknown>
 }
 
 /**
- * Sahne dalını GLB (ikili glTF) olarak paketler.
+ * Packs a scene branch as GLB (binary glTF).
  *
- * Kaynak ağaca DOKUNMUYOR: userData eklemek için bir kopya üzerinde çalışıyor.
- * `Object3D.clone` geometri ve materyalleri PAYLAŞIYOR, yani kopya ucuz ve
- * bırakılması gereken bir şey üretmiyor — ama modelin kendi userData'sını
- * kirletmiyor, ki model hâlâ sahnede canlı olabilir.
+ * It does NOT touch the source tree: it works on a clone in order to add
+ * userData. `Object3D.clone` SHARES geometry and materials, so the clone is
+ * cheap and produces nothing that has to be disposed — but it does not pollute
+ * the model's own userData, and the model may still be live in the scene.
  */
 export async function exportGlb(root: Object3D, options: GlbOptions = {}): Promise<ArrayBuffer> {
   const clone = root.clone(true)
@@ -55,13 +58,13 @@ export async function exportGlb(root: Object3D, options: GlbOptions = {}): Promi
   const exporter = new GLTFExporter()
   const result = await exporter.parseAsync(clone, {
     binary: true,
-    // userData'daki `vibe3d` bloğu dosyaya `extras` olarak gitsin: modelin
-    // hangi registry adresinden geldiği dosyanın içinde kalsın istiyoruz.
+    // Let the `vibe3d` block in userData go into the file as `extras`: we want
+    // the registry address the model came from to stay inside the file.
     includeCustomExtensions: true,
-    // Kit zaten metre biriminde ve Y-up, yani glTF'in kendi sözleşmesiyle
-    // aynı — dönüştürme gerekmiyor.
+    // The kit is already in metres and Y-up, i.e. the same as glTF's own
+    // convention — no conversion needed.
     trs: false,
   })
-  if (!(result instanceof ArrayBuffer)) throw new Error('GLTFExporter ikili çıktı vermedi')
+  if (!(result instanceof ArrayBuffer)) throw new Error('GLTFExporter did not return binary output')
   return result
 }

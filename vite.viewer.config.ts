@@ -2,16 +2,16 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 
 /**
- * Viewer'ı tek dosyalık bir Artifact'e gömmek için ayrı build.
- * `scripts/build-artifact.ts` çıktıyı tek HTML'e indirger.
+ * A separate build for embedding the viewer into a single-file Artifact.
+ * `scripts/build-artifact.ts` collapses the output into one HTML file.
  */
 export default defineConfig({
   resolve: {
     alias: [
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
-      // `three` ve `three/webgpu` ayrı bundle'lar; ikisini de yüklemek çekirdeği
-      // iki kez paketler ve instanceof kontrollerini bozar. Regex şart —
-      // düz string önek eşleşmesi `three/addons/...` yolunu da bozardı.
+      // `three` and `three/webgpu` are separate bundles; loading both packs the
+      // core twice and breaks instanceof checks. The regex is required — a plain
+      // string prefix match would break the `three/addons/...` path too.
       { find: /^three$/, replacement: 'three/webgpu' },
     ],
   },

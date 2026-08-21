@@ -1,14 +1,14 @@
 /**
- * GLB dışa aktarımının gidiş-DÖNÜŞ doğrulaması.
+ * ROUND-TRIP verification of the GLB export.
  *
- * Dosyanın yazılmış olması içinde bir şey olduğunu kanıtlamaz. Nitekim
- * GLTFExporter tanımadığı bir materyal gördüğünde hata vermiyor, sessizce boş
- * materyal yazıyor — kit `three/webgpu` materyalleri kullandığı için bu tam da
- * başımıza gelebilecek türden bir sessiz kayıptı.
+ * The file having been written proves nothing about what is inside it. Indeed,
+ * when GLTFExporter meets a material it does not recognise it does not throw,
+ * it silently writes an empty material — and since the kit uses `three/webgpu`
+ * materials this was exactly the kind of silent loss we could run into.
  *
- * Bu yüzden her model dışa aktarılıyor, GERİ YÜKLENİYOR ve iki taraf
- * karşılaştırılıyor: üçgen sayısı, sınır kutusu, vertex renklerinin varlığı ve
- * materyal sayısı. Hiçbiri tutmuyorsa dosya bozuk demektir.
+ * So every model is exported, LOADED BACK and the two sides are compared:
+ * triangle count, bounding box, presence of vertex colours and material count.
+ * If any of them disagree the file is broken.
  */
 class BunFileReader {
   result: ArrayBuffer | string | null = null
@@ -81,28 +81,28 @@ for (const id of Object.keys(CATALOG)) {
   const after = summarise(gltf.scene)
 
   console.log(`\n${entry.address}`)
-  console.log(`  ${before.triangles} üçgen · ${before.meshes} mesh → GLB ${(buffer.byteLength / 1024).toFixed(1)} KB`)
+  console.log(`  ${before.triangles} triangles · ${before.meshes} meshes → GLB ${(buffer.byteLength / 1024).toFixed(1)} KB`)
 
-  expect('üçgen sayısı korundu', before.triangles === after.triangles)
-  expect('mesh sayısı korundu', before.meshes === after.meshes)
-  expect(`vertex renkleri korundu (${after.colours}/${before.colours})`,
+  expect('triangle count preserved', before.triangles === after.triangles)
+  expect('mesh count preserved', before.meshes === after.meshes)
+  expect(`vertex colours preserved (${after.colours}/${before.colours})`,
     after.colours === before.colours)
-  // Bizim kitimiz için bu ayrıca bir SÖZLEŞME: bütün renk bilgisi vertex
-  // color'da taşınıyor, dolayısıyla COLOR_0'ı olmayan bir medieval-kit modeli
-  // dosyada gri bir kütleye dönüşmüş demektir.
+  // For our kit this is also a CONTRACT: all colour information is carried in
+  // vertex colours, so a medieval-kit model without COLOR_0 has turned into a
+  // grey lump inside the file.
   //
-  // scifi-kit göstergesi bilerek dışarıda: onun yüzey kimliği TSL düğüm
-  // grafiğinde, yani ŞADER KODUNDA. glTF şader taşımıyor; o model dışa
-  // aktarıldığında aşınması kayboluyor ve bu düzeltilebilir bir şey değil,
-  // iki yaklaşımın gerçek farkı.
+  // The scifi-kit gauge is deliberately left out: its surface identity lives in
+  // a TSL node graph, that is, in SHADER CODE. glTF does not carry shaders; when
+  // that model is exported its wear disappears, and that is not something to be
+  // fixed — it is the real difference between the two approaches.
   if (entry.namespace === '@medieval-kit') {
-    expect('bütün mesh\'ler vertex rengi taşıyor', before.colours === before.meshes)
+    expect('every mesh carries vertex colours', before.colours === before.meshes)
   }
   const drift = before.size.map((value, i) => Math.abs(value - after.size[i]!))
-  expect(`ölçüler korundu (sapma ${Math.max(...drift).toExponential(1)} m)`,
+  expect(`dimensions preserved (drift ${Math.max(...drift).toExponential(1)} m)`,
     Math.max(...drift) < 1e-3)
 }
 
-console.log(`\n${Object.keys(CATALOG).length} model dışa aktarıldı ve geri okundu`)
-console.log(failures.length === 0 ? 'Tüm kontroller geçti.' : `${failures.length} kontrol BAŞARISIZ.`)
+console.log(`\n${Object.keys(CATALOG).length} models exported and read back`)
+console.log(failures.length === 0 ? 'All checks passed.' : `${failures.length} checks FAILED.`)
 if (failures.length > 0) process.exitCode = 1

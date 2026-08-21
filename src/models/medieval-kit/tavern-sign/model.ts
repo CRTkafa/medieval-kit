@@ -1,18 +1,18 @@
 /**
  * @medieval-kit/tavern-sign
  *
- * Duvara tutturulmuş dövme demir kolun ucunda sallanan tahta tabela.
+ * A wooden board swinging from the end of a forged iron bracket fixed to a wall.
  *
- * Okuma yazma nadir olduğu için dönemin tabelası YAZI değil RESİM taşırdı:
- * çelenk şarapçıyı, çizme kunduracıyı, havan eczacıyı gösterirdi. Bu yüzden
- * model panonun kendisini veriyor, üstündeki işareti değil — tüketici
- * `parts.board.anchor`'a ne isterse takar. Protokolün semantik parça fikri
- * tam olarak bu işe yarıyor.
+ * Since literacy was rare, a period sign carried a PICTURE, not TEXT: a garland
+ * meant the vintner, a boot the cobbler, a mortar the apothecary. So the model
+ * gives the board itself, not the device on it — the consumer attaches whatever
+ * they want to `parts.board.anchor`. This is exactly what the protocol's idea
+ * of semantic parts is good for.
  *
- * Sallanma çanınkinden farklı bir sarkaç: burada geri çağırma kuvveti yerçekimi
- * değil, iki halkanın sürtünmesi. Yani duran bir tabela hep DÜZ durur ama
- * itildiğinde uzun süre salınır. Çanın sert, hızlı sönümlemesinin yanına
- * konduğunda ikisinin farkı hemen okunuyor.
+ * The swing is a different pendulum from the bell's: here the restoring force
+ * is not gravity but the friction of two rings. So a sign at rest always hangs
+ * STRAIGHT, but once pushed it oscillates for a long time. Put next to the
+ * bell's hard, fast damping, the difference between the two reads immediately.
  */
 import type { BufferGeometry } from 'three'
 
@@ -28,17 +28,17 @@ import {
 } from '../core/index.ts'
 
 export interface TavernSignConfig {
-  /** Pano genişliği (metre). */
+  /** Board width (metres). */
   readonly width: number
-  /** Pano yüksekliği (metre). */
+  /** Board height (metres). */
   readonly height: number
-  /** Kolun duvardan çıkıntısı (metre). */
+  /** How far the bracket projects from the wall (metres). */
   readonly reach: number
-  /** Askı zincirinin boyu (metre). */
+  /** Length of the hanging chain (metres). */
   readonly drop: number
-  /** Tahta sayısı. */
+  /** Number of planks. */
   readonly plankCount: number
-  /** Sallanmanın sönümlenme hızı. */
+  /** How fast the swing damps out. */
   readonly damping: number
   readonly seed: number
 }
@@ -53,15 +53,15 @@ export const tavernSignDefaults: TavernSignConfig = {
   seed: 73,
 }
 
-// Zincirler ayrı bir parça DEĞİL: panoyla birlikte sallanmak zorundalar,
-// dolayısıyla onun `extras` gövdesi olarak yaşıyorlar.
+// The chains are NOT a separate part: they have to swing together with the
+// board, so they live as its `extras` body.
 export type TavernSignParts = 'bracket' | 'board'
 
 export interface TavernSignActions {
-  /** Tabelayı iter: rüzgâr ya da kapıdan çıkan biri. */
+  /** Pushes the sign: wind, or someone coming out of the door. */
   push(strength?: number): void
   still(): void
-  /** Anlık salınım açısı (radyan). */
+  /** Current swing angle (radians). */
   lean(): number
 }
 
@@ -77,28 +77,29 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
     build: ({ config, random }) => {
       const tint = createTinter(random)
       const bar = config.reach * 0.035
-      // Dönme ekseni: zincirlerin koldan çıktığı hat. Pano ve zincirler bu
-      // noktaya GÖRE yazılıyor.
+      // Axis of rotation: the line where the chains leave the bracket. The
+      // board and the chains are written RELATIVE to this point.
       const pivotY = config.height * 0.5 + config.drop
       const armY = pivotY
       const hangX = config.width * 0.4
 
-      // --- Kol ---------------------------------------------------------------
-      // Duvara sıfır Z'de oturuyor, +Z yönüne uzanıyor.
+      // --- Bracket -----------------------------------------------------------
+      // Sits against the wall at Z zero and reaches out along +Z.
       const iron: BufferGeometry[] = []
       iron.push(boxGeometry(
         [bar * 4.4, config.height * 0.9, bar * 1.6],
         [0, armY - config.height * 0.1, bar * 0.4],
         tint('iron', -0.05, 0.7),
       ))
-      // Yatay kol.
+      // The horizontal arm.
       iron.push(boxGeometry(
         [bar * 1.5, bar * 1.7, config.reach],
         [0, armY + bar * 0.5, config.reach / 2],
         tint('iron', 0.02, 0.7),
       ))
-      // Payanda: kolu duvara bağlayan eğri destek. Onsuz kol havada duruyor
-      // gibi görünüyor ve gözün "bu nasıl taşınıyor" sorusu cevapsız kalıyor.
+      // Brace: the curved support tying the arm back to the wall. Without it
+      // the arm looks like it is hanging in the air and the eye's question of
+      // "what is holding this up" goes unanswered.
       const braceLength = config.reach * 0.72
       const brace = boxGeometry(
         [bar * 1.1, braceLength, bar * 1.1],
@@ -109,7 +110,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       brace.rotateX(Math.PI / 4)
       brace.translate(0, armY - config.height * 0.42, bar)
       iron.push(brace)
-      // Kolun ucundaki kıvrım: dövme demirin imzası.
+      // The curl at the end of the arm: the signature of forged iron.
       const curl = boxGeometry(
         [bar * 0.9, config.reach * 0.3, bar * 0.9],
         [0, config.reach * 0.15, 0],
@@ -120,9 +121,10 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       curl.translate(0, armY + bar * 0.5, config.reach)
       iron.push(curl)
 
-      // --- Zincirler ------------------------------------------------------------
-      // Panoyla BİRLİKTE sallanmak zorundalar, o yüzden panonun `extras`
-      // gövdesi. Ayrı parça olsalardı pano sallanırken zincir dimdik kalırdı.
+      // --- Chains ----------------------------------------------------------------
+      // They have to swing TOGETHER with the board, hence the board's `extras`
+      // body. Were they a separate part, the chain would stay bolt upright
+      // while the board swung.
       const links: BufferGeometry[] = []
       for (const side of [-1, 1]) {
         const count = 3
@@ -130,7 +132,8 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
           const y = -config.drop * ((i + 0.5) / count)
           const ring = bandGeometry(config.drop * 0.16, 0, bar * 0.6, bar * 0.35, 6,
             tint('iron', jitter(random, 0.05), 0.7), { inner: true })
-          // Ardışık halkalar dik açıyla geçmeli — zincir budur.
+          // Successive links must pass through at right angles — that is what a
+          // chain is.
           ring.rotateX(i % 2 === 0 ? Math.PI / 2 : 0)
           ring.rotateZ(i % 2 === 0 ? 0 : Math.PI / 2)
           ring.translate(side * hangX, y, config.reach * 0.86 * (side === 0 ? 1 : 1))
@@ -138,7 +141,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
         }
       }
 
-      // --- Pano ------------------------------------------------------------------
+      // --- Board -------------------------------------------------------------------
       const planks = Math.max(1, Math.round(config.plankCount))
       const plankHeight = config.height / planks
       const board: BufferGeometry[] = []
@@ -153,8 +156,8 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
           tint('oak', jitter(random, 0.05)),
         ))
       }
-      // Arkadaki iki çıta: tahtaları birbirine bağlayan şey. Tahtaların İÇİNE
-      // giriyorlar ki hiçbir yüz aynı düzleme oturmasın.
+      // The two battens on the back: what holds the planks together. They go
+      // INTO the planks so that no two faces end up coplanar.
       for (const side of [-1, 1]) {
         board.push(boxGeometry(
           [config.width * 0.07, config.height * 0.94, config.height * 0.045],
@@ -162,7 +165,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
           tint('oak', -0.09),
         ))
       }
-      // Panoyu zincire bağlayan iki demir kulak.
+      // The two iron lugs joining the board to the chain.
       for (const side of [-1, 1]) {
         links.push(boxGeometry(
           [bar * 1.2, config.drop * 0.4, bar * 1.4],
@@ -186,8 +189,8 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       parts.board.anchor.rotation.x = angle
       return {
         push: (strength = 1) => {
-          // Mevcut hareketi güçlendiriyor, sıfırlamıyor: art arda gelen
-          // itmeler gerçek bir rüzgâr gibi birikmeli.
+          // Reinforces the existing motion instead of resetting it: successive
+          // pushes should accumulate the way a real wind does.
           velocity += (velocity >= 0 ? 1 : -1) * 1.6 * strength
         },
         still: () => { angle = 0; velocity = 0; parts.board.anchor.rotation.x = 0 },
@@ -199,11 +202,11 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       const step = Math.min(0.05, Math.max(0, dt))
       if (step === 0) return
       if (Math.abs(angle) < 1e-5 && Math.abs(velocity) < 1e-5) return
-      // Çandan daha YUMUŞAK bir sarkaç: geri çağırma zayıf, sönümleme az.
-      // Ağır bir panonun uzun ve tembel salınımı böyle görünüyor.
+      // A SOFTER pendulum than the bell's: weak restoring force, little damping.
+      // This is what the long, lazy swing of a heavy board looks like.
       velocity += -angle * 11 * step - velocity * getConfig().damping * step
       angle += velocity * step
-      // Sınır: pano kola çarpmadan önce durmalı.
+      // Limit: the board must stop before it hits the arm.
       const limit = 0.55
       if (Math.abs(angle) > limit) {
         angle = Math.sign(angle) * limit

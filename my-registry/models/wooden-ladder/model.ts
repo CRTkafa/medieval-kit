@@ -1,11 +1,11 @@
 /**
  * @medieval-kit/wooden-ladder
  *
- * İki dikme, aralarında basamaklar. Kitin en ucuz modeli ve sahne değeri en
- * yüksek olanlardan biri: bir sahneye dikey hareket önerir.
+ * Two rails with rungs between them. The cheapest model in the kit and one of
+ * the highest in scene value: it suggests vertical movement in a scene.
  *
- * Basamaklar dikmelerin İÇİNE giriyor (geçme), yani hiçbir yüzey dikmelerin
- * yüzeyiyle aynı düzleme oturmuyor.
+ * The rungs go INTO the rails (a housed joint), so no surface sits on the same
+ * plane as the surface of the rails.
  */
 import { Color } from 'three'
 
@@ -19,10 +19,10 @@ import {
 
 export interface WoodenLadderConfig {
   readonly height: number
-  /** Dikmeler arası mesafe (metre). */
+  /** Distance between the rails (metres). */
   readonly width: number
   readonly rungCount: number
-  /** Dikmelerin üste doğru incelmesi. 0 = paralel. */
+  /** How much the rails narrow towards the top. 0 = parallel. */
   readonly taper: number
   readonly seed: number
 }
@@ -53,8 +53,8 @@ export function createModel(overrides: Partial<WoodenLadderConfig> = {}) {
       const railThickness = config.width * 0.1
       const half = config.width / 2
 
-      // Dikmeler üste doğru birbirine yaklaşır; bu tek detay merdiveni
-      // "iki tahta" olmaktan çıkarıp merdiven yapıyor.
+      // The rails converge towards the top; this single detail stops the ladder
+      // from being "two boards" and makes it a ladder.
       const lean = half * config.taper
       const rails = [-1, 1].map((side) => {
         const rail = chamferedBoxGeometry(
@@ -65,7 +65,7 @@ export function createModel(overrides: Partial<WoodenLadderConfig> = {}) {
         [0, 0, 0],
         shade(),
       )
-        // Z ekseni etrafında hafif eğ: alt uç dışta, üst uç içte.
+        // Lean it slightly around the Z axis: bottom end out, top end in.
         rail.rotateZ((side * -lean) / config.height)
         rail.translate(side * half, 0, 0)
         return rail
@@ -76,8 +76,8 @@ export function createModel(overrides: Partial<WoodenLadderConfig> = {}) {
       for (let i = 0; i < count; i += 1) {
         const t = (i + 0.5) / count
         const y = -config.height / 2 + t * config.height
-        // Basamak, o yükseklikteki dikme aralığından biraz UZUN: uçları
-        // dikmelerin içinde kalsın.
+        // The rung is a little LONGER than the rail gap at that height, so that
+        // its ends stay inside the rails.
         const span = (half - lean * t) * 2 + railThickness * 0.9
         rungs.push(chamferedBoxGeometry(
         [span, railThickness * 1.05],

@@ -1,15 +1,16 @@
 /**
  * @medieval-kit/cart-wheel
  *
- * Fıçıdan sonra en ikonik ortaçağ nesnesi. Tek başına da kullanılır — duvara
- * yaslanmış bir tekerlek bir sahneyi anında köy yapar.
+ * The most iconic medieval object after the barrel. It works alone too — a
+ * wheel leaning against a wall turns a scene into a village instantly.
  *
- * Gerçek yapımı dıştan içe dört katman: demir bandaj, ahşap ispit (felloe),
- * parmaklar, göbek. İspit tek parça değil, düz parçalardan kurulur — yani
- * lowpoly çokgen jant burada bir basitleştirme değil, doğru inşa.
+ * The real thing is four layers from the outside in: iron tyre, wooden felloe,
+ * spokes, hub. The felloe is not one piece, it is built from straight pieces —
+ * so a lowpoly polygonal rim is not a simplification here, it is the correct
+ * construction.
  *
- * Tekerlek XY düzleminde duruyor; ekseni Z. Yatırmak isteyen `root.rotation.x`
- * ile çevirir.
+ * The wheel stands in the XY plane; its axis is Z. Whoever wants it lying down
+ * turns it with `root.rotation.x`.
  */
 import { Color, type BufferGeometry } from 'three'
 
@@ -24,15 +25,15 @@ import {
 } from '../core/index.ts'
 
 export interface CartWheelConfig {
-  /** Dış yarıçap, demir bandaj dâhil (metre). */
+  /** Outer radius, iron tyre included (metres). */
   readonly radius: number
-  /** Parmak sayısı. İspit parça sayısı da buna bağlı. */
+  /** Number of spokes. The felloe piece count follows from it. */
   readonly spokeCount: number
-  /** Tekerlek kalınlığı (metre). */
+  /** Wheel thickness (metres). */
   readonly width: number
-  /** Göbeğin uzunluğu, kalınlığın katı olarak. */
+  /** Hub length, as a multiple of the thickness. */
   readonly hubLength: number
-  /** Demir bandaj kalınlığı, yarıçapın oranı olarak. */
+  /** Iron tyre thickness, as a fraction of the radius. */
   readonly tyre: number
   readonly seed: number
 }
@@ -73,7 +74,7 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
       const hubRadius = config.radius * 0.17
       const hubLength = config.width * config.hubLength
 
-      // --- göbek: iki ucu pahlı, ortası şişkin tornalanmış kütük ---
+      // --- hub: turned log, chamfered at both ends, swollen in the middle ---
       const hubProfile: Level[] = [
         { y: -hubLength / 2, radius: hubRadius * 0.68 },
         { y: -hubLength / 2 + hubLength * 0.1, radius: hubRadius * 0.92 },
@@ -83,10 +84,10 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
         { y: hubLength / 2, radius: hubRadius * 0.68 },
       ]
       const hub = latheGeometry(hubProfile, 8, [0, 0, 0], oak(-0.05), { colourTop: oak(-0.03) })
-      // Göbeğin ekseni Z olmalı: tekerlek dik duruyor.
+      // The hub's axis has to be Z: the wheel stands upright.
       hub.rotateX(Math.PI / 2)
 
-      // --- parmaklar: göbekten ispite, dışa doğru incelen ---
+      // --- spokes: from hub to felloe, tapering outward ---
       const spokePieces: BufferGeometry[] = []
       const spokeLength = felloeInner - hubRadius * 0.6
       for (let i = 0; i < spokes; i += 1) {
@@ -99,25 +100,25 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
           [0, spokeLength / 2 + hubRadius * 0.6, 0],
           oak(),
         )
-        // Elle yontulmuş parmak tam ortalanmaz; küçük bir sapma veriyoruz.
+        // A hand-carved spoke is never exactly centred; we add a small offset.
         spoke.rotateZ(angle + jitter(random, 0.012))
         spokePieces.push(spoke)
       }
 
-      // --- ispit: düz ahşap parçalardan kurulu çokgen jant ---
+      // --- felloe: polygonal rim built from straight wooden pieces ---
       const felloePieces: BufferGeometry[] = []
       const segments = spokes
       const step = (Math.PI * 2) / segments
-      // Kiriş uzunluğu: komşu iki köşe arasındaki mesafe. Parçalar birbirine
-      // GİRSİN diye biraz fazla uzun, uç uca değil.
+      // Chord length: the distance between two neighbouring corners. A little
+      // too long so the pieces BITE into one another, not just meet end to end.
       const chord = 2 * felloeOuter * Math.sin(step / 2) * 1.03
       const midRadius = (felloeOuter + felloeInner) / 2
       for (let i = 0; i < segments; i += 1) {
         const angle = (i + 0.5) * step
-        // Her parça kendi kalınlığında. Bu hem doğru (elle kesilmiş ispit
-        // parçaları eşit olmaz) hem de zorunlu: hepsi tam aynı kalınlıkta
-        // olsaydı yan yüzleri aynı düzlemde olur ve bindirdikleri yerde
-        // z-fighting yaparlardı.
+        // Every piece has its own thickness. That is both correct (hand-cut
+        // felloe pieces are never equal) and required: if they were all exactly
+        // the same thickness their side faces would be coplanar and would
+        // z-fight wherever they overlap.
         const thickness = config.width * (1 + jitter(random, 0.07))
         const piece = chamferedBoxGeometry(
           [chord, thickness],
@@ -127,17 +128,17 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
           [0, 0, 0],
           oak(0.03),
         )
-        // Parça origin'de kuruluyor: X = teğet (kiriş boyu), Y = radyal
-        // kalınlık, Z = tekerlek kalınlığı. Yani angle=0 için zaten doğru
-        // yönde. Yarıçapa taşıyıp tek bir dönüşle yerine götürmek yeterli —
-        // araya fazladan çevirme koymak parçaların bir kısmını birbirine
-        // paralel hâle getiriyor ve uç yüzleri çakışıyordu.
+        // The piece is built at the origin: X = tangent (chord length), Y =
+        // radial thickness, Z = wheel thickness. So for angle=0 it already
+        // faces the right way. Moving it out to the radius and taking it into
+        // place with a single rotation is enough — an extra rotation in between
+        // made some of the pieces parallel and their end faces overlapped.
         piece.translate(0, midRadius, 0)
         piece.rotateZ(angle)
         felloePieces.push(piece)
       }
 
-      // --- demir bandaj: ispiti çevreleyen tek parça çember ---
+      // --- iron tyre: single-piece hoop wrapping the felloe ---
       const tyre = latheGeometry([
         { y: -config.width / 2, radius: config.radius },
         { y: -config.width / 2 + tyreThickness * 0.3, radius: config.radius + tyreThickness * 0.06 },

@@ -1,21 +1,22 @@
 /**
  * @medieval-kit/wooden-shovel
  *
- * Üçüncü deneme. İlk ikisi başarısızdı ve ikisi de aynı sebepten: ağzı düz
- * parçalardan kurmaya çalıştım.
+ * Third attempt. The first two failed, and both for the same reason: I tried
+ * to build the blade out of flat pieces.
  *
- *   1. deneme — iki kutuyu uç uca koydum. "Kürek şekli" çıktı, kürek çıkmadı.
- *   2. deneme — üç düz paneli hafifçe döndürüp yan yana dizdim. Paneller kendi
- *      merkezleri etrafında döndüğü için aralarında kademe kaldı; göz onu tek
- *      yüzey değil "üç tahta" olarak okudu.
+ *   attempt 1 — two boxes end to end. It came out "shovel-shaped", not a shovel.
+ *   attempt 2 — three flat panels, each rotated slightly, lined up side by
+ *      side. Because the panels rotated about their own centres, steps were
+ *      left between them; the eye read that as "three boards", not one surface.
  *
- * Küreği kürek yapan şey ağzın TEK SÜREKLİ İÇBÜKEY YÜZEY olması: toprağı tutan
- * çukur. `dishedSheetGeometry` tam bunun için yazıldı — enine kesiti kavisli,
- * genişliği ve kalınlığı boyunca değişen dikişsiz bir levha.
+ * What makes a shovel a shovel is that the blade is ONE CONTINUOUS CONCAVE
+ * SURFACE: the dish that holds the soil. `dishedSheetGeometry` was written for
+ * exactly this — a seamless sheet with a curved cross-section whose width and
+ * thickness change along its length.
  *
- * Siluet: sokette dar boyun, %45'te en geniş, uca doğru yumuşak daralma.
- * Arkada ayak basamağı — gerçek kürekte ağzın üst kenarı kıvrılır, ayakla
- * bastırmak için.
+ * Silhouette: a narrow neck at the socket, widest at 45%, a soft taper towards
+ * the tip. A foot tread at the back — on a real shovel the top edge of the
+ * blade is folded over, to press down on with the foot.
  */
 import { type BufferGeometry } from 'three'
 
@@ -34,13 +35,13 @@ import {
 export interface WoodenShovelConfig {
   readonly length: number
   readonly shaftRadius: number
-  /** Ağzın en geniş yeri (metre). */
+  /** The widest point of the blade (metres). */
   readonly bladeWidth: number
-  /** Ağız uzunluğu, toplam boyun oranı olarak. */
+  /** Blade length, as a fraction of the total length. */
   readonly bladeLength: number
-  /** Kepçenin derinliği: kenarların ortaya göre kalkması. 0 = düz levha. */
+  /** Depth of the scoop: how far the edges rise above the middle. 0 = flat sheet. */
   readonly dish: number
-  /** Ağzın sapa göre eğimi (derece). */
+  /** Tilt of the blade relative to the shaft (degrees). */
   readonly bladeAngle: number
   readonly seed: number
 }
@@ -79,13 +80,14 @@ export function createModel(overrides: Partial<WoodenShovelConfig> = {}) {
       const t = config.length * 0.011
       const curve = config.bladeWidth * config.dish
 
-      // Enine kesit profili — DÖRDÜNCÜ deneme, bu kez siluet yüzünden.
+      // Cross-section profile — the FOURTH attempt, this time over the silhouette.
       //
-      // Üçüncü deneme geometrik olarak doğruydu (tek sürekli çukur yüzey) ama
-      // hâlâ kürek gibi durmuyordu: kenarlar ortada şişip uca doğru yumuşakça
-      // kapanıyordu, yani KAŞIK profili. Kürek kaşık değildir: yanları boyunca
-      // neredeyse PARALEL gider, sonra uçta kısa bir pahla biter. Toprağı tutan
-      // şey o paralel kısım; onsuz elde ettiğin şey bir spatula oluyor.
+      // The third attempt was geometrically correct (one continuous dished
+      // surface) but it still did not read as a shovel: the edges bulged in the
+      // middle and closed softly towards the tip, i.e. a SPOON profile. A shovel
+      // is not a spoon: it runs almost PARALLEL along its sides, then ends in a
+      // short chamfer at the tip. What holds the soil is that parallel part;
+      // without it what you get is a spatula.
       const profile: SheetLevel[] = [
         { y: 0, halfWidth: half * 0.24, thickness: t * 1.5, curve: curve * 0.08 },
         { y: span * 0.11, halfWidth: half * 0.82, thickness: t * 1.15, curve: curve * 0.4 },
@@ -98,9 +100,9 @@ export function createModel(overrides: Partial<WoodenShovelConfig> = {}) {
 
       const sheet = dishedSheetGeometry(profile, 8, steelTint(random, -0.04), steelTint(random, 0.04))
 
-      // Ayak basamağı: ağzın üst kenarındaki kıvrım, çukurun ARKASINDA. Omuz
-      // hizasında ve GENİŞ olmalı — üstüne basılan yer burası, dar bir çıkıntı
-      // hem işlevsiz hem de siluette hiç görünmüyor.
+      // Foot tread: the fold at the top edge of the blade, BEHIND the dish. It
+      // must sit at shoulder height and be WIDE — this is where you step, and a
+      // narrow ledge is both useless and invisible in the silhouette.
       const tread = chamferedBoxGeometry(
         [config.bladeWidth * 0.78, t * 2.4],
         [config.bladeWidth * 0.7, t * 1.9],
@@ -112,10 +114,11 @@ export function createModel(overrides: Partial<WoodenShovelConfig> = {}) {
       tread.rotateX(0.42)
       tread.translate(0, span * 0.12, -t * 1.7)
 
-      // Sırt kayışı: soketten çıkıp ağzın ARKASINDA yukarı uzanan dövme demir.
-      // Küreği kürek yapan ikinci şey bu. Onsuz ağız, sapın ucuna yapıştırılmış
-      // bir levha gibi duruyor; gerçek kürekte ağzı taşıyan şey o kayıştır ve
-      // gözün "bu nasıl duruyor" sorusunu cevaplayan da odur.
+      // Back strap: forged iron leaving the socket and running up BEHIND the
+      // blade. This is the second thing that makes a shovel a shovel. Without it
+      // the blade looks like a sheet glued to the end of the shaft; on a real
+      // shovel the strap is what carries the blade, and it is also what answers
+      // the eye's question of "how is this held on".
       const strap = chamferedBoxGeometry(
         [config.shaftRadius * 2.3, t * 2.2],
         [config.shaftRadius * 1.1, t * 1.4],
@@ -126,9 +129,9 @@ export function createModel(overrides: Partial<WoodenShovelConfig> = {}) {
       )
 
       const blade: BufferGeometry = mergeColoured([sheet, tread])
-      // İkisi de AYNI dönüşümden geçmeli, yoksa kayış ağzın arkasında kalmaz.
+      // Both must take the SAME transform, or the strap won't stay behind the blade.
       for (const piece of [blade, strap]) {
-        // Ağız sapla tam hizada değil, hafifçe öne eğik: toprağa dalması için.
+        // The blade is tilted slightly forward of the shaft line, so it bites the soil.
         piece.rotateX(-(config.bladeAngle * Math.PI) / 180)
         piece.translate(0, shaft.top - span * 0.06, 0)
       }

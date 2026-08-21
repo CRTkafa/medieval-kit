@@ -1,30 +1,34 @@
 /**
  * @medieval-kit/wooden-fence
  *
- * Zıvanalı riven çit: yarılmış kalın direkler, direğin İÇİNDEN geçen kirişler.
+ * Mortised riven fence: riven heavy posts, rails passing THROUGH the post.
  *
- * İKİNCİ deneme ve sebebi tek kelimeyle söylenebilir: BİRLEŞİM. İlk hâlde
- * dört kare çubuk ve önlerine konmuş iki ince lata vardı; hiçbir noktada iki
- * parçanın birbirine nasıl tutunduğu görünmüyordu, dolayısıyla nesnenin bütün
- * konusu eksikti. Render'da çit değil "çitin teknik resmi" gibi okunuyordu —
- * 4.89 × 1.10 × 0.09 m, yani derinlik/boy oranı 54:1, karton.
+ * SECOND attempt, and the reason can be said in one word: JOINERY. The first
+ * version was four square sticks with two thin battens laid across their
+ * front; at no point was it visible how two pieces held on to each other, so
+ * the whole subject of the object was missing. In the render it read not as a
+ * fence but as "the technical drawing of a fence" — 4.89 × 1.10 × 0.09 m,
+ * i.e. a depth-to-length ratio of 54:1, cardboard.
  *
- * Gerçek riven post-and-rail çitinde direğe DİKDÖRTGEN BİR DELİK açılır ve
- * kiriş o delikten geçer. Modelin tamamı bu tek gerçeğin etrafında yeniden
- * kuruldu:
+ * In a real riven post-and-rail fence a RECTANGULAR HOLE is cut through the
+ * post and the rail passes through that hole. The entire model was rebuilt
+ * around this single fact:
  *
- *   - Direk artık tek kutu değil: iki YANAK ve aralarındaki KÖPRÜ blokları.
- *     Delik böylece geometrik olarak var oluyor, boyanmış bir çentik değil.
- *     `bakeOcclusion` da ağzını kendiliğinden karartıyor.
- *   - Kiriş delikten geçip çitin iki ucunda karşı yüzden TAŞIYOR. Zıvana dili
- *     siluete giren tek yatay çıkıntı ve "bu nasıl duruyor" sorusunu tek
- *     başına cevaplıyor.
- *   - Kiriş delikten dar: her yanda birkaç milimlik boşluk kalıyor, yani delik
- *     kapanmıyor. Deliği delik gösteren şey o boşluk.
+ *   - The post is no longer a single box: two CHEEKS with BRIDGE blocks
+ *     between them. The hole therefore exists geometrically, it is not a
+ *     painted notch. `bakeOcclusion` darkens its mouth on its own too.
+ *   - The rail passes through the hole and PROTRUDES from the far face at the
+ *     two ends of the fence. The tenon tongue is the only horizontal
+ *     protrusion that enters the silhouette, and it answers the question
+ *     "how is this standing up" all by itself.
+ *   - The rail is narrower than the hole: a few millimetres of gap remain on
+ *     each side, so the hole does not close up. That gap is what shows the
+ *     hole as a hole.
  *
- * Bir de dizilim: eski kiriş dağılımı `0.28 + 0.5·r/(count−1)` idi, yani kaç
- * kiriş olursa olsun HEP 0.28–0.78 aralığını dolduruyordu. Üstü ve altı
- * doldurmak yapısal olarak imkânsızdı; siluetin üst kenarı bu yüzden boştu.
+ * And the spacing: the old rail distribution was `0.28 + 0.5·r/(count−1)`,
+ * i.e. no matter how many rails there were it ALWAYS filled the 0.28–0.78
+ * band. Filling the top and the bottom was structurally impossible; that is
+ * why the upper edge of the silhouette was empty.
  */
 import { Color } from 'three'
 import type { BufferGeometry } from 'three'
@@ -39,16 +43,16 @@ import {
 } from '../core/index.ts'
 
 export interface WoodenFenceConfig {
-  /** Bölüm sayısı. Her bölüm iki direk arası. */
+  /** Number of sections. Each section is the span between two posts. */
   readonly sections: number
-  /** Bir bölümün uzunluğu (metre). Kiriş bir kütükten yarıldığı için 2–3 m. */
+  /** Length of one section (metres). 2–3 m, because a rail is riven from one log. */
   readonly sectionLength: number
   readonly height: number
-  /** Yatay kiriş sayısı. */
+  /** Number of horizontal rails. */
   readonly railCount: number
-  /** Direklerin eğrilik ve boy sapması. 0 = fabrikasyon düzgünlük. */
+  /** Curvature and height deviation of the posts. 0 = factory straightness. */
   readonly rough: number
-  /** Bir uca payanda konsun mu (0/1). */
+  /** Whether a brace is placed at one end (0/1). */
   readonly brace: number
   readonly seed: number
 }
@@ -68,10 +72,10 @@ export type WoodenFenceParts = 'posts' | 'rails'
 export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
   return createKitModel<WoodenFenceConfig, 'oak', WoodenFenceParts>({
     id: 'wooden-fence',
-    // Alaca hücresi elle veriliyor: çit 4.8 m uzun, otomatik türetme onu
-    // modelin ölçeğinden çıkarınca tek direk tek hücreye düşüyor ve doku
-    // sistemi hiçbir şey yapmıyor. Ahşabın damar lekesi nesnenin boyundan
-    // bağımsız olarak birkaç santimdir.
+    // The mottle cell is given by hand: the fence is 4.8 m long, and when the
+    // automatic derivation takes it from the model's scale a single post falls
+    // into a single cell and the texture system does nothing. The grain mottle
+    // of wood is a few centimetres regardless of the object's size.
     mottle: { cell: 0.05 },
     defaults: woodenFenceDefaults,
     slots: ['oak'],
@@ -82,7 +86,7 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
         tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), lift + jitter(random, 0.06))
         return tint
       }
-      /** Damar ucu: yarılmış yüzey ve kesik uçlar. Çit bunu hiç kullanmıyordu. */
+      /** End grain: riven surface and cut ends. The fence never used this. */
       const endGrain = (lift = 0): Color => {
         tint.copy(MEDIEVAL_PALETTE.oakEnd)
         tint.offsetHSL(jitter(random, 0.01), jitter(random, 0.04), lift + jitter(random, 0.05))
@@ -100,21 +104,21 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
       const half = config.height / 2
       const rough = Math.max(0, config.rough)
 
-      // --- Ölçüler, hepsi yükseklikten türetiliyor --------------------------
-      const postW = config.height * 0.12          // direğin çit boyunca genişliği
-      const mortise = config.height * 0.062       // deliğin Z açıklığı
-      const cheek = config.height * 0.03          // deliğin iki yanındaki et
-      const postD = mortise + cheek * 2           // direğin toplam derinliği
-      const railH = config.height * 0.098         // kirişin dikey yüksekliği
-      const railD = config.height * 0.053         // kirişin derinliği — delikten DAR
-      const tenon = config.height * 0.088         // uçlardaki taşma
+      // --- Dimensions, all derived from the height --------------------------
+      const postW = config.height * 0.12          // post width along the fence
+      const mortise = config.height * 0.062       // Z opening of the hole
+      const cheek = config.height * 0.03          // material on each side of the hole
+      const postD = mortise + cheek * 2           // total depth of the post
+      const railH = config.height * 0.098         // vertical height of the rail
+      const railD = config.height * 0.053         // rail depth — NARROWER than the hole
+      const tenon = config.height * 0.088         // overhang at the ends
 
-      // Kiriş yükseklikleri. Üs 1.12: aralıklar aşağı doğru sıkışıyor, çünkü
-      // altından geçmeye çalışan hayvan küçük olandır.
+      // Rail heights. Exponent 1.12: the gaps tighten towards the bottom,
+      // because the animal trying to get under it is the small one.
       const railT = Array.from({ length: count }, (_, r) =>
         count === 1 ? 0.55 : 0.19 + 0.71 * Math.pow(r / (count - 1), 1.12))
 
-      // --- Direkler -----------------------------------------------------------
+      // --- Posts --------------------------------------------------------------
       const postPieces: BufferGeometry[] = []
       const slotHalf = railH / 2 + config.height * 0.008
 
@@ -123,7 +127,7 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
         const postH = config.height + jitter(random, 0.075 * rough)
         const pieces: BufferGeometry[] = []
 
-        // İki yanak: deliğin duvarları. Tam boy, tabandan tepeye.
+        // Two cheeks: the walls of the hole. Full height, base to top.
         for (const side of [-1, 1]) {
           pieces.push(chamferedBoxGeometry(
             [postW, cheek],
@@ -136,15 +140,15 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
           ))
         }
 
-        // Köprüler: yuvaların ARASINI dolduran bloklar. Delik tam olarak
-        // bunların bıraktığı boşluk. Kesitleri yanakların İÇİNDE kalıyor
-        // (±Z yüzleri yanak katısına gömülü), yani hiçbir yüz çifti eş
-        // düzlemde değil.
+        // Bridges: blocks that fill the space BETWEEN the slots. The hole is
+        // exactly the gap they leave. Their cross-sections stay INSIDE the
+        // cheeks (their ±Z faces are buried in the cheek solid), so no pair
+        // of faces is coplanar.
         //
-        // Köprüler direğin iki UCUNA kadar gitmiyor: uçları yanakların
-        // uçlarıyla aynı düzleme oturup titriyordu. İçeri çekilen paylar
-        // görünmüyor — alttaki toprak yığınının, üstteki başlığın içinde
-        // kalıyor.
+        // The bridges do not run all the way to the two ENDS of the post:
+        // their ends sat on the same plane as the cheek ends and z-fought.
+        // The insets are not visible — they stay inside the soil mound below
+        // and inside the cap above.
         const inset = cheek * 0.3
         const bounds = [0, ...railT.flatMap((t) => [t * postH - slotHalf, t * postH + slotHalf]), postH]
         for (let k = 0; k + 1 < bounds.length; k += 2) {
@@ -161,9 +165,9 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
           ))
         }
 
-        // Başlık: baltayla yontulmuş, suyu akıtan sırt. Tabanı gövdenin İÇİNDE
-        // ve kesiti gövdenin o yükseklikteki kesitinden BÜYÜK — `toolSocket`
-        // deseninin aynısı, eş düzlem yüz çifti bu yüzden oluşmuyor.
+        // Cap: an axe-hewn ridge that sheds water. Its base sits INSIDE the body
+        // and its section is LARGER than the body's section at that height — the
+        // same pattern as `toolSocket`; that is why no coplanar face pair forms.
         pieces.push(taperedBoxGeometry(
           [postW * 0.88, postD * 0.98],
           [postW * 0.74, postD * 0.13],
@@ -173,10 +177,10 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
           endGrain(0.07),
         ))
 
-        // Kur → DÖNDÜR → taşı. Eski kod merkezi doğrudan geometri çağrısına
-        // geçirdiği için döndürmek imkânsızdı; ızgara gibi dizilmesinin sebebi
-        // buydu. Dönüşler küçük tutuluyor: 0.045 rad, delik yolunda 7 mm yanal
-        // kayma demek ve delik payı 8 mm.
+        // Build → ROTATE → translate. The old code passed the centre straight
+        // into the geometry call, so rotating was impossible; that is why they
+        // lined up like a grid. Rotations are kept small: 0.045 rad means 7 mm
+        // of lateral drift along the hole, and the hole slack is 8 mm.
         const post = mergeColoured(pieces)
         post.rotateY(jitter(random, 0.045 * rough))
         post.rotateZ(jitter(random, 0.03 * rough))
@@ -185,7 +189,7 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
         post.translate(x, -half - sink, 0)
         postPieces.push(post)
 
-        // Toprak yığını. DÖNMEZ: direğin eğikliği yığını yerden kaldırırdı.
+        // Soil mound. DOES NOT ROTATE: the post's lean would lift it off the ground.
         postPieces.push(taperedBoxGeometry(
           [postW * 2.2, postD * 2],
           [postW * 1.25, postD * 1.15],
@@ -195,14 +199,14 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
         ))
       }
 
-      // --- Kirişler -------------------------------------------------------------
+      // --- Rails ----------------------------------------------------------------
       const railPieces: BufferGeometry[] = []
       for (let r = 0; r < count; r += 1) {
         const y = -half + railT[r]! * config.height + jitter(random, config.height * 0.005)
         for (let i = 0; i < sections; i += 1) {
           const xc = -total / 2 + (i + 0.5) * config.sectionLength
-          // Gövde iki komşu direğin deliğine giriyor ve orada komşu bölmenin
-          // gövdesiyle uç uca buluşuyor.
+          // The body enters the holes of the two neighbouring posts and meets
+          // the body of the adjacent bay end to end in there.
           const body = chamferedBoxGeometry(
             [config.sectionLength + postW * 0.55, railD],
             [config.sectionLength + postW * 0.55, railD * 0.88],
@@ -215,10 +219,10 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
           railPieces.push(body)
         }
 
-        // Zıvana dili: YALNIZ iki uçta. Karşı yüzden taşan bu parça siluete
-        // giren tek yatay çıkıntı; kirişin direğin içinden geçtiğini tek
-        // başına anlatıyor. Ara direklerde taşma yok, çünkü orada iki gövde
-        // deliğin içinde buluşuyor.
+        // Tenon tongue: ONLY at the two ends. Protruding from the far face, this
+        // piece is the only horizontal projection entering the silhouette; it
+        // tells on its own that the rail runs through the post. No overhang at
+        // the intermediate posts, because there two bodies meet inside the hole.
         for (const side of [-1, 1]) {
           const px = side * total / 2
           railPieces.push(taperedBoxGeometry(
@@ -232,8 +236,8 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
         }
       }
 
-      // --- Payanda ---------------------------------------------------------------
-      // Modelin tek eksen dışı hattı. Uç direği tarlaya doğru destekliyor.
+      // --- Brace -----------------------------------------------------------------
+      // The model's only off-axis line. It props the end post towards the field.
       if (config.brace >= 0.5) {
         const rise = config.height * 0.72
         const run = config.sectionLength * 0.3
@@ -248,17 +252,17 @@ export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
           shade(-0.05),
           endGrain(0.02),
         )
-        // İşaret TERS görünüyor ama doğrusu bu: payandanın TEPESİ direğe
-        // yaslanır, AYAĞI tarlaya basar. Ters çevrildiğinde ayağı direğin
-        // dibinde, tepesi havada kalan bir çubuk çıkıyordu — hiçbir şeyi
-        // desteklemeyen bir payanda.
+        // The sign looks INVERTED but this is the correct one: the TOP of the
+        // brace leans against the post, its FOOT stands on the field. Flipped,
+        // what came out was a stick with its foot at the base of the post and
+        // its top in the air — a brace that supports nothing.
         const angle = Math.atan2(run, rise)
         brace.rotateZ(atStart ? angle : -angle)
         brace.translate(
           (atStart ? -1 : 1) * (total / 2 - run / 2),
           -half + rise / 2 + config.height * 0.02,
-          // Direğin arka yüzü EĞİK (konik), payandanınki dik — hiçbir
-          // yükseklikte eş düzleme gelmiyorlar.
+          // The post's back face is SLOPED (tapered), the brace's is upright —
+          // they never become coplanar at any height.
           -postD * 0.62,
         )
         postPieces.push(brace)

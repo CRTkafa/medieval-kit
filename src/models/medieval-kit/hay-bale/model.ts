@@ -1,23 +1,24 @@
 /**
  * @medieval-kit/hay-bale
  *
- * Bağlanmış saman demeti.
+ * A bound bundle of straw.
  *
- * Bir uyarı yerinde: bugün "balya" denince akla gelen dikdörtgen prizma
- * makinenin işidir ve 19. yüzyıla aittir. Ortaçağda saman ya gevşek yığılır ya
- * da elle bağlanıp demet yapılırdı. Bu model ikincisi.
+ * A warning is in order: the rectangular block that comes to mind today when
+ * you say "bale" is machine work and belongs to the 19th century. In the Middle
+ * Ages straw was either heaped loose or bound by hand into a bundle. This model
+ * is the second.
  *
- * İKİNCİ deneme. İlki dilim dilim kutulardan kuruluydu ve render'a bakınca
- * kararı verdiren şey netti: SOLGUN BİR TAHTA SANDIK gibi duruyordu. İki ayrı
- * hata vardı ve ikisi de biçimle ilgiliydi, renkle değil:
+ * The SECOND attempt. The first was built from slice after slice of boxes and
+ * one look at the render made the call obvious: it looked like A PALE WOODEN
+ * CHEST. There were two separate mistakes, both about form, not colour:
  *
- *   - Kesit dikdörtgendi. Keskin köşe + düz yüz = marangoz işi. Bağlanmış bir
- *     demetin kesiti yuvarlaktır, çünkü ipi çeken şey onu yuvarlatır.
- *   - Yüzeyler kusursuz düzdü. Saman hiçbir yerde düz değildir.
+ *   - The cross-section was rectangular. Sharp corner + flat face = joinery. A
+ *     bound bundle's section is round, because the cord that pulls it rounds it.
+ *   - The surfaces were perfectly flat. Straw is nowhere flat.
  *
- * Bu yüzden gövde artık bir dönel gövde — ipin sıktığı yerde daralan, sonra
- * `roughenGeometry` ile bozulan bir silindir. O iki değişiklik renk hiç
- * değişmeden modeli tanınır hâle getirdi.
+ * So the body is now a lathe body — a cylinder that narrows where the cord
+ * cinches it and is then broken up with `roughenGeometry`. Those two changes
+ * made the model recognisable without the colour changing at all.
  */
 import type { BufferGeometry } from 'three'
 
@@ -34,17 +35,17 @@ import {
 } from '../core/index.ts'
 
 export interface HayBaleConfig {
-  /** Uzunluk (metre). */
+  /** Length (metres). */
   readonly length: number
-  /** Yükseklik (metre). */
+  /** Height (metres). */
   readonly height: number
-  /** Derinlik (metre). */
+  /** Depth (metres). */
   readonly depth: number
-  /** Kaç ip bağı. */
+  /** How many cord ties. */
   readonly ropeCount: number
-  /** Yüzeyden fırlayan gevşek sap sayısı. */
+  /** Number of loose stalks sticking out of the surface. */
   readonly wisps: number
-  /** Yüzey düzensizliği. 0 = pürüzsüz gövde. */
+  /** Surface irregularity. 0 = smooth body. */
   readonly rough: number
   readonly seed: number
 }
@@ -71,9 +72,9 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
       const ropes = Math.max(0, Math.round(config.ropeCount))
       const halfLength = config.length / 2
 
-      // Gövde önce YARIÇAP 1 olan bir dönel gövde olarak kuruluyor, sonra
-      // gerçek en/boy oranına ezileceği için. Böylece ipin daralttığı miktar
-      // tek bir sayı — iki eksende ayrı ayrı hesaplamak gerekmiyor.
+      // The body is built first as a lathe body of RADIUS 1, because it is then
+      // squashed into the real width/depth ratio. That way the amount the cord
+      // pulls in is a single number — no need to work it out per axis.
       const ropeXs = Array.from({ length: ropes }, (_, i) =>
         ropes === 1 ? 0 : (i / (ropes - 1) - 0.5) * config.length * 0.54)
       const cinch = (x: number): number => {
@@ -85,13 +86,13 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
         return tightest
       }
 
-      // --- Gövde ---------------------------------------------------------
+      // --- Body -----------------------------------------------------------
       const rings = 11
       const levels: Level[] = Array.from({ length: rings }, (_, i) => {
         const t = i / (rings - 1)
         const x = -halfLength + config.length * t
-        // Uçlar yuvarlanıyor: ilk ve son halka belirgin şekilde dar, yoksa
-        // demet iki ucundan kesilmiş bir boru gibi duruyor.
+        // The ends round off: the first and last hoop are clearly narrower, or
+        // else the bundle looks like a pipe cut off at both ends.
         const endFade = 1 - Math.pow(Math.abs(t - 0.5) * 2, 6) * 0.34
         return { y: x, radius: 0.5 * cinch(x) * endFade * (1 + jitter(random, 0.05)) }
       })
@@ -99,16 +100,17 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
       const body = latheGeometry(levels, 7, [0, 0, 0], tint('straw', -0.06, 1.6), {
         colourTop: tint('strawPale', 0.02, 1.6),
       })
-      // Dikey kurulup yatırılıyor: dönel gövde yardımcısı Y ekseni etrafında
-      // çalışıyor, demet ise X boyunca uzanıyor.
+      // Built upright and then laid down: the lathe helper works around the Y
+      // axis, whereas the bundle runs along X.
       body.rotateZ(Math.PI / 2)
       body.scale(1, config.height, config.depth)
       roughenGeometry(body, config.height * 0.045 * config.rough, { salt: 11 })
 
-      // --- Fırlayan saplar ------------------------------------------------
-      // Yüzeydeki gevşek saplar ve iki uçtan püsküren damar uçları. İkincisi
-      // önemli: bağlanmış bir demette sapların KESİLMİŞ uçları hep iki uçtadır
-      // ve demeti "kesilmiş bitki" olarak okutan tek işaret odur.
+      // --- Stray stalks ----------------------------------------------------
+      // The loose stalks on the surface and the stem ends spraying out of the
+      // two ends. The second matters: in a bound bundle the CUT ends of the
+      // stalks are always at the two ends, and that is the only sign that makes
+      // the bundle read as "cut plant".
       const wispPieces: BufferGeometry[] = []
       const wispCount = Math.max(0, Math.round(config.wisps))
       const thickness = config.height * 0.016
@@ -118,12 +120,12 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
         const length = config.height * (fromEnd ? 0.2 + random() * 0.24 : 0.13 + random() * 0.17)
         const wisp = boxGeometry(
           [length, thickness * (0.6 + random() * 0.9), thickness],
-          [length * 0.3, 0, 0],   // kökü orijinin gerisinde: gövdeye gömülü
+          [length * 0.3, 0, 0],   // root behind the origin: buried in the body
           tint('strawPale', 0.05, 1.4),
         )
 
         if (fromEnd) {
-          // Uç sapları: X ekseni boyunca dışarı, hafif saçılarak.
+          // End stalks: outward along the X axis, scattering a little.
           const side = i % 6 === 0 ? 1 : -1
           const angle = random() * Math.PI * 2
           const radius = 0.5 * (0.15 + random() * 0.8)
@@ -136,7 +138,7 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
             Math.cos(angle) * radius * config.depth,
           )
         } else {
-          // Yüzey sapları: gövdenin yan yüzeyinden dışarı.
+          // Surface stalks: outward from the side surface of the body.
           const x = (random() - 0.5) * config.length * 0.88
           const angle = random() * Math.PI * 2
           const shrink = cinch(x)
@@ -151,14 +153,14 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
         wispPieces.push(wisp)
       }
 
-      // --- İpler ----------------------------------------------------------
-      // Gövde yuvarlak olduğu için ip artık dört çubuktan değil gerçek bir
-      // HALKADAN kuruluyor. Aynı ezme dönüşümünden geçiyor, dolayısıyla
-      // demetin kesitine tam oturuyor.
+      // --- Cords -----------------------------------------------------------
+      // Since the body is round, the cord is now built from a real HOOP rather
+      // than from four bars. It goes through the same squashing transform, so
+      // it sits exactly on the bundle's cross-section.
       const ropePieces: BufferGeometry[] = []
       const cord = config.height * 0.03
       for (const x of ropeXs) {
-        // Serbest duran halka: iç yüzü de gerekli, yoksa kapalı katı olmuyor.
+        // Free-standing hoop: it needs its inner face too, or it is not solid.
         const ring = bandGeometry(0.5 * cinch(x) + cord * 0.35, 0, cord * 1.5, cord, 7,
           tint('cloth', -0.07), { inner: true })
         ring.rotateZ(Math.PI / 2)

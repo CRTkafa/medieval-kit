@@ -1,20 +1,20 @@
 /**
  * @medieval-kit/iron-lantern
  *
- * Elde taşınan ya da bir çengele asılan demir fener: altıgen bir kafes, cam
- * paneller, içinde yağ kandili.
+ * An iron lantern carried in the hand or hung from a hook: a hexagonal cage,
+ * glass panels, an oil lamp inside.
  *
- * Meşaleden farkı sadece biçim değil. Meşale sarf malzemesi, fener ALET —
- * pahalı, saklanan, miras kalan bir şey. Bu yüzden geometri de daha "yapılmış"
- * görünüyor: dövme köşe dikmeleri, havalandırma bacası, taşıma halkası.
+ * What separates it from the torch is not only shape. A torch is a consumable,
+ * a lantern is a TOOL — expensive, kept, handed down. So the geometry looks
+ * more "made" as well: forged corner posts, a vent flue, a carrying hoop.
  *
- * Camın iki sonucu var ve ikisi de burada görünür:
+ * The glass has two consequences and both are visible here:
  *
- *   - `glass` yuvası SAYDAM ve `depthWrite` kapalı. Bu olmadan cam, arkasındaki
- *     fitili gizliyordu; şeffaf bir yüzey derinlik yazmamalı.
- *   - Cam paneller kafesin `extras` gövdesi. Ayrı parça yapmak mantıklı
- *     gelmişti ama yanlış: kafes ile cam TEK ANLAM — biri hareket ederse
- *     diğeri de eder. Bölünen şey sadece materyal.
+ *   - The `glass` slot is TRANSPARENT and `depthWrite` is off. Without that the
+ *     glass hid the wick behind it; a transparent surface must not write depth.
+ *   - The glass panels are an `extras` body of the cage. Making them a separate
+ *     part had seemed sensible but was wrong: cage and glass are ONE MEANING —
+ *     if one moves, so does the other. Only the material is split.
  */
 import type { BufferGeometry } from 'three'
 
@@ -31,15 +31,15 @@ import {
 } from '../core/index.ts'
 
 export interface IronLanternConfig {
-  /** Gövde yüksekliği, halka hariç (metre). */
+  /** Body height, hoop excluded (metres). */
   readonly height: number
-  /** Kafesin köşeden köşeye yarıçapı (metre). */
+  /** Corner-to-corner radius of the cage (metres). */
   readonly radius: number
-  /** Kaç köşe. 4 fener, 6 daha zengin. */
+  /** How many corners. 4 is a lantern, 6 is richer. */
   readonly sides: number
-  /** Alev boyu, gövde yüksekliğinin oranı olarak. */
+  /** Flame height, as a fraction of the body height. */
   readonly flameHeight: number
-  /** Titremenin genliği. 0 = sabit alev. */
+  /** Amplitude of the flicker. 0 = steady flame. */
   readonly flicker: number
   readonly seed: number
 }
@@ -74,14 +74,14 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
       const half = config.height / 2
       const sides = Math.max(3, Math.round(config.sides))
       const bar = config.radius * 0.13
-      // Camlı bölüm gövdenin ortası: altta yağ haznesi, üstte baca için yer.
+      // The glazed section is the middle: oil font below, room for the flue above.
       const glassBottom = -half + config.height * 0.2
       const glassTop = half - config.height * 0.26
 
-      // --- Kafes -------------------------------------------------------------
+      // --- Cage --------------------------------------------------------------
       const iron: BufferGeometry[] = []
 
-      // Taban tabağı ve tepe şapkası: ikisi de altıgen, biri düz biri konik.
+      // Base dish and top cap: both hexagonal, one flat and one conical.
       iron.push(prismGeometry(
         config.radius * 1.08, config.radius, config.height * 0.11, sides,
         [0, -half + config.height * 0.055, 0], tint('iron', -0.04, 0.7),
@@ -90,14 +90,14 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
         config.radius * 1.12, config.radius * 0.42, config.height * 0.19, sides,
         [0, half - config.height * 0.16, 0], tint('iron', 0.03, 0.7),
       ))
-      // Baca: sıcak hava çıkmazsa alev söner. İşlevsel bir detay ve siluetin
-      // tepesini feneri fener yapan şey.
+      // Flue: if the hot air cannot get out the flame dies. A functional detail,
+      // and what makes the top of the silhouette read as a lantern.
       iron.push(prismGeometry(
         config.radius * 0.4, config.radius * 0.34, config.height * 0.09, sides,
         [0, half - config.height * 0.025, 0], tint('iron', 0.07, 0.7),
       ))
 
-      // Köşe dikmeleri: cam panellerin arasında kalan dövme demir çubuklar.
+      // Corner posts: the forged iron bars left between the glass panels.
       const step = (Math.PI * 2) / sides
       for (let i = 0; i < sides; i += 1) {
         const a = i * step
@@ -106,7 +106,7 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
           [0, 0, 0],
           tint('iron', jitter(random, 0.05), 0.7),
         )
-        // Önce yönlendir, sonra taşı — ters sıra dikmeyi yörüngeye savurur.
+        // Orient first, then translate — reversed, the post is flung into orbit.
         post.rotateY(a)
         post.translate(
           Math.sin(a) * config.radius * 0.97,
@@ -115,22 +115,22 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
         )
         iron.push(post)
       }
-      // Cam panelleri tutan alt ve üst çerçeve.
+      // The bottom and top frames holding the glass panels.
       for (const y of [glassBottom, glassTop]) {
         iron.push(bandGeometry(config.radius * 0.99, y, bar * 1.1, bar * 0.8, sides,
           tint('iron', -0.02, 0.7)))
       }
 
-      // --- Cam -----------------------------------------------------------------
-      // Paneller dikmelerden biraz İÇERİDE: aynı yarıçapta olsalardı yan
-      // yüzleri dikmelerin yüzleriyle aynı düzleme oturur ve titrerdi.
+      // --- Glass ---------------------------------------------------------------
+      // The panels sit slightly INSIDE the posts: at the same radius their side
+      // faces would be coplanar with the posts' faces and would flicker.
       const glass = prismGeometry(
         config.radius * 0.9, config.radius * 0.9, glassTop - glassBottom, sides,
         [0, (glassBottom + glassTop) / 2, 0], tint('glass', 0.04, 0.4),
         { capTop: false, capBottom: false },
       )
 
-      // --- Yağ haznesi ve fitil --------------------------------------------------
+      // --- Oil font and wick ------------------------------------------------------
       const fontTop = glassBottom + config.height * 0.16
       const font = latheGeometry([
         { y: glassBottom - config.height * 0.02, radius: config.radius * 0.5 },
@@ -143,9 +143,9 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
         [0, fontTop + config.height * 0.035, 0], tint('char', 0.05),
       )
 
-      // --- Alev --------------------------------------------------------------
-      // Meşalenin alevinin küçüğü ve daha sakini: kapalı bir fenerde alev
-      // rüzgâr almaz, o yüzden titremesi de daha az.
+      // --- Flame -------------------------------------------------------------
+      // A smaller, calmer version of the torch's flame: in a closed lantern the
+      // flame gets no wind, so it flickers less as well.
       const flameHeight = config.height * config.flameHeight
       const flameBase = fontTop + config.height * 0.07
       const flameProfile: Level[] = [
@@ -159,12 +159,12 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
           { colourTop: tint('emberTip', 0.02, 0.35) }),
       ])
 
-      // --- Taşıma halkası ------------------------------------------------------
+      // --- Carrying hoop ----------------------------------------------------------
       const handle: BufferGeometry[] = [bandGeometry(
         config.radius * 0.3, half + config.height * 0.1, bar * 0.9, bar * 0.55, 8,
         tint('iron', 0.06, 0.7), { inner: true },
       )]
-      // Halkayı bacaya bağlayan dil.
+      // The tongue joining the hoop to the flue.
       handle.push(boxGeometry(
         [bar * 1.1, config.height * 0.1, bar],
         [0, half + config.height * 0.045, 0],
@@ -204,7 +204,7 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
       const amount = getConfig().flicker
       if (amount === 0) return
       elapsed += Math.max(0, dt)
-      // Meşaleninkinden yavaş ve küçük: cam alevi rüzgârdan koruyor.
+      // Slower and smaller than the torch's: the glass shields the flame from wind.
       const pulse = Math.sin(elapsed * 6.4) * 0.06 + Math.sin(elapsed * 11.1 + 0.9) * 0.035
       const anchor = parts.flame.anchor
       anchor.scale.set(1 - pulse * 0.4 * amount, 1 + pulse * amount, 1 - pulse * 0.4 * amount)

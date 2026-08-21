@@ -1,20 +1,20 @@
 /**
  * @medieval-kit/coin-pouch
  *
- * Büzgülü deri kese ve yanına dökülmüş sikkeler.
+ * A drawstring leather pouch with coins spilled beside it.
  *
- * Kesenin tek başına bir sorunu var: kapalı bir deri torba, uzaktan bakınca
- * taştan ayırt edilemiyor. İçindekini gösteren şey DÖKÜLEN sikkeler; onlar
- * olmadan model "kese" değil "yumru" oluyor. Bu yüzden sikkeler isteğe bağlı
- * bir süs değil, modelin okunmasının kendisi.
+ * On its own the pouch has a problem: a closed leather bag cannot be told apart
+ * from a stone at any distance. What shows what is inside are the SPILLED
+ * coins; without them the model is a "lump", not a "pouch". So the coins are
+ * not an optional garnish, they are how the model gets read at all.
  *
- * Sikke yerleşimi de düşünülmüş: yere dökülen madenî para düzgün bir çember
- * yapmaz, kesenin ağzından bir yöne saçılır ve bir kısmı üst üste biner. Eşit
- * aralıklı bir halka her zaman "yerleştirilmiş" görünüyordu.
+ * The coin layout is thought through too: money spilled on the ground does not
+ * form a neat circle, it scatters one way out of the pouch's mouth and part of
+ * it lands on top of itself. An evenly spaced ring always looked "placed".
  *
- * Dönem notu: gümüş peni ince ve KÜÇÜKTÜR — bir santimden biraz büyük. Kalın,
- * altın, iri sikke fantezi görüntüsüdür; burada oran gerçeğe yakın tutuldu ve
- * bu, kesenin ölçeğini de doğru okutuyor.
+ * Period note: a silver penny is thin and SMALL — a little over a centimetre.
+ * The thick, golden, oversized coin is a fantasy image; here the proportion is
+ * kept close to the real one, and that makes the pouch's scale read right too.
  */
 import type { BufferGeometry } from 'three'
 
@@ -31,15 +31,15 @@ import {
 } from '../core/index.ts'
 
 export interface CoinPouchConfig {
-  /** Kesenin yüksekliği (metre). */
+  /** Height of the pouch (metres). */
   readonly height: number
-  /** Kesenin en geniş yarıçapı (metre). */
+  /** Widest radius of the pouch (metres). */
   readonly radius: number
-  /** Ne kadar dolu. 0.3 yarı boş ve sarkık, 1 tıka basa. */
+  /** How full it is. 0.3 is half empty and slumped, 1 is stuffed. */
   readonly fill: number
-  /** Dışarı dökülmüş sikke sayısı. */
+  /** Number of coins spilled outside. */
   readonly coins: number
-  /** Sikke yarıçapı (metre). */
+  /** Coin radius (metres). */
   readonly coinRadius: number
   readonly seed: number
 }
@@ -63,14 +63,14 @@ export function createModel(overrides: Partial<CoinPouchConfig> = {}) {
     build: ({ config, random }) => {
       const tint = createTinter(random)
       const fill = Math.max(0.15, Math.min(1, config.fill))
-      const floor = 0                       // kese yere oturuyor
+      const floor = 0                       // the pouch sits on the ground
       const wide = config.radius * (0.68 + fill * 0.4)
       const neckY = config.height * (0.62 + fill * 0.14)
 
-      // --- Kese ---------------------------------------------------------------
-      // Çuvalın küçüğü ama profili farklı: kese ipin ÜSTÜNDE büzülüp yukarı
-      // toplanıyor, çuvalınki gibi dışa devrilmiyor. Aradaki fark bir kese ile
-      // bir torba arasındaki fark.
+      // --- Pouch --------------------------------------------------------------
+      // A smaller sack, but a different profile: the pouch gathers ABOVE the
+      // cord and pulls upward, it does not flop outward the way the sack does.
+      // That gap is the gap between a pouch and a plain bag.
       const profile: Level[] = [
         { y: floor, radius: wide * 0.62 },
         { y: config.height * 0.1, radius: wide * 0.94 },
@@ -86,12 +86,12 @@ export function createModel(overrides: Partial<CoinPouchConfig> = {}) {
       })
       roughenGeometry(pouch, config.radius * 0.055, { salt: 51, scaleY: 0.6 })
 
-      // --- Büzgü ipi -----------------------------------------------------------
+      // --- Drawstring ------------------------------------------------------------
       const cordPieces: BufferGeometry[] = [bandGeometry(
         config.radius * 0.31, neckY, config.height * 0.05, config.radius * 0.055, 8,
         tint('cloth', -0.18, 0.8), { inner: true },
       )]
-      // Sarkan iki uç. Önce yönlendir, sonra taşı.
+      // The two hanging ends. Orient first, then translate.
       for (const side of [-1, 1]) {
         const tail = prismGeometry(
           config.radius * 0.04, config.radius * 0.028, config.height * 0.3, 4,
@@ -103,19 +103,19 @@ export function createModel(overrides: Partial<CoinPouchConfig> = {}) {
         cordPieces.push(tail)
       }
 
-      // --- Dökülen sikkeler ------------------------------------------------------
+      // --- Spilled coins -----------------------------------------------------------
       const count = Math.max(0, Math.round(config.coins))
       const coinPieces: BufferGeometry[] = []
-      // Saçılma YÖNÜ: tek bir yöne doğru, çünkü dökülen para bir yana akar.
+      // Scatter DIRECTION: all one way, because spilled money flows to one side.
       const spillAngle = random() * Math.PI * 2
       for (let i = 0; i < count; i += 1) {
         const t = (i + 0.6) / count
-        // Uzaklık kökle artıyor: kesenin dibinde yığılma, uzakta seyrelme.
+        // Distance grows with a square root: piled at the pouch, thin further out.
         const distance = wide * (1.15 + Math.sqrt(t) * 2.4)
         const spread = jitter(random, 0.75) * (0.35 + t * 0.65)
         const angle = spillAngle + spread
         const thickness = config.coinRadius * (0.13 + random() * 0.06)
-        // Üst üste binenler: her üçüncü sikke bir öncekinin üstüne düşüyor.
+        // The overlapping ones: every third coin lands on top of the previous.
         const stack = i % 3 === 2 ? thickness * 1.6 : 0
 
         const coin = prismGeometry(
@@ -123,7 +123,7 @@ export function createModel(overrides: Partial<CoinPouchConfig> = {}) {
           config.coinRadius * (0.9 + random() * 0.16),
           thickness, 9, [0, 0, 0], tint('brass', jitter(random, 0.06), 0.5),
         )
-        // Bir kısmı yatık düşmez: kenarına yaslananlar yığına derinlik veriyor.
+        // Some do not land flat: the ones leaning on edge give the pile depth.
         const tilt = random() < 0.22 ? 0.5 + random() * 0.7 : jitter(random, 0.12)
         coin.rotateX(tilt)
         coin.rotateY(random() * Math.PI * 2)

@@ -1,4 +1,4 @@
-/* Palet, scifi-kit'in kendi materyal yuvalarından türetildi:
+/* Palette derived from scifi-kit's own material slots:
    surface.graphite / recess.ink / signal.amber / signal.cyan */
 :root {
   --ink: #0b0e12;
@@ -36,7 +36,7 @@ html, body {
   background: var(--ink);
 }
 
-/* ---------- sol ray ---------- */
+/* ---------- left rail ---------- */
 
 .rail {
   display: flex;
@@ -90,7 +90,7 @@ html, body {
   margin: 0 0 10px;
 }
 
-/* ---------- registry grupları ---------- */
+/* ---------- registry groups ---------- */
 
 .ns-head {
   display: flex;
@@ -177,7 +177,7 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- okumalar ---------- */
+/* ---------- readouts ---------- */
 
 .readout {
   display: grid;
@@ -199,7 +199,7 @@ html, body {
 
 .readout dd.accent { color: var(--amber); }
 
-/* ---------- parametreler ---------- */
+/* ---------- parameters ---------- */
 
 .params {
   display: flex;
@@ -259,8 +259,8 @@ input[type='range']::-moz-range-thumb {
   background: var(--amber);
 }
 
-/* Sayfadaki tek düzyazı parçaları Archivo'da; tanımlayıcılar ve sayılar mono
-   kalıyor. Ayrım bilgi türünü kodluyor, süs değil. */
+/* The only prose fragments on the page are in Archivo; identifiers and numbers
+   stay mono. The distinction encodes the kind of information, it is not decor. */
 .empty-note {
   font-family: Archivo, ui-sans-serif, system-ui, sans-serif;
   font-size: 11.5px;
@@ -270,7 +270,7 @@ input[type='range']::-moz-range-thumb {
   max-width: 34ch;
 }
 
-/* ---------- eylemler ---------- */
+/* ---------- actions ---------- */
 
 .actions { display: flex; flex-direction: column; gap: 6px; }
 
@@ -394,7 +394,7 @@ canvas { display: block; width: 100%; height: 100%; }
   .provenance { max-width: 55vw; }
 }
 
-/* Varsayılana dönme: alan adına tıklanabilir, sapanlar işaretli. */
+/* Reset to default: the field name is clickable, departures are marked. */
 .param-name.resettable { cursor: pointer; }
 .param-name.resettable:hover { color: var(--cyan); }
 .param-name.changed { color: var(--amber); }
@@ -402,7 +402,7 @@ canvas { display: block; width: 100%; height: 100%; }
 
 .reset-all { margin-bottom: 4px; }
 
-/* ---------------------------------------------------- parça ve yuva panelleri */
+/* ------------------------------------------------------ part and slot panels */
 
 .block-note {
   float: right;
@@ -438,7 +438,7 @@ canvas { display: block; width: 100%; height: 100%; }
   color: var(--amber);
   background: color-mix(in srgb, var(--amber) 12%, transparent);
 }
-/* Solo kipinde gizlenen parçalar: hâlâ okunur ama kapalı oldukları belli. */
+/* Parts hidden in solo mode: still readable but clearly switched off. */
 .chip.muted { opacity: 0.34; }
 
 .slots {

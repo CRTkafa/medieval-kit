@@ -2,7 +2,7 @@ import { WebGPURenderer } from 'three/webgpu'
 import { Color, DirectionalLight, HemisphereLight, PerspectiveCamera, Scene, Vector3 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
-// İki farklı registry'den iki model. Aynı CLI, aynı proje, aynı render döngüsü.
+// Two models from two different registries. Same CLI, same project, same render loop.
 import { createPreview as createGaugePreview } from '@/models/scifi-kit/pressure-gauge/model.ts'
 import { createModel as createBarrel } from '@/models/medieval-kit/wooden-barrel/model.ts'
 
@@ -14,8 +14,8 @@ const actionButton = document.querySelector<HTMLButtonElement>('#action')!
 if (!navigator.gpu) {
   status.classList.add('error')
   status.textContent =
-    'Bu tarayıcıda WebGPU yok. scifi-kit modelleri TSL düğüm materyalleri kullanıyor ve ' +
-    'WebGPURenderer gerektiriyor. Chrome/Edge 113+ deneyin.'
+    'This browser has no WebGPU. The scifi-kit models use TSL node materials and ' +
+    'require WebGPURenderer. Try Chrome/Edge 113+.'
   throw new Error('WebGPU unavailable')
 }
 
@@ -35,8 +35,9 @@ interface Stage {
 }
 
 /**
- * Sci-fi ölçer: sahneyi, ışıkları ve referans kamerasını modelin kendi
- * `createPreview` fonksiyonu kuruyor. Model yazarının niyet ettiği kadraj bu.
+ * Sci-fi gauge: the scene, the lights and the reference camera are all set up
+ * by the model's own `createPreview` function. This is the framing the model's
+ * author intended.
  */
 function gaugeStage(aspect: number): Stage {
   const preview = createGaugePreview({ aspect })
@@ -44,8 +45,8 @@ function gaugeStage(aspect: number): Stage {
     scene: preview.scene,
     camera: preview.camera,
     target: new Vector3(0.25, 2.55, 0),
-    actionLabel: 'Basınç testi',
-    note: '@scifi-kit/pressure-gauge · WebGPU + TSL aşınma materyali · sahne modelin createPreview\'ından geliyor',
+    actionLabel: 'Pressure test',
+    note: '@scifi-kit/pressure-gauge · WebGPU + TSL wear material · the scene comes from the model\'s createPreview',
     action: () => preview.triggerPressureTest(),
     update: (delta) => preview.update(delta),
     dispose: () => preview.dispose(),
@@ -53,8 +54,9 @@ function gaugeStage(aspect: number): Stage {
 }
 
 /**
- * Medieval fıçı: registry sadece modeli dağıtıyor, önizleme yok. Sahneyi,
- * ışıkları ve kamerayı uygulama kuruyor — vibe3d'nin asıl sözleşmesi bu.
+ * Medieval barrel: the registry only ships the model, there is no preview. The
+ * application sets up the scene, the lights and the camera — this is vibe3d's
+ * actual contract.
  */
 function barrelStage(aspect: number): Stage {
   const barrel = createBarrel()
@@ -75,7 +77,7 @@ function barrelStage(aspect: number): Stage {
   camera.lookAt(0, 0.1, 0)
   scene.add(camera)
 
-  // configure() topolojiyi yeniden kurar ama kök ve anchor'lar aynı kalır.
+  // configure() rebuilds the topology, but the root and the anchors stay the same.
   const staveOptions = [12, 7, 20]
   let staveIndex = 0
 
@@ -83,12 +85,12 @@ function barrelStage(aspect: number): Stage {
     scene,
     camera,
     target: new Vector3(0, 0.1, 0),
-    actionLabel: 'Tahta sayısını değiştir',
-    note: '@medieval-kit/wooden-barrel · sizin registry\'niz · düz WebGL materyali, TSL yok',
+    actionLabel: 'Change the stave count',
+    note: '@medieval-kit/wooden-barrel · your own registry · plain WebGL material, no TSL',
     action: () => {
       staveIndex = (staveIndex + 1) % staveOptions.length
       const result = barrel.configure({ staveCount: staveOptions[staveIndex] })
-      status.textContent = `staveCount = ${staveOptions[staveIndex]} · rebuilt = ${result.rebuilt} · kök nesne aynı kaldı`
+      status.textContent = `staveCount = ${staveOptions[staveIndex]} · rebuilt = ${result.rebuilt} · the root object stayed the same`
     },
     update: () => undefined,
     dispose: () => {
@@ -125,8 +127,8 @@ function selectStage(name: StageName): void {
   resize()
 }
 
-// ResizeObserver, `resize` olayından daha güvenilir: sekme gizliyken açılan ya da
-// düzeni sonradan oturan sayfalarda canvas 0x0 kalmıyor.
+// ResizeObserver is more reliable than the `resize` event: on pages opened while
+// the tab is hidden, or whose layout settles later, the canvas does not stay 0x0.
 function resize(): void {
   const width = canvas.clientWidth
   const height = canvas.clientHeight
@@ -144,8 +146,9 @@ for (const button of stageButtons) {
 }
 actionButton.addEventListener('click', () => stage.action())
 
-// Geliştirme kolaylığı: konsoldan `__vibe3d.stage.scene` ile sahneyi gezebilir,
-// `__vibe3d.renderOnce()` ile sekme arka plandayken bile tek kare aldırabilirsiniz.
+// Development convenience: from the console you can walk the scene with
+// `__vibe3d.stage.scene`, and force a single frame with `__vibe3d.renderOnce()`
+// even while the tab is in the background.
 if (import.meta.env.DEV) {
   Object.defineProperty(globalThis, '__vibe3d', {
     value: {

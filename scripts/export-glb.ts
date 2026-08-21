@@ -1,26 +1,26 @@
 /**
- * Kitin tamamını GLB dosyalarına aktarır.
+ * Exports the whole kit to GLB files.
  *
- * `bun scripts/export-glb.ts` → glb/ altında her model için bir dosya.
+ * `bun scripts/export-glb.ts` → one file per model under glb/.
  * `bun scripts/export-glb.ts --one wooden-chest --out /tmp`
  *
- * Neden CLI: vibe3d'nin inceleyicisi tek modeli tarayıcıdan indiriyor. Kiti
- * gerçekten kullanmak isteyen biri yirmi modeli tek tek indirmek istemez —
- * Blender'a, Godot'ya ya da Unity'ye götürmek için tek komut lazım.
+ * Why a CLI: the vibe3d viewer downloads a single model from the browser.
+ * Someone who actually wants to use the kit does not want to download twenty
+ * models one by one — taking them to Blender, Godot or Unity needs one command.
  *
- * Ayrıca bu betik dışa aktarımın DOĞRULAMASI: tarayıcı açmadan, her modelin
- * gerçekten geçerli bir GLB ürettiğini burada görebiliyoruz.
+ * This script is also the VERIFICATION of the export: without opening a
+ * browser, we can see here that every model really produces a valid GLB.
  */
 import { mkdir, writeFile } from 'node:fs/promises'
 
 /**
- * GLTFExporter ikili çıktıyı `FileReader` üzerinden topluyor ve bu API
- * tarayıcıya ait — bun'da tanımlı değil. Tek ihtiyaç duyulan yolu burada
- * karşılıyoruz.
+ * GLTFExporter collects the binary output through `FileReader`, and that API
+ * belongs to the browser — it is not defined in bun. Here we cover the one
+ * path that is actually needed.
  *
- * Doldurma İMPORTLARDAN ÖNCE kurulmalı: `@/glb.ts` modülü GLTFExporter'ı
- * yüklüyor ve o da yüklenirken globali görmek istiyor. Bu yüzden aşağıdaki iki
- * import statik değil dinamik.
+ * The polyfill has to be installed BEFORE THE IMPORTS: the `@/glb.ts` module
+ * loads GLTFExporter, and that wants to see the global while it loads. That is
+ * why the two imports below are dynamic rather than static.
  */
 class BunFileReader {
   result: ArrayBuffer | string | null = null
@@ -28,9 +28,9 @@ class BunFileReader {
   onerror: ((error: unknown) => void) | null = null
 
   readAsArrayBuffer(blob: Blob): void {
-    // `onloadend` bu çağrıdan SONRA atanıyor, dolayısıyla geri çağrı bir
-    // sonraki mikro göreve ertelenmek zorunda. Senkron çağırmak onu asla
-    // tetiklenmemiş gibi gösterirdi.
+    // `onloadend` is assigned AFTER this call, so the callback has to be
+    // deferred to the next microtask. Calling it synchronously would make it
+    // look as if it never fired.
     void blob.arrayBuffer().then(
       (buffer) => { this.result = buffer; this.onloadend?.() },
       (error) => { this.onerror?.(error) },
@@ -59,7 +59,7 @@ let total = 0
 
 for (const id of ids) {
   const entry = CATALOG[id]
-  if (!entry) throw new Error(`katalogda yok: ${id}`)
+  if (!entry) throw new Error(`not in catalog: ${id}`)
   const built = entry.build()
   const buffer = await exportGlb(built.root, {
     name: id,
@@ -67,14 +67,14 @@ for (const id of ids) {
   })
   built.dispose()
 
-  // GLB başlığını burada doğruluyoruz: sessizce bozuk dosya yazmaktansa
-  // patlamak iyi. Sihirli sayı 'glTF', sonra sürüm, sonra toplam uzunluk.
+  // We verify the GLB header here: blowing up beats silently writing a broken
+  // file. Magic number 'glTF', then the version, then the total length.
   const header = new DataView(buffer)
   const magic = header.getUint32(0, true)
-  if (magic !== 0x46546c67) throw new Error(`${id}: GLB sihirli sayısı yanlış`)
-  if (header.getUint32(4, true) !== 2) throw new Error(`${id}: glTF sürümü 2 değil`)
+  if (magic !== 0x46546c67) throw new Error(`${id}: wrong GLB magic number`)
+  if (header.getUint32(4, true) !== 2) throw new Error(`${id}: glTF version is not 2`)
   if (header.getUint32(8, true) !== buffer.byteLength) {
-    throw new Error(`${id}: başlıktaki uzunluk dosya boyutuyla uyuşmuyor`)
+    throw new Error(`${id}: length in the header does not match the file size`)
   }
 
   await writeFile(`${outDir}/${id}.glb`, new Uint8Array(buffer))
@@ -82,4 +82,4 @@ for (const id of ids) {
   console.log(`  ${id.padEnd(20)} ${(buffer.byteLength / 1024).toFixed(1)} KB`)
 }
 
-console.log(`\n${ids.length} model → ${outDir}/ · toplam ${(total / 1024).toFixed(1)} KB`)
+console.log(`\n${ids.length} models → ${outDir}/ · total ${(total / 1024).toFixed(1)} KB`)

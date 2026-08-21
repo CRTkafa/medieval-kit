@@ -1,18 +1,19 @@
 /**
  * @medieval-kit/iron-brazier
  *
- * Kitin ilk HAREKETLİ modeli. Fıçı ve sandık statik: kurulurlar ve öyle
- * kalırlar. Mangal, vibe3d protokolünün onların hiç dokunmadığı iki parçasını
- * çalıştırıyor:
+ * The first MOVING model in the kit. The barrel and the chest are static: they
+ * are built and they stay that way. The brazier exercises two parts of the
+ * vibe3d protocol that those two never touch:
  *
- *   - tipli `actions`  → yak / söndür
- *   - `update(dt)`     → alev titremesi ve ışık dalgalanması
+ *   - typed `actions`  → light / extinguish
+ *   - `update(dt)`     → flame flicker and light fluctuation
  *
- * Ayrım önemli: `configure()` topolojiyi yeniden kurar ve pahalıdır, kullanıcı
- * ayarı içindir. Kare başına değişen her şey `update()` içinde olmalı.
+ * The distinction matters: `configure()` rebuilds the topology and is
+ * expensive, it is meant for user settings. Everything that changes per frame
+ * must live inside `update()`.
  *
- * Model ayrıca bir PointLight taşıyor. Işık `flame` anchor'ına takılı, yani
- * configure() geometriyi yeniden kursa bile ışık hayatta kalıyor.
+ * The model also carries a PointLight. The light is attached to the `flame`
+ * anchor, so even when configure() rebuilds the geometry the light survives.
  */
 import {
   Color,
@@ -40,17 +41,17 @@ import {
 } from '../core/index.ts'
 
 export interface IronBrazierConfig {
-  /** Ayak dâhil toplam yükseklik (metre). */
+  /** Total height including the legs (metres). */
   readonly height: number
-  /** Kâsenin üst ağız yarıçapı (metre). */
+  /** Radius of the bowl's top rim (metres). */
   readonly bowlRadius: number
-  /** Kâse çevresindeki köşe sayısı. Düşük tut — lowpoly silueti bu belirler. */
+  /** Corner count around the bowl. Keep it low — it sets the lowpoly silhouette. */
   readonly bowlSegments: number
-  /** Ayak sayısı. */
+  /** Number of legs. */
   readonly legCount: number
-  /** Alev dili sayısı. 0 = alev yok, sadece kömür. */
+  /** Number of flame blades. 0 = no flame, coals only. */
   readonly flameCount: number
-  /** Varyasyon tohumu. */
+  /** Variation seed. */
   readonly seed: number
 }
 
@@ -64,20 +65,20 @@ export const ironBrazierDefaults: IronBrazierConfig = {
 }
 
 export interface IronBrazierParts {
-  /** Kâse ve ağız çemberi. */
+  /** The bowl and its rim hoop. */
   readonly bowl: PartHandle<Group>
-  /** Ayaklar ve pabuçlar. */
+  /** The legs and their feet. */
   readonly legs: PartHandle<Group>
-  /** Sönmüş kömürler. */
+  /** Burnt-out coals. */
   readonly coals: PartHandle<Group>
-  /** Alev dilleri, kor kömürler ve ışık. Söndürülünce gizlenir. */
+  /** Flame blades, glowing coals and the light. Hidden when extinguished. */
   readonly flame: PartHandle<Group>
 }
 
 export interface IronBrazierActions {
-  /** Ateşi yakar ya da söndürür. */
+  /** Lights or extinguishes the fire. */
   setLit(lit: boolean): void
-  /** Şu anda yanıyor mu. */
+  /** Whether it is currently lit. */
   isLit(): boolean
 }
 
@@ -109,9 +110,9 @@ export function createModel(
   const flame = createPart('iron-brazier/flame')
   root.add(bowl.anchor, legs.anchor, coals.anchor, flame.anchor)
 
-  // Işık ANCHOR'a takılı, üretilen içeriğe değil. Anchor rebuild'de
-  // değişmediği için configure() ateşi söndürmüyor — tüketicinin kendi
-  // eklediği nesneler de aynı sebeple hayatta kalıyor.
+  // The light is attached to the ANCHOR, not to the generated content. Because
+  // the anchor does not change on rebuild, configure() does not put the fire
+  // out — objects the consumer added itself also survive for the same reason.
   const light = new PointLight(0xffa04d, 0, 6, 2)
   light.name = 'iron-brazier/firelight'
   flame.anchor.add(light)
@@ -121,7 +122,7 @@ export function createModel(
   let lit = true
   let elapsed = 0
 
-  /** Kâsenin üst ağzının dünya yüksekliği. */
+  /** World height of the bowl's top rim. */
   const bowlTop = (): number => config.height * 0.5
   const bowlDepth = (): number => config.bowlRadius * 0.78
 
@@ -138,8 +139,8 @@ export function createModel(
     const outerBottom = config.bowlRadius * 0.56
     const wall = config.bowlRadius * 0.055
 
-    // Dış kabuk ve iç kabuk aynı koni; içteki ters çevrilmiş, çünkü kâsenin
-    // içine bakıldığında yüzeyler bize dönük olmalı.
+    // The outer shell and the inner shell are the same cone; the inner one is
+    // flipped, because when you look into the bowl the faces must face us.
     const outer = prismGeometry(
       outerBottom, config.bowlRadius, depth, config.bowlSegments,
       [0, centreY, 0], shade(), { capTop: false, capBottom: true },
@@ -148,8 +149,8 @@ export function createModel(
       outerBottom - wall, config.bowlRadius - wall, depth, config.bowlSegments,
       [0, centreY + wall, 0], shade(), { capTop: false, capBottom: true },
     ))
-    // Ağız çemberi dış ve iç kabuğun arasındaki boşluğu kapatır ve dövme bir
-    // dudak izlenimi verir.
+    // The rim hoop closes the gap between the outer and inner shells and gives
+    // the impression of a forged lip.
     const rim = bandGeometry(
       config.bowlRadius + wall * 0.4, bowlTop(), wall * 2.6, wall * 1.6,
       config.bowlSegments, shade(),
@@ -171,15 +172,15 @@ export function createModel(
       tint.copy(MEDIEVAL_PALETTE.iron)
       tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.05))
 
-      // Önce origin'in ALTINA sarkan bir çubuk kur, sonra dışa yatır, sonra
-      // yerine döndür. Sıra önemli: rotate her zaman origin etrafında döner.
+      // First build a stick hanging BELOW the origin, then tilt it outwards, then
+      // rotate it into place. Order matters: rotate always turns about the origin.
       const leg = boxGeometry([thickness, legLength, thickness], [0, -legLength / 2, 0], tint)
       leg.rotateZ(tilt)
       leg.rotateY(angle)
       leg.translate(0, attachY, 0)
       pieces.push(leg)
 
-      // Pabuç: ayağın yere bastığı yassı taban.
+      // Foot: the flat base where the leg stands on the ground.
       const spread = Math.sin(tilt) * legLength
       const foot = boxGeometry(
         [thickness * 2.1, thickness * 0.7, thickness * 2.1],
@@ -198,7 +199,7 @@ export function createModel(
     return mergeColoured(pieces)
   }
 
-  /** Kâsenin içine dağılmış kömür parçaları. `hot` olanlar ışıldar. */
+  /** Coal pieces scattered inside the bowl. The `hot` ones glow. */
   function coalPieces(random: () => number, hot: boolean): BufferGeometry[] {
     const tint = new Color()
     const pieces: BufferGeometry[] = []
@@ -231,8 +232,8 @@ export function createModel(
   }
 
   /**
-   * Alev dilleri. Her biri ayrı bir Group içinde, çünkü update() onları tek
-   * tek ölçekleyip döndürecek — birleştirilmiş tek geometri kıpırdayamazdı.
+   * Flame blades. Each one sits in its own Group, because update() will scale
+   * and rotate them one by one — a single merged geometry could not move.
    */
   function buildFlame(random: () => number, target: Group): { geometries: BufferGeometry[]; blades: Blade[] } {
     const geometries: BufferGeometry[] = []
@@ -251,8 +252,8 @@ export function createModel(
       hot.copy(MEDIEVAL_PALETTE.ember).offsetHSL(0, jitter(random, 0.04), jitter(random, 0.05))
       tip.copy(MEDIEVAL_PALETTE.emberTip).offsetHSL(jitter(random, 0.02), 0, jitter(random, 0.05))
 
-      // Uç yarıçapı sıfır: koni. Renk dipten uca geçiş yapıyor, alevin dibi ile
-      // ucu aynı renk değildir.
+      // Tip radius zero: a cone. The colour shifts from base to tip, because the
+      // bottom of a flame and its tip are not the same colour.
       const blade = prismGeometry(
         width, 0, reach, 5,
         [0, reach / 2, 0], hot,
@@ -292,8 +293,8 @@ export function createModel(
     for (const geometry of owned) geometry.dispose()
     owned = []
     blades = []
-    // reset() sadece üretilmiş içeriği değiştirir; anchor'lar ve onlara
-    // takılanlar (ışık dâhil) yerinde kalır.
+    // reset() only replaces the generated content; the anchors and whatever is
+    // attached to them (the light included) stay in place.
     const random = createRandom(config.seed)
     attach(bowl.reset(), buildBowl(random), 'bowl', 'iron')
     attach(legs.reset(), buildLegs(random), 'legs', 'iron')
@@ -316,7 +317,7 @@ export function createModel(
   }
 
   function applyLit(): void {
-    // Üretilen alev içeriği content'te; ışık anchor'da. İkisi de sönmeli.
+    // The generated flame content is in content, the light on the anchor. Both go out.
     flame.content.visible = lit
     light.visible = lit
     light.position.y = bowlTop()
@@ -362,13 +363,13 @@ export function createModel(
     },
     update: (deltaSeconds: number) => {
       if (!lit) return
-      // Kare atlamalarında alevin fırlamaması için adımı sınırla.
+      // Clamp the step so the flame does not shoot up when frames are dropped.
       elapsed += Math.min(Math.max(deltaSeconds, 0), 0.05)
 
       let brightness = 0
       for (const blade of blades) {
-        // İki farklı frekansın toplamı: tek sinüs fazla düzenli, "nefes alan"
-        // bir ritim veriyor; ateş öyle yanmaz.
+        // The sum of two different frequencies: a single sine is too regular and
+        // gives a "breathing" rhythm; fire does not burn like that.
         const wave =
           Math.sin(elapsed * blade.speed + blade.phase) * 0.6 +
           Math.sin(elapsed * blade.speed * 2.7 + blade.phase * 1.9) * 0.4

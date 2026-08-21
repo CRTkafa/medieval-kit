@@ -1,13 +1,13 @@
 /**
 * @medieval-kit/wooden-barrel
 *
-* Gerçek bir fıçı tek parça değildir: uçlara doğru daralan ayrı tahtalardan
-* (stave) kurulur, demir çemberlerle sıkıştırılır, kapağı gövdenin içine
-* gömülür ve tahtalar kapağın üstünde bir bilezik (chime) bırakır. Bu model
-* onu böyle kuruyor — şişirilmiş bir silindir olarak değil.
+* A real barrel is not a single piece: it is built from separate boards
+* (staves) that narrow towards the ends, squeezed together by iron hoops, its
+* head sunk into the body, and the staves leave a collar (the chime) above the
+* head. This model builds it that way — not as an inflated cylinder.
 *
-* Bağımlılıklar: düz `three` ve `@medieval-kit/core`. scifi-kit'in
-* primitive/aşınma boru hattına hiç dokunmuyor; WebGL yeterli.
+* Dependencies: plain `three` and `@medieval-kit/core`. It never touches
+* scifi-kit's primitive/wear pipeline; WebGL is enough.
 */
 import { Color, type BufferGeometry } from 'three'
 
@@ -24,17 +24,17 @@ import {
 } from '../core/index.ts'
 
 export interface WoodenBarrelConfig {
-  /** Toplam yükseklik (metre). */
+  /** Total height (metres). */
   readonly height: number
-  /** Göbekteki (bilge) dış yarıçap (metre). */
+  /** Outer radius at the belly (bilge), in metres. */
   readonly radius: number
-  /** Uçların göbeğe göre ne kadar daraldığı. 0.16 = uçlar %84 genişlikte. */
+  /** How far the ends narrow against the belly. 0.16 = ends at 84% width. */
   readonly taper: number
-  /** Tahta sayısı. Tek sayı, mükemmel simetriyi kırdığı için varsayılan. */
+  /** Stave count. Odd by default, because it breaks perfect symmetry. */
   readonly staveCount: number
-  /** Demir çember sayısı. */
+  /** Iron hoop count. */
   readonly hoopCount: number
-  /** Varyasyon tohumu. Aynı tohum her zaman aynı fıçıyı verir. */
+  /** Variation seed. The same seed always gives the same barrel. */
   readonly seed: number
 }
 
@@ -52,14 +52,14 @@ export type WoodenBarrelParts = 'staves' | 'heads' | 'hoops'
 const SLOTS = ['oak', 'iron'] as const
 type Slot = (typeof SLOTS)[number]
 
-/** Fıçı profili: t ∈ [-1,1], uçlarda dar, göbekte geniş. */
+/** Barrel profile: t ∈ [-1,1], narrow at the ends, wide at the belly. */
 function profileAt(t: number, taper: number): number {
   return 1 - taper * t * t
 }
 
 /**
-* Çemberler uçtan içe doğru simetrik yerleşir: en dıştakiler "chime" (uç)
-* çemberi, içtekiler "bilge" (göbek) çemberi.
+* The hoops sit symmetrically from the ends inwards: the outermost ones are the
+* "chime" (end) hoops, the inner ones the "bilge" (belly) hoops.
 */
 function hoopPositions(count: number): number[] {
   if (count <= 0) return []
@@ -83,22 +83,22 @@ export function createModel(overrides: Partial<WoodenBarrelConfig> = {}) {
       slots: SLOTS,
       build: ({ config, random }) => {
         const half = config.height / 2
-        // Beş seviye: uçlar, çeyrekler ve göbek. Lowpoly bir fıçı eğrisi için
-        // yeterli; altıncı seviye siluete ölçülebilir bir şey katmıyor.
+        // Five levels: ends, quarters and belly. Enough for a lowpoly barrel
+        // curve; a sixth level adds nothing measurable to the silhouette.
         const levels = [-1, -0.58, 0, 0.58, 1]
 
         function buildStaves(random: () => number, half: number, levels: number[]): BufferGeometry {
           const wallThickness = config.radius * 0.13
           const step = (Math.PI * 2) / config.staveCount
-          // Tahtalar arasında ince bir boşluk — "tek parça" değil "monte edilmiş"
-          // okunmasını sağlayan tek detay bu.
+          // A thin gap between the staves — the one detail that makes this read
+          // as "assembled" instead of "a single piece".
           const gap = step * 0.055
           const tint = new Color()
           const pieces: BufferGeometry[] = []
 
           for (let index = 0; index < config.staveCount; index += 1) {
-            // Her tahta kendi ufak sapmalarını taşır: yarıçap, uç yüksekliği, ton.
-            // Mükemmel tekrar "üretilmiş" gibi okunur; kural: aynaları kır.
+            // Every stave carries its own small deviations: radius, end height,
+            // tone. Perfect repetition reads "manufactured"; rule: break mirrors.
             const radiusBias = 1 + jitter(random, 0.014)
             const topBias = jitter(random, 0.006)
             const bottomBias = jitter(random, 0.006)
@@ -129,8 +129,8 @@ export function createModel(overrides: Partial<WoodenBarrelConfig> = {}) {
         function buildHeads(random: () => number, half: number): BufferGeometry {
           const wallThickness = config.radius * 0.13
           const endRadius = config.radius * profileAt(1, config.taper)
-          // Kapak gövdenin İÇİNE oturur ve uçtan biraz geride kalır; tahtaların
-          // üstte bıraktığı bilezik (chime) fıçıyı fıçı yapan siluet detayı.
+          // The head seats INSIDE the body, a little back from the end; the
+          // collar (chime) the staves leave above it makes a barrel a barrel.
           const seatRadius = endRadius - wallThickness * 0.9
           const inset = config.height * 0.055
           const tint = new Color(MEDIEVAL_PALETTE.oakEnd)
@@ -151,7 +151,7 @@ export function createModel(overrides: Partial<WoodenBarrelConfig> = {}) {
 
           for (const t of positions) {
             const seat = config.radius * profileAt(t, config.taper)
-            // Uç çemberleri daha geniştir: en çok zorlanan yer orası.
+            // The end hoops are wider: that is where the strain is greatest.
             const bandHeight = config.height * (0.045 + 0.03 * Math.abs(t))
             tint.copy(MEDIEVAL_PALETTE.iron)
             tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.05))
@@ -169,8 +169,8 @@ export function createModel(overrides: Partial<WoodenBarrelConfig> = {}) {
           return mergeColoured(pieces)
         }
 
-        // Çağrı SIRASI korunmalı: tohuma bağlı rastgelelik akış hâlinde
-        // ilerliyor, sıra değişirse geometri de değişir.
+        // The call ORDER must be kept: the seeded randomness advances as a
+        // stream, and if the order changes so does the geometry.
         const stavesPart = buildStaves(random, half, levels)
         const headsPart = buildHeads(random, half)
         const hoopsPart = buildHoops(random, half)

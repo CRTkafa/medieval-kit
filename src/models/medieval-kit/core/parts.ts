@@ -3,23 +3,26 @@ import { Group } from 'three'
 import type { PartHandle } from '@/lib/vibe3d/model.ts'
 
 /**
- * Semantik parça yuvası: sabit anchor + değiştirilebilir içerik.
+ * Semantic part slot: fixed anchor + replaceable content.
  *
- * vibe3d'nin en kolay yanlış anlaşılan sözleşmesi bu. `PartHandle` iki ayrı
- * nesne bildirir ve ikisi AYNI OLAMAZ:
+ * This is the most easily misunderstood contract in vibe3d. `PartHandle`
+ * declares two separate objects and they CANNOT BE THE SAME:
  *
- *   anchor   modelin ömrü boyunca aynı nesne. Tüketici ışığını, etiketini,
- *            çarpışma gövdesini, gameplay nesnesini buraya takar.
- *   content  configure() her çağrıldığında atılıp yeniden kurulan geometri.
+ *   anchor   the same object for the lifetime of the model. The consumer
+ *            attaches its light, its label, its collision body, its gameplay
+ *            object here.
+ *   content  the geometry that is thrown away and rebuilt every time
+ *            configure() is called.
  *
- * İkisini aynı Group yapıp rebuild'de `clear()` çağırmak, tüketicinin taktığı
- * her şeyi de sessizce siler — model çalışmaya devam eder, ama protokolün asıl
- * vaadi bozulmuştur. `scripts/verify-model.ts` bunu ayrıca test ediyor.
+ * Making both the same Group and calling `clear()` on rebuild silently deletes
+ * everything the consumer attached too — the model keeps working, but the
+ * protocol's actual promise is broken. `scripts/verify-model.ts` tests this
+ * separately.
  */
 export interface PartSlot extends PartHandle<Group> {
   readonly anchor: Group
   readonly content: Group
-  /** İçeriği taze bir Group ile değiştirir ve onu döndürür. Anchor'a dokunmaz. */
+  /** Replaces the content with a fresh Group and returns it. Leaves the anchor alone. */
   reset(): Group
 }
 

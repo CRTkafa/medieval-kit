@@ -1,25 +1,27 @@
 /**
  * @medieval-kit/wicker-basket
  *
- * Söğüt çubuğundan örülmüş sepet, isteğe bağlı olarak meyveyle dolu.
+ * A basket woven from willow rods, optionally filled with produce.
  *
- * Kitin en çok "nasıl yapıldığını" taklit eden modeli, çünkü hasırda biçim ile
- * yapım aynı şey: sepet, dikey çubukların (stake) etrafından geçen yatay
- * çubukların (withy) BİR ÖNÜNDEN BİR ARKASINDAN dolanmasıdır. O dolanma
- * olmadan elde ettiğin şey üstüne çizgi çizilmiş bir kova oluyor.
+ * The model in the kit that imitates "how it was made" the most, because in
+ * wickerwork the form and the making are the same thing: a basket is the
+ * horizontal rods (withies) winding IN FRONT OF ONE and BEHIND THE NEXT of the
+ * vertical rods (stakes). Without that winding what you get is a bucket with
+ * lines drawn on it.
  *
- * Örgü hilesi kısa: her yatay halka önce düz bir bant olarak üretiliyor, sonra
- * köşeleri AÇILARINA bağlı olarak içeri-dışarı itiliyor —
+ * The weave trick is short: every horizontal hoop is first produced as a flat
+ * band, then its vertices are pushed in and out according to THEIR ANGLE —
  *
- *     yarıçap × (1 + genlik · cos(dikeySayısı · açı + faz))
+ *     radius × (1 + amplitude · cos(stakes · angle + phase))
  *
- * Ardışık sıralarda faz π kadar kaydırılıyor, yani bir sıranın dışarı çıktığı
- * yerde bir sonraki içeri giriyor. Gerçek örgü tam olarak budur ve maliyeti
- * fazladan tek bir üçgen değil.
+ * On consecutive rows the phase is shifted by π, so where one row comes out the
+ * next one goes in. That is exactly what a real weave is, and it costs not one
+ * single extra triangle.
  *
- * Meyveler ayrı bir yuvada ve renkleri `hue` alanından geliyor: aynı modelden
- * elma, şalgam ya da lahana sepeti çıkabiliyor. Domates ARAMAYIN — Amerika'dan
- * gelme ve Avrupa mutfağına 16. yüzyıldan önce girmiyor.
+ * The produce sits in its own slot and takes its colour from the `hue` field:
+ * the same model can give you a basket of apples, turnips or cabbages. Do NOT
+ * look for tomatoes — they come from the Americas and do not enter European
+ * cooking before the 16th century.
  */
 import { Color, type BufferGeometry } from 'three'
 
@@ -36,19 +38,19 @@ import {
 } from '../core/index.ts'
 
 export interface WickerBasketConfig {
-  /** Sepet yüksekliği, kulp hariç (metre). */
+  /** Basket height, handle excluded (metres). */
   readonly height: number
-  /** Ağız yarıçapı (metre). */
+  /** Mouth radius (metres). */
   readonly radius: number
-  /** Tabana doğru daralma. 0 = silindir. */
+  /** Taper towards the base. 0 = cylinder. */
   readonly taper: number
-  /** Dikey çubuk sayısı. Örgünün "dalga sayısı" da bu. */
+  /** Number of vertical stakes. Also the "wave count" of the weave. */
   readonly stakes: number
-  /** Yatay örgü sırası. */
+  /** Horizontal weave rows. */
   readonly rows: number
-  /** İçindeki meyve sayısı. 0 = boş sepet. */
+  /** Number of fruits inside. 0 = empty basket. */
   readonly produce: number
-  /** Meyve rengi, renk çemberi üzerinde 0–1. */
+  /** Fruit colour, 0–1 around the colour wheel. */
   readonly hue: number
   readonly seed: number
 }
@@ -77,15 +79,16 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
       const stakes = Math.max(5, Math.round(config.stakes))
       const rows = Math.max(1, Math.round(config.rows))
       const bottomRadius = config.radius * (1 - config.taper)
-      const withy = config.height * 0.05          // çubuk kalınlığı
-      const amplitude = 0.055                     // örgünün içeri-dışarı payı
+      const withy = config.height * 0.05          // rod thickness
+      const amplitude = 0.055                     // in-out travel of the weave
 
       const radiusAt = (t: number): number => bottomRadius + (config.radius - bottomRadius) * t
 
       /**
-       * Bandı örgüye çeviren dönüşüm: her köşe, KENDİ açısına bağlı olarak
-       * merkeze yaklaşıp uzaklaşıyor. Y'ye dokunulmuyor, dolayısıyla halka
-       * düzlemde kalıyor ve komşu sıralarla çakışmıyor.
+       * The transform that turns a band into a weave: every vertex moves
+       * towards and away from the centre according to ITS OWN angle. Y is left
+       * alone, so the hoop stays in its plane and never collides with the
+       * neighbouring rows.
        */
       const undulate = (geometry: BufferGeometry, phase: number): BufferGeometry => {
         const position = geometry.getAttribute('position')
@@ -103,9 +106,9 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
         return geometry
       }
 
-      // --- Dikey çubuklar ------------------------------------------------------
-      // Örgünün İÇİNDEN geçiyorlar: yatay halkalar onların bir önünden bir
-      // arkasından dolandığı için burada gizlenip orada görünüyorlar.
+      // --- Vertical stakes -----------------------------------------------------
+      // They run THROUGH the weave: because the horizontal hoops wind in front
+      // of one and behind the next, the stakes hide here and show up there.
       const pieces: BufferGeometry[] = []
       for (let i = 0; i < stakes; i += 1) {
         const angle = (i / stakes) * Math.PI * 2
@@ -113,7 +116,7 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
           withy * 0.42, withy * 0.36, config.height * 1.02, 4,
           [0, 0, 0], tint('straw', -0.09, 1.2),
         )
-        // Önce eğ, sonra taşı: daralan bir sepette dikmeler de yatık.
+        // Bend first, move second: in a tapering basket the stakes lean too.
         stake.rotateX(Math.atan2(config.radius - bottomRadius, config.height))
         stake.rotateY(angle)
         const mid = (bottomRadius + config.radius) / 2
@@ -121,15 +124,17 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
         pieces.push(stake)
       }
 
-      // --- Yatay örgü ----------------------------------------------------------
-      // Dikey çubuk başına İKİ segment: `cos(stakes·θ)` tam olarak her çubukta
-      // bir kez artı, bir kez eksi örnekleniyor, yani dalga en az üçgenle tam
-      // çözülüyor. Dört segment daha yumuşak bir dalga veriyordu ama halka
-      // başına üçgeni ikiye katlıyor ve sepet lowpoly bütçesini aşıyordu.
+      // --- Horizontal weave ----------------------------------------------------
+      // TWO segments per vertical stake: `cos(stakes·θ)` is sampled exactly once
+      // positive and once negative on every stake, so the wave is fully resolved
+      // with the fewest possible triangles. Four segments gave a smoother wave
+      // but doubled the triangles per hoop and pushed the basket past the
+      // lowpoly budget.
       //
-      // Halkaların İÇ YÜZÜ üretilmiyor. Onun yerine tek parça bir iç astar var
-      // (aşağıda): altı halkanın altı ayrı iç yüzeyi ~800 üçgen tutuyordu,
-      // astar 44 tutuyor ve içeriden bakınca aradaki fark görünmüyor.
+      // The INNER FACE of the hoops is not generated. In its place there is a
+      // single-piece inner liner (below): six separate inner surfaces for six
+      // hoops cost ~800 triangles, the liner costs 44, and from the inside the
+      // difference is invisible.
       for (let r = 0; r < rows; r += 1) {
         const t = (r + 0.5) / rows
         const y = -half + config.height * t
@@ -137,13 +142,13 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
           radiusAt(t), y, config.height * 0.11, withy * 0.8, stakes * 2,
           tint('straw', jitter(random, 0.07), 1.2),
         )
-        // Faz her sırada yarım dalga kayıyor: bir sıranın dışarı çıktığı yerde
-        // bir sonrakinin içeri girmesi, örgüyü örgü yapan şey.
+        // The phase shifts by half a wave on every row: the next row going in
+        // where the previous one came out is what makes a weave a weave.
         pieces.push(undulate(ring, r % 2 === 0 ? 0 : Math.PI))
       }
 
-      // İç astar: örgünün arkasını kapatan tek yüzey. Normalleri eksene baksın
-      // diye ters sarımlı.
+      // Inner liner: the single surface that closes off the back of the weave.
+      // Wound in reverse so the normals face the axis.
       pieces.push(flipGeometry(latheGeometry([
         { y: -half + config.height * 0.03, radius: bottomRadius * (1 - amplitude) },
         { y: half - config.height * 0.02, radius: config.radius * (1 - amplitude) },
@@ -152,28 +157,28 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
         capBottom: false,
       })))
 
-      // --- Taban ---------------------------------------------------------------
+      // --- Base ----------------------------------------------------------------
       pieces.push(latheGeometry([
         { y: -half - config.height * 0.01, radius: bottomRadius * 0.94 },
         { y: -half + config.height * 0.05, radius: bottomRadius * 0.99 },
       ], stakes * 2, [0, 0, 0], tint('straw', -0.14, 1.2), { capTop: true }))
 
-      // --- Kenar ---------------------------------------------------------------
-      // Örgüyü bitiren kalın bükme. Sepetin en görünür detayı ve olmadığı
-      // zaman kenar "kesilmiş" duruyor.
+      // --- Rim -----------------------------------------------------------------
+      // The thick bend that finishes the weave. It is the most visible detail on
+      // the basket, and without it the edge looks "cut off".
       const rim = mergeColoured([
         bandGeometry(config.radius * 1.015, half - config.height * 0.03,
           config.height * 0.1, withy * 1.5, stakes * 2,
           tint('straw', 0.07, 1.2), { inner: true }),
       ])
 
-      // --- İçindekiler ----------------------------------------------------------
+      // --- Contents ------------------------------------------------------------
       const count = Math.max(0, Math.round(config.produce))
       const contents: BufferGeometry[] = []
       const hue = ((config.hue % 1) + 1) % 1
       for (let i = 0; i < count; i += 1) {
         const size = config.radius * (0.2 + random() * 0.07)
-        // Elma profili: üstte ve altta çukur, ortada geniş.
+        // Apple profile: dimpled top and bottom, wide in the middle.
         const fruit = latheGeometry([
           { y: -size * 0.86, radius: size * 0.3 },
           { y: -size * 0.6, radius: size * 0.78 },
@@ -186,8 +191,9 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
           0.3 + random() * 0.12,
         ))
 
-        // Yerleşim: altın oran açısı + kökle artan uzaklık. Meyveler ağzın
-        // hizasında bir kubbe oluşturuyor, çünkü dolu bir sepet düz bitmez.
+        // Placement: golden-angle spiral plus a distance growing with the square
+        // root. The fruit forms a dome level with the mouth, because a full
+        // basket does not end flat.
         const angle = i * 2.399963
         const ring = Math.sqrt((i + 0.4) / count)
         const spread = config.radius * 0.62 * ring

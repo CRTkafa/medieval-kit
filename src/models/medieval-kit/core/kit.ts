@@ -11,19 +11,20 @@ import { createRandom } from './random.ts'
 import { createMedievalMaterials, type MedievalSlot, type SlotMaterial } from './materials.ts'
 
 /**
- * Kit modeli iskelesi.
+ * Kit model scaffold.
  *
- * Her model aynı sözleşmeyi kurmak zorunda: kaynak sahipliği, materyal
- * çözümleme ve override, sabit anchor + değiştirilebilir content, kimliği
- * bozmayan configure(), idempotent dispose(). Bunu her modelde elle yazmak hem
- * ~80 satır tekrar hem de her tekrarda hata yapma şansı demek — nitekim
- * anchor/content ayrımını ilk üç modelde birden yanlış yapmıştım.
+ * Every model has to set up the same contract: resource ownership, material
+ * resolution and overrides, fixed anchor + replaceable content, a configure()
+ * that does not break identity, an idempotent dispose(). Writing that by hand
+ * in every model means ~80 lines of repetition plus a chance to get it wrong
+ * on each repetition — and indeed I got the anchor/content split wrong in the
+ * first three models at once.
  *
- * Buradan sonra model yazmak sadece geometri üretmek: `build` bir parça adı →
- * geometri eşlemesi döndürür, gerisini bu fonksiyon halleder.
+ * From here on, writing a model is just producing geometry: `build` returns a
+ * part name → geometry mapping, this function handles the rest.
  */
 
-/** Bir parçanın tek materyal yuvası kullanan gövdesi. */
+/** The body of a part that uses a single material slot. */
 export interface PartBody<S extends string> {
   readonly slot: S
   readonly geometry: BufferGeometry
@@ -31,47 +32,51 @@ export interface PartBody<S extends string> {
 
 export interface BuiltPart<S extends string> extends PartBody<S> {
   /**
-   * Aynı parçaya ait, BAŞKA yuva kullanan ek gövdeler.
+   * Extra bodies belonging to the same part that use a DIFFERENT slot.
    *
-   * Parçalar root'un kardeş çocukları, yani biri hareket ettiğinde diğerleri
-   * onu takip edemez. Sandığın kapağı hem meşe tahta hem demir kayış hem de
-   * kilidin kancasıdır ve üçü birlikte dönmek ZORUNDA — ayrı parça olsalardı
-   * kapak açılırken kayışlar havada asılı kalırdı.
+   * Parts are sibling children of the root, so when one moves the others
+   * cannot follow it. A chest's lid is oak boards and iron bands and the
+   * lock's hasp all at once, and the three MUST rotate together — if they were
+   * separate parts, the bands would hang in mid-air as the lid opened.
    *
-   * Yani bu alan "bir parça = bir mesh" varsayımını değil, "bir parça = bir
-   * anlam" ilkesini koruyor. Anlam bölünmüyor, sadece materyal bölünüyor.
+   * So this field does not preserve the assumption "one part = one mesh", it
+   * preserves the principle "one part = one meaning". The meaning is not
+   * split, only the material is.
    */
   readonly extras?: readonly PartBody<S>[]
   /**
-   * Parçanın kendi dönme merkezi (model uzayında).
+   * The part's own centre of rotation (in model space).
    *
-   * Verildiğinde anchor buraya konumlanır ve geometrinin BU NOKTAYA GÖRE
-   * yazılmış olduğu varsayılır. Sandık kapağının menteşe etrafında dönebilmesi
-   * için gereken tek şey bu: kapak geometrisi menteşe orijininde üretilir,
-   * anchor menteşeye taşınır, `anchor.rotation.x` artık kapağı açar.
+   * When given, the anchor is positioned here and the geometry is assumed to
+   * have been written RELATIVE TO THIS POINT. This is the only thing needed
+   * for a chest lid to rotate around its hinge: the lid geometry is produced
+   * at the hinge origin, the anchor is moved to the hinge, and
+   * `anchor.rotation.x` now opens the lid.
    *
-   * Tüketicinin anchor'a taktığı nesneler de bu dönüşe katılır — kapağın
-   * üstüne konan bir mum kapakla birlikte kalkar. Doğru davranış bu.
+   * Objects the consumer attached to the anchor join this rotation too — a
+   * candle placed on top of the lid rises with the lid. That is the correct
+   * behaviour.
    */
   readonly origin?: Vec3
 }
 
 export interface BuildContext<C, S extends MedievalSlot> {
   readonly config: Readonly<C>
-  /** Tohuma bağlı deterministik rastgelelik. Her rebuild'de baştan başlar. */
+  /** Seed-bound deterministic randomness. Starts over on every rebuild. */
   readonly random: () => number
-  /** Yuvanın geçerli materyali (override varsa o). */
+  /** The slot's current material (the override, if there is one). */
   resolve(slot: S): Material
-  /** Yuvanın varsayılan materyali — override edilmiş olsa bile. */
+  /** The slot's default material — even if it has been overridden. */
   readonly defaults: Pick<SlotMaterial, S>
 }
 
 /**
- * Eylemlere ve `update`'e verilen çalışma zamanı bağlamı.
+ * The runtime context handed to actions and to `update`.
  *
- * Geometriye değil PARÇALARA erişim veriyor: bir eylem yeniden inşa
- * tetiklememeli, sadece sahne grafiğinde bir şey oynatmalı. Kapağı açmak
- * modelin kimliğini değiştirmez, dolayısıyla `configure()` işi değildir.
+ * It gives access to the PARTS, not to the geometry: an action must not
+ * trigger a rebuild, it should only move something in the scene graph. Opening
+ * the lid does not change the model's identity, so it is not `configure()`'s
+ * job.
  */
 export interface RuntimeContext<C, P extends string> {
   readonly parts: Record<P, PartHandle<Group>>
@@ -84,45 +89,47 @@ export interface KitModelOptions<
   P extends string,
   A extends object = Record<string, never>,
 > {
-  /** Registry item adı; mesh isimlerinde ve userData'da kullanılır. */
+  /** Registry item name; used in mesh names and in userData. */
   readonly id: string
   readonly defaults: C
   readonly slots: readonly S[]
-  /** Parça adı → geometri. `undefined` dönen parça o yapılandırmada yok demektir. */
+  /** Part name → geometry. `undefined` means absent in that configuration. */
   build(context: BuildContext<C, S>): Record<P, BuiltPart<S> | undefined>
   /**
-   * Vertex renklerine pişirilecek ortam kapanması. `false` kapatır.
+   * Ambient occlusion to bake into the vertex colours. `false` turns it off.
    *
-   * Bütün parçalar BİRLİKTE değerlendirilir: bir tahtanın koyulaştığı yer
-   * komşu direğin yüzeyidir, kendi yüzeyi değil.
+   * All parts are evaluated TOGETHER: the place where a board darkens is the
+   * surface of the neighbouring post, not its own surface.
    */
   readonly occlusion?: OcclusionOptions | false
   /**
-   * Vertex renklerine işlenen yüzey alacası. `false` kapatır.
+   * Surface mottle written into the vertex colours. `false` turns it off.
    *
-   * Miktar YUVAYA göre ölçekleniyor (aşağıdaki tabloya bakın): cilalanmış
-   * çelik alacalı değildir, saman fena hâlde alacalıdır. Modelin ayrıca bir
-   * şey yapması gerekmiyor.
+   * The amount is scaled BY SLOT (see the table below): burnished steel is not
+   * mottled, straw is mottled badly. The model does not have to do anything
+   * else.
    */
   readonly mottle?: { readonly amount?: number; readonly cell?: number } | false
   /**
-   * Modelin tipli eylemleri. Bir kez, ilk inşadan sonra kurulur — dolayısıyla
-   * kapanışta tutulan durum (kapak açık mı, alev fazı ne) rebuild'i atlatır.
+   * The model's typed actions. Set up once, after the first build — so state
+   * held in the closure (is the lid open, which flame phase) survives a
+   * rebuild.
    */
   actions?(context: RuntimeContext<C, P>): A
-  /** Kare başına çağrılır. Tüketici çağırmazsa model tamamen statik kalır. */
+  /** Called each frame. If the consumer never calls it, the model stays fully static. */
   update?(deltaSeconds: number, context: RuntimeContext<C, P>): void
 }
 
 /**
- * Yuva başına alaca çarpanı.
+ * Mottle multiplier per slot.
  *
- * Kural malzemenin fiziğinden geliyor: bir yüzey ne kadar cilalıysa o kadar
- * TEK RENK olur, çünkü göze giden ışık yüzeyin kendi pigmentinden değil
- * yansımadan gelir. Saman ve bezde tam tersi geçerli.
+ * The rule comes from the physics of the material: the more polished a surface
+ * is, the more it becomes a SINGLE COLOUR, because the light reaching the eye
+ * comes from the reflection rather than from the surface's own pigment. For
+ * straw and cloth the exact opposite holds.
  *
- * Bunu yuvaya bağlamak, her modelde ayrı ayrı ayarlamaktan iyi: kit içinde
- * aynı malzeme her yerde aynı görünüyor.
+ * Tying this to the slot is better than tuning it separately in every model:
+ * within the kit the same material looks the same everywhere.
  */
 const MOTTLE_BY_SLOT: Readonly<Record<MedievalSlot, number>> = {
   straw: 1.35,
@@ -135,7 +142,7 @@ const MOTTLE_BY_SLOT: Readonly<Record<MedievalSlot, number>> = {
   brass: 0.35,
   steel: 0.22,
   glass: 0.15,
-  ember: 0,   // alev alacalanmaz: rengi zaten son renk
+  ember: 0,   // a flame is not mottled: its colour is already the final colour
 }
 
 export function createKitModel<
@@ -149,8 +156,8 @@ export function createKitModel<
 ): ModelInstance<C, Record<P, PartHandle<Group>>, A> {
   let config: C = { ...options.defaults, ...overrides }
 
-  // Modelin sahip olduğu kaynaklar. Tüketicinin verdiği materyaller buraya
-  // girmez, dolayısıyla dispose() onlara dokunmaz.
+  // The resources the model owns. Materials handed in by the consumer never
+  // enter here, so dispose() does not touch them.
   const scope = new ResourceScope()
   const defaults = createMedievalMaterials(scope, options.slots)
   const overridesBySlot = new Map<S, Material>()
@@ -177,18 +184,20 @@ export function createKitModel<
       .filter((part): part is BuiltPart<S> => part !== undefined)
     const geometriesOf = (part: BuiltPart<S>): BufferGeometry[] =>
       [part, ...(part.extras ?? [])]
-        // Alev ne gölge ALIR ne gölge YAPAR. `ember` aydınlatılmayan bir
-        // materyal, yani vertex rengi doğrudan ekrana giden son renk —
-        // kapanma onu karartsa alev sönerdi. Kural yuvanın kendisine bağlı,
-        // model başına bir bayrağa değil: unutulması mümkün olmasın.
+        // A flame neither TAKES shadow nor CASTS one. `ember` is an unlit
+        // material, so its vertex colour is the final colour going straight to
+        // the screen — if occlusion darkened it, the flame would go out. The
+        // rule is tied to the slot itself, not to a per-model flag: it must
+        // not be possible to forget it.
         .filter((body) => body.slot !== 'ember')
         .map((body) => body.geometry)
 
     if (options.occlusion !== false) {
-      // Kapanma MONTAJ uzayında hesaplanmalı: kendi orijininde yazılmış bir
-      // kapak, gövdenin yanında değil içinde duruyormuş gibi görünür ve yanlış
-      // yerleri karartır. Bu yüzden önce hepsi yerine taşınıyor, pişiriliyor,
-      // sonra geri alınıyor — sonuç geometriler yine menteşe-yerel kalıyor.
+      // Occlusion has to be computed in ASSEMBLY space: a lid written at its
+      // own origin looks as though it sits inside the body rather than beside
+      // it, and darkens the wrong places. So everything is first moved into
+      // place, baked, then moved back — the resulting geometries stay
+      // hinge-local.
       const moved = built.filter((part) => part.origin !== undefined)
       for (const part of moved) {
         const [x, y, z] = part.origin!
@@ -203,17 +212,17 @@ export function createKitModel<
 
     if (options.mottle !== false) {
       const amount = options.mottle?.amount ?? 0.125
-      // Leke büyüklüğü modelin ölçeğinden türetiliyor ama MUTLAK SINIRLARLA.
+      // The mottle size is derived from the model's scale, but WITH ABSOLUTE
+      // BOUNDS.
       //
-      // Sınırlar sonradan eklendi ve gerçek bir hatayı kapattı: ölçek tek
-      // başına kullanılınca 4.89 m'lik çit 0.27 m'lik hücre alıyordu. Çitin
-      // direği 0.09 m — yani bütün direk TEK hücreye düşüyor ve tamamen düz
-      // renk çıkıyordu. Model doku sisteminin bedelini ödeyip karşılığında
-      // hiçbir şey almıyordu.
+      // The bounds were added later and closed a real bug: with scale used on
+      // its own, a 4.89 m fence got a 0.27 m cell. The fence's post is 0.09 m
+      // — so the entire post fell into ONE cell and came out completely flat.
+      // The model paid the cost of the texture system and got nothing back.
       //
-      // Doğrusu şu: ahşabın damar lekesi 2–8 cm'dir ve nesnenin büyüklüğüyle
-      // ilgisi yoktur. Bir çit direği ile bir maşrapa tahtası aynı ağaçtan
-      // çıkıyor.
+      // The truth is this: wood grain mottle is 2–8 cm and has nothing to do
+      // with the size of the object. A fence post and a tankard stave come out
+      // of the same tree.
       const extent = built.reduce((largest, part) => {
         part.geometry.computeBoundingBox()
         const box = part.geometry.boundingBox
@@ -229,9 +238,9 @@ export function createKitModel<
     }
 
     for (const [name, part] of Object.entries(produced) as Array<[P, BuiltPart<S> | undefined]>) {
-      // Anchor ilk kurulumda yaratılır ve bir daha ASLA değişmez; sadece
-      // içeriği yenilenir. Tüketicinin anchor'a taktığı nesneler bu yüzden
-      // rebuild'i atlatır.
+      // The anchor is created on first setup and NEVER changes again; only its
+      // content is renewed. That is why objects the consumer attached to the
+      // anchor survive a rebuild.
       let slot = parts[name]
       if (!slot) {
         slot = createPart(`${options.id}/${name}`)
@@ -241,9 +250,9 @@ export function createKitModel<
       const target = slot.reset()
       if (!part) continue
 
-      // Konum güncelleniyor ama DÖNÜŞ değil: eylemlerin oynattığı açı
-      // yeniden inşadan sağ çıkmalı, yoksa `configure()` her çağrıldığında
-      // sandığın kapağı çarpar.
+      // The position is updated but the ROTATION is not: the angle an action
+      // moved has to survive a rebuild, otherwise the chest's lid slams shut
+      // every time `configure()` is called.
       if (part.origin) slot.anchor.position.set(...part.origin)
 
       for (const body of [part, ...(part.extras ?? [])]) {

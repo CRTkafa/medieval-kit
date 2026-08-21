@@ -22,3 +22,5 @@ glb/
 
 # models.lock.json KASITLI OLARAK dahil edilir: kurulu kaynağın hangi sürümden
 # geldiğini kaydeder ve `vibe3d diff` onunla yerel değişiklikleri bulur.
+scripts/probe.ts
+scripts/zdiag.ts

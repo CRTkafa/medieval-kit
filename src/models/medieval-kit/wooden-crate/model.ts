@@ -1,13 +1,15 @@
 /**
 * @medieval-kit/wooden-crate
 *
-* Sandık, kutu değildir: dört köşe dikmesine çakılmış yatay tahta sıralarıdır.
-* Aradaki ince boşluklar ve dikmelerin dışa taşması, siluete "monte edilmiş"
-* okunuşunu veren şey. Bu model onu böyle kuruyor.
+* A crate is not a box: it is rows of horizontal boards nailed to four corner
+* posts. The thin gaps between them, and the posts standing proud of them, are
+* what give the silhouette its "assembled" reading. This model builds it that
+* way.
 *
-* Fıçıyla aynı core'u paylaşıyor: aynı meşe tonu, aynı deterministik
-* rastgelelik, aynı vertex-renk tekniği. Yan yana koyduğunuzda aynı
-* katalogdan gelmiş gibi durmalarının sebebi bu.
+* It shares the same core as the barrel: the same oak tone, the same
+* deterministic randomness, the same vertex-colour technique. That is why they
+* look as if they came from the same catalogue when you stand them side by
+* side.
 */
 import { Color, type BufferGeometry } from 'three'
 
@@ -22,17 +24,17 @@ import {
 } from '../core/index.ts'
 
 export interface WoodenCrateConfig {
-  /** Genişlik (X ekseni, metre). */
+  /** Width (X axis, metres). */
   readonly width: number
-  /** Yükseklik (metre). */
+  /** Height (metres). */
   readonly height: number
-  /** Derinlik (Z ekseni, metre). */
+  /** Depth (Z axis, metres). */
   readonly depth: number
-  /** Her yüzdeki yatay tahta sırası sayısı. */
+  /** Number of horizontal board rows on each face. */
   readonly plankRows: number
-  /** Demir kayış sayısı. 0 = sade ahşap sandık. */
+  /** Iron strap count. 0 = plain wooden crate. */
   readonly strapCount: number
-  /** Varyasyon tohumu. */
+  /** Variation seed. */
   readonly seed: number
 }
 
@@ -57,13 +59,13 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
       slots: SLOTS,
       build: ({ config, random }) => {
         /**
-        * Ölçü sözleşmesi.
+        * The dimension contract.
         *
-        * Z-FIGHTING KURALI: hiçbir iki yüzey aynı düzlemde, aynı yöne bakarak
-        * örtüşmemeli. Gerçek marangozlukta parçalar birbirine geçer; burada da öyle
-        * yapıyoruz. Dikmeler tahtalardan dışarı taşıyor, kapak ve taban çerçeveden
-        * biraz sarkıyor, tahtalar birbirine küt ekleniyor. Böylece her yüzey kendi
-        * düzleminde tek başına.
+        * Z-FIGHTING RULE: no two surfaces may overlap in the same plane facing the
+        * same way. In real joinery the parts interlock, and we do the same here. The
+        * posts stand proud of the boards, the lid and the floor overhang the frame a
+        * little, the boards are butt-jointed to one another. That way every surface
+        * is alone in its own plane.
         */
         const dims = () => {
           const post = Math.min(config.width, config.depth) * 0.11
@@ -71,9 +73,9 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
           return {
             post,
             board,
-            /** Dikmelerin tahta yüzeyinden ne kadar dışarı taştığı. */
+            /** How far the posts stand proud of the board surface. */
             postProud: board * 0.45,
-            /** Kapak ve tabanın çerçeveden sarkması. */
+            /** Overhang of the lid and the floor beyond the frame. */
             overhang: board * 0.6,
             half: config.height / 2,
           }
@@ -85,13 +87,13 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
           const pieces: BufferGeometry[] = []
           const x = config.width / 2 - post / 2
           const z = config.depth / 2 - post / 2
-          // Dikmeler kapak ve tabanın İÇİNE giriyor; uçları o katı parçaların
-          // içinde kaldığı için görünmez ve hiçbir yüzeyle hizalanmaz.
+          // The posts run INTO the lid and the floor; because their ends stay
+          // inside those solid pieces they are invisible and align with nothing.
           const reach = half - board * 0.3
 
           for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]] as const) {
             tint.copy(MEDIEVAL_PALETTE.oak)
-            // Dikmeler gövdeden biraz daha koyu: farklı kesim, daha çok yıpranma.
+            // Posts are a bit darker than the body: a different cut, more wear.
             tint.offsetHSL(jitter(random, 0.01), jitter(random, 0.04), -0.045 + jitter(random, 0.02))
             pieces.push(chamferedBoxGeometry(
                 [post, post], [post, post], reach * 2,
@@ -107,17 +109,18 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
           const tint = new Color()
           const pieces: BufferGeometry[] = []
 
-          // Yan tahtalar dikmelerin ARKASINA çekili: dış yüzleri ±width/2 değil,
-          // ±(width/2 - postProud). Dikmelerle aynı düzleme oturmamalarının sebebi bu.
+          // The side boards are pulled BEHIND the posts: their outer faces are not at
+          // ±width/2 but at ±(width/2 - postProud). That is why they never share a plane
+          // with the posts.
           const faceX = config.width / 2 - postProud - board / 2
           const faceZ = config.depth / 2 - postProud - board / 2
-          // Küt ek (butt joint): ön/arka tahtalar yan tahtaların iç yüzüne dayanır.
-          // Değiyorlar ama örtüşmüyorlar — kenar teması z-fighting üretmez.
+          // Butt joint: the front/back boards bear against the inner face of the side
+          // boards. They touch but do not overlap — edge contact produces no z-fighting.
           const spanX = (config.width / 2 - postProud - board) * 2
           const spanZ = (config.depth / 2 - postProud - board) * 2
 
-          // Sıralar kapak ve tabanın içine girecek kadar uzanıyor, ama dikmelerin
-          // uçlarından FARKLI bir yükseklikte bitiyor.
+          // The rows reach far enough to enter the lid and the floor, but they end
+          // at a DIFFERENT height than the ends of the posts.
           const wallTop = half - board * 0.65
           const rows = Math.max(1, config.plankRows)
           const gap = config.height * 0.012
@@ -142,8 +145,9 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
             }
           }
 
-          // Kapak ve taban: çerçevenin üstüne/altına oturan, biraz sarkan tahta
-          // levhalar. Sarkma sayesinde yan yüzleri dikmelerin yüzleriyle hizalanmıyor.
+          // Lid and floor: board sheets that sit on top of and under the frame and
+          // overhang it a little. The overhang keeps their side faces from aligning
+          // with the faces of the posts.
           const slabWidth = config.width + overhang * 2
           const slabDepth = config.depth + overhang * 2
           const slabBoards = 3
@@ -178,7 +182,7 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
           const proud = post * 0.3
 
           for (let i = 0; i < config.strapCount; i += 1) {
-            // Kayışlar üstten ve alttan içe doğru simetrik yerleşir.
+            // The straps sit symmetrically from the top and the bottom inwards.
             const t = config.strapCount === 1
             ? 0
             : 0.6 - (1.2 * i) / (config.strapCount - 1)
@@ -186,8 +190,9 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
             tint.copy(MEDIEVAL_PALETTE.iron)
             tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.06))
 
-            // Ön/arka kayışlar köşelerde dışa taşıyor; yan kayışlar onlara VARMADAN
-            // bitiyor. Böylece dört parçanın üst yüzleri köşede üst üste binmiyor.
+            // The front/back straps stand proud at the corners; the side straps end
+            // BEFORE reaching them. That way the top faces of the four pieces do not
+            // sit on top of each other at the corner.
             pieces.push(
               chamferedBoxGeometry([config.width + proud * 2, proud], [config.width + proud * 2, proud], bandHeight, proud * 0.22, [0, y, config.depth / 2], tint),
               chamferedBoxGeometry([config.width + proud * 2, proud], [config.width + proud * 2, proud], bandHeight, proud * 0.22, [0, y, -config.depth / 2], tint),
@@ -199,8 +204,8 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
           return mergeColoured(pieces)
         }
 
-        // Çağrı SIRASI korunmalı: tohuma bağlı rastgelelik akış hâlinde
-        // ilerliyor, sıra değişirse geometri de değişir.
+        // The call ORDER must be kept: the seeded randomness advances as a
+        // stream, and if the order changes so does the geometry.
         const postsPart = buildPosts(random)
         const planksPart = buildPlanks(random)
         const strapsPart = buildStraps(random)

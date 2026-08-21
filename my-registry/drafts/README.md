@@ -1,14 +1,15 @@
-# Taslaklar
+# Drafts
 
-Bu klasördeki modeller registry'ye **derlenmez** — `build.ts` yalnızca
-`models/` altını tarar. Kod saklanıyor ama yayınlanan pakete girmiyor.
+Models in this folder are **not compiled** into the registry — `build.ts` only
+walks `models/`. The code is kept, but it never enters the published package.
 
 ## iron-brazier
 
-Titreyen alevli, kor kömürlü, kendi ışığını taşıyan demir mangal. Teknik
-olarak çalışıyor (tipli `actions`, `update()`, dört materyal yuvası) ama kitin
-diline ait değil: medieval kitin belkemiği tek gösterişli model değil, yan yana
-konduğunda sahne kuran çok sayıda basit parça.
+An iron brazier with a flickering flame, glowing coals, and a light of its own.
+It works, technically (typed `actions`, `update()`, four material slots), but it
+does not belong to the kit's language: the backbone of a medieval kit is not one
+showpiece model, it is the many plain pieces that build a scene once they stand
+next to each other.
 
-Kite geri almak istenirse `models/` altına taşımak ve `build.ts` içindeki
-`MODEL_META`'ya girdisini eklemek yeterli.
+To pull it back into the kit, move it under `models/` and add its entry to
+`MODEL_META` in `meta.ts`.

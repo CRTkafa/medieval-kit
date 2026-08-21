@@ -1,15 +1,16 @@
 /**
- * Eş düzlemli çakışma (z-fighting) denetimi.
+ * Coplanar overlap (z-fighting) check.
  *
- * İki yüzey tam olarak aynı düzlemde, aynı yöne bakıyor ve alanları
- * örtüşüyorsa, hangisinin önde olduğu derinlik tamponunun kayan nokta
- * hassasiyetine kalır. Kamera oynadıkça kazanan değişir ve yüzey titrer.
+ * If two surfaces lie in exactly the same plane, face the same way and their
+ * areas overlap, which one ends up in front is left to the floating-point
+ * precision of the depth buffer. As the camera moves the winner changes and
+ * the surface flickers.
  *
- * Kenardan değen yüzeyler (bitişik tahtalar) sorun DEĞİLDİR — örtüşme yoktur.
- * O yüzden test bounding box'a değil, gerçek alan örtüşmesine bakıyor:
- * bir üçgenin ağırlık merkezi diğerinin İÇİNDE mi?
+ * Surfaces that only touch along an edge (adjacent boards) are NOT a problem —
+ * there is no overlap. So the test does not look at bounding boxes but at real
+ * area overlap: is one triangle's centroid INSIDE the other?
  *
- * Çalıştır: bun scripts/zfight.ts
+ * Run: bun scripts/zfight.ts
  */
 import { Mesh, Vector3, type Object3D } from 'three/webgpu'
 
@@ -28,13 +29,13 @@ export interface ZFightReport {
   samples: string[]
 }
 
-/** Düzlem kimliği: yuvarlanmış normal + orijine uzaklık. */
+/** Plane identity: rounded normal + distance to the origin. */
 function planeKey(normal: Vector3, offset: number): string {
   const r = (value: number): string => (Math.round(value * 1000) / 1000).toFixed(3)
   return `${r(normal.x)},${r(normal.y)},${r(normal.z)}|${r(offset)}`
 }
 
-/** Düzlemin baskın eksenini atarak 2B'ye indir. */
+/** Drop the plane's dominant axis to reduce it to 2D. */
 function project(point: Vector3, axis: 'x' | 'y' | 'z'): [number, number] {
   if (axis === 'x') return [point.y, point.z]
   if (axis === 'y') return [point.x, point.z]
@@ -54,7 +55,7 @@ function insideTriangle(
   const d3 = sign(p, c, a)
   const negative = d1 < 0 || d2 < 0 || d3 < 0
   const positive = d1 > 0 || d2 > 0 || d3 > 0
-  // Kenarda olmak yeterli değil; kesin olarak içeride olmalı.
+  // Being on the edge is not enough; it has to be strictly inside.
   return !(negative && positive)
 }
 
@@ -79,7 +80,7 @@ export function findZFighting(root: Object3D): ZFightReport {
     }
   })
 
-  // Aynı düzlem + aynı bakış yönü olanları grupla.
+  // Group the ones on the same plane facing the same way.
   const groups = new Map<string, Face[]>()
   for (const face of faces) {
     const normal = new Vector3()
@@ -108,7 +109,7 @@ export function findZFighting(root: Object3D): ZFightReport {
       for (let j = i + 1; j < group.length; j += 1) {
         const first = group[i]!
         const second = group[j]!
-        // Aynı mesh içindeki komşu üçgenler zaten aynı yüzeyi döşüyor.
+        // Neighbouring triangles in the same mesh already tile one surface.
         const pa = project(first.a, dominant)
         const pb = project(first.b, dominant)
         const pc = project(first.c, dominant)
@@ -125,7 +126,7 @@ export function findZFighting(root: Object3D): ZFightReport {
             const p = first.centroid
             samples.push(
               `${first.mesh} ↔ ${second.mesh} @ ` +
-              `(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}) düzlem ${key}`,
+              `(${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}) plane ${key}`,
             )
           }
         }

@@ -1,16 +1,16 @@
 /**
- * Kendi registry'nizi derleyen script.
+ * The script that builds your own registry.
  *
- * `models/` altındaki her klasörü tarar:
- *   - `model.ts` içeriyorsa  -> vibe3d:model
- *   - içermiyorsa            -> vibe3d:lib (paylaşılan destek item'ı)
+ * It scans every folder under `models/`:
+ *   - contains `model.ts`  -> vibe3d:model
+ *   - does not             -> vibe3d:lib (shared support item)
  *
- * Bağımlılıklar kaynaktan türetilir: bir model `../core/` altından import
- * ediyorsa `@medieval-kit/core` otomatik bağımlılık olur. Elle tutulan bir
- * liste yok, dolayısıyla listenin bayatlaması da mümkün değil.
+ * Dependencies are derived from the source: if a model imports from under
+ * `../core/`, `@medieval-kit/core` automatically becomes a dependency. There is
+ * no hand-maintained list, so the list cannot go stale either.
  *
- * Çalıştır:  bun my-registry/build.ts
- * Doğrula:   bunx vibe3d registry validate my-registry/dist/registry.json
+ * Run:       bun my-registry/build.ts
+ * Validate:  bunx vibe3d registry validate my-registry/dist/registry.json
  */
 import { createHash } from 'node:crypto'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
@@ -24,15 +24,15 @@ const outputRoot = join(registryRoot, 'dist')
 const NAMESPACE = '@medieval-kit'
 const THREE_RANGE = 'three@>=0.185.0'
 
-/** Model başına katalog verisi. Kaynak dosyalar diskten okunur. */
+/** Catalogue data per model. The source files themselves are read from disk. */
 import { MODEL_META } from './meta.ts'
 
 const LIB_DESCRIPTION: Record<string, { title: string; description: string }> = {
   core: {
     title: 'Medieval Kit Core',
     description:
-      'Kitin paylaşılan temeli: deterministik rastgelelik, vertex-renkli materyaller ' +
-      've stave/band/head geometri üreticileri.',
+      'The shared foundation of the kit: deterministic randomness, vertex-colored materials ' +
+      'and stave/band/head geometry generators.',
   },
 }
 
@@ -63,8 +63,8 @@ async function registryFiles(itemId: string, paths: readonly string[]) {
     const content = await readFile(path, 'utf8')
     return {
       path: posix(relative(registryRoot, path)),
-      // {models} ve {vibe3d}, tüketicinin models.json'ındaki paths ile
-      // değiştirilir — registry onun klasör düzenini varsaymak zorunda değil.
+      // {models} and {vibe3d} are replaced with the paths from the consumer's
+      // models.json — the registry does not have to assume its folder layout.
       target: `{models}/medieval-kit/${itemId}/${posix(relative(directory, path))}`,
       content,
       hash: sha256(content),
@@ -72,7 +72,7 @@ async function registryFiles(itemId: string, paths: readonly string[]) {
   }))
 }
 
-/** `from '../<klasör>/'` biçimindeki her import bir registry bağımlılığıdır. */
+/** Every import of the form `from '../<folder>/'` is a registry dependency. */
 function dependenciesFrom(contents: readonly string[], selfId: string): string[] {
   const found = new Set<string>()
   const pattern = /from\s+['"]\.\.\/([a-z0-9][a-z0-9-]*)\//g
@@ -92,12 +92,12 @@ async function main(): Promise<void> {
 
   for (const entry of entries) {
     if (!entry.isDirectory()) continue
-    // Nokta ile başlayan klasörler item değildir. Araçlar (editör, VCS, ajan
-    // durumu) buraya klasör bırakabilir; registry adları ise `[a-z0-9-]+`
-    // olmak zorunda, yani böyle bir klasör derlemeyi kırardı.
+    // Folders starting with a dot are not items. Tools (editor, VCS, agent
+    // state) may leave folders here; registry names, on the other hand, have to
+    // be `[a-z0-9-]+`, so such a folder would break the build.
     if (entry.name.startsWith('.')) continue
-    // Model olmanın ölçütü: klasörün KÖKÜNDE model.ts. Alt ağaçta aramak
-    // yanlış: `core/model.ts` paylaşılan bir yardımcı, model değil.
+    // The criterion for being a model: model.ts at the folder ROOT. Searching
+    // the subtree is wrong: `core/model.ts` is a shared helper, not a model.
     const paths = await collectTypeScript(join(sourceRoot, entry.name))
     const root = join(sourceRoot, entry.name, 'model.ts')
     if (paths.includes(root)) models.push(entry.name)
@@ -111,7 +111,7 @@ async function main(): Promise<void> {
   for (const id of libs) {
     const paths = await collectTypeScript(join(sourceRoot, id))
     const contents = await Promise.all(paths.map((path) => readFile(path, 'utf8')))
-    const meta = LIB_DESCRIPTION[id] ?? { title: id, description: 'Paylaşılan kit kaynağı.' }
+    const meta = LIB_DESCRIPTION[id] ?? { title: id, description: 'Shared kit source.' }
     items.push({
       name: id,
       type: 'vibe3d:lib',
@@ -127,7 +127,7 @@ async function main(): Promise<void> {
     const paths = await collectTypeScript(join(sourceRoot, id))
     const contents = await Promise.all(paths.map((path) => readFile(path, 'utf8')))
     const meta = MODEL_META[id]
-    if (!meta) throw new Error(`${id} için MODEL_META girdisi yok`)
+    if (!meta) throw new Error(`no MODEL_META entry for ${id}`)
     items.push({
       name: id,
       type: 'vibe3d:model',
@@ -149,12 +149,12 @@ async function main(): Promise<void> {
     })
   }
 
-  // defaultItem şart: `vibe3d add @medieval-kit` (item adı vermeden) bunu kurar.
+  // defaultItem is required: `vibe3d add @medieval-kit` (with no item name) installs this.
   items.push({
     name: 'kit',
     type: 'vibe3d:kit',
     title: 'Medieval Kit',
-    description: 'Lowpoly medieval kitin tamamı.',
+    description: 'The complete lowpoly medieval kit.',
     dependencies: [],
     registryDependencies: models.map((id) => `${NAMESPACE}/${id}`),
     files: [],
@@ -165,14 +165,14 @@ async function main(): Promise<void> {
     schemaVersion: 1,
     namespace: NAMESPACE,
     name: 'Medieval Kit',
-    description: 'Three.js için lowpoly medieval prosedürel model kütüphanesi.',
+    description: 'Lowpoly medieval procedural model library for Three.js.',
     license: 'MIT',
     defaultItem: 'kit',
     compatibility: {
       vibe3d: '^0.0.1',
       engine: 'three',
       three: '>=0.185.0',
-      // scifi-kit ['webgpu','tsl'] ister; bu kit klasik WebGL ile çalışır.
+      // scifi-kit requires ['webgpu','tsl']; this kit runs on classic WebGL.
       capabilities: [],
     },
     items,
@@ -189,7 +189,7 @@ async function main(): Promise<void> {
     (total, item) => total + (item as { files: unknown[] }).files.length,
     0,
   )
-  console.log(`${items.length} item derlendi · ${models.length} model · ${libs.length} lib · ${fileCount} dosya`)
+  console.log(`${items.length} items built · ${models.length} models · ${libs.length} libs · ${fileCount} files`)
   for (const id of [...libs, ...models]) {
     const item = items.find((candidate) => (candidate as { name: string }).name === id) as {
       registryDependencies: string[]

@@ -3,32 +3,33 @@ import { Color, DoubleSide, MeshBasicMaterial, MeshStandardMaterial } from 'thre
 import type { ResourceScope } from '@vibe3d/ownership.ts'
 
 /**
- * Kitin paylaşılan materyal seti.
+ * The kit's shared material set.
  *
- * Kritik tercih: her materyal `vertexColors: true`. Renk varyasyonu materyalde
- * değil GEOMETRİDE taşınıyor. Böylece 13 tahtanın 13 ayrı tonu olabiliyor ama
- * hepsi tek materyali, dolayısıyla tek çizim çağrısını paylaşıyor.
+ * The critical choice: every material is `vertexColors: true`. Colour
+ * variation is carried in the GEOMETRY, not in the material. That way 13
+ * boards can have 13 separate tones while all of them share a single
+ * material, and therefore a single draw call.
  *
- * Bu, scifi-kit'in aşınma boru hattındaki fikrin küçük hâli: yüzey kimliğini
- * vertex attribute'una yaz, sonra birleştir.
+ * This is the small version of the idea behind scifi-kit's wear pipeline:
+ * write the surface identity into a vertex attribute, then merge.
  */
 export type MedievalSlot =
-  | 'oak'      // kereste
-  | 'iron'     // dövme demir
-  | 'steel'    // kullanımdan parlamış çelik
-  | 'brass'    // tunç ve bakır: çan, sikke
-  | 'straw'    // saman, hasır, süpürge teli
-  | 'cloth'    // keten, çuval bezi, tirşe
-  | 'leather'  // deri: kitap kabı, kese
-  | 'glass'    // üflemeli cam
-  | 'produce'  // meyve ve sebze kabuğu
-  | 'ember'    // alev — ışık almaz, yayar
-  | 'char'     // kömür, zift
+  | 'oak'      // timber
+  | 'iron'     // wrought iron
+  | 'steel'    // steel burnished by use
+  | 'brass'    // bronze and copper: bells, coins
+  | 'straw'    // straw, wicker, besom bristles
+  | 'cloth'    // linen, sackcloth, parchment
+  | 'leather'  // leather: book covers, pouches
+  | 'glass'    // blown glass
+  | 'produce'  // fruit and vegetable skin
+  | 'ember'    // flame — does not take light, it emits it
+  | 'char'     // charcoal, pitch
 
 /**
- * Her yuvanın materyal TİPİ farklı olabilir. `ember` aydınlatılmayan bir
- * MeshBasicMaterial; diğerleri PBR. Bu eşleme sayesinde model kodu hangi tipi
- * aldığını derleme zamanında biliyor.
+ * The material TYPE can differ per slot. `ember` is an unlit MeshBasicMaterial;
+ * the rest are PBR. Thanks to this mapping the model code knows at compile
+ * time which type it is getting.
  */
 export interface SlotMaterial {
   readonly oak: MeshStandardMaterial
@@ -45,42 +46,43 @@ export interface SlotMaterial {
 }
 
 export interface MedievalPalette {
-  /** Meşe gövde tonu. */
+  /** Oak body tone. */
   readonly oak: Color
-  /** Kapak tahtası — gövdeden biraz daha soğuk ve açık (damar ucu). */
+  /** Lid board — a little cooler and lighter than the body (end grain). */
   readonly oakEnd: Color
-  /** Dövme demir: örsten yeni çıkmış, oksit tabakası hâlâ üstünde. */
+  /** Wrought iron: fresh off the anvil, the oxide layer still on it. */
   readonly iron: Color
-  /** Kullanımdan parlamış çelik: örsün yüzü, küreğin ağzı, çatalın ucu. */
+  /** Steel burnished by use: the anvil's face, the shovel's blade, the fork's tines. */
   readonly steel: Color
-  /** Tunç — çan, havan, sikke. */
+  /** Bronze — bells, mortars, coins. */
   readonly brass: Color
-  /** Kuru saman. */
+  /** Dry straw. */
   readonly straw: Color
-  /** Güneşte ağarmış saman ucu. */
+  /** Straw tips bleached by the sun. */
   readonly strawPale: Color
-  /** Ham keten / çuval bezi. */
+  /** Raw linen / sackcloth. */
   readonly cloth: Color
-  /** İşlenmiş deri. */
+  /** Tanned leather. */
   readonly leather: Color
-  /** Üflemeli cam — hafif yeşilimsi, dönemin camı berrak değildi. */
+  /** Blown glass — slightly greenish, glass of the period was not clear. */
   readonly glass: Color
-  /** Meyve kabuğu taban tonu. Asıl renk modelin `hue` alanından geliyor. */
+  /** Base tone of fruit skin. The actual colour comes from the model's `hue` field. */
   readonly produce: Color
-  /** Alev dibi — sıcak ve parlak. */
+  /** Base of the flame — hot and bright. */
   readonly ember: Color
-  /** Alev ucu — daha doygun, daha kırmızı. */
+  /** Tip of the flame — more saturated, more red. */
   readonly emberTip: Color
-  /** Sönmüş kömür. */
+  /** Burnt-out charcoal. */
   readonly char: Color
-  /** Kor hâlindeki kömür. */
+  /** Charcoal that is still glowing. */
   readonly charHot: Color
 }
 
 /**
- * Renkler sRGB olarak yazılır; three, ColorManagement açıkken bunları içeride
- * lineer uzayda saklar. Vertex color attribute'u lineer beklediği için
- * `color.r/g/b` doğrudan yazılabilir — ekstra dönüşüm gerekmez.
+ * The colours are written as sRGB; with ColorManagement enabled three stores
+ * them internally in linear space. Since the vertex colour attribute expects
+ * linear values, `color.r/g/b` can be written straight through — no extra
+ * conversion needed.
  */
 export const MEDIEVAL_PALETTE: MedievalPalette = {
   oak: new Color(0x8a5a34),
@@ -101,14 +103,15 @@ export const MEDIEVAL_PALETTE: MedievalPalette = {
 }
 
 /**
- * İstenen yuvalar için materyal üretir.
+ * Creates materials for the requested slots.
  *
- * Slot listesi bilerek zorunlu: mangalın meşeye, fıçının emissive materyale
- * ihtiyacı yok. Kullanılmayan materyal üretmek hem boşuna GPU kaynağı hem de
- * modelin `materialSlots` bildirimiyle çelişen bir yalan olur.
+ * The slot list is required on purpose: the brazier does not need oak, the
+ * barrel does not need an emissive material. Creating unused materials is both
+ * a wasted GPU resource and a lie that contradicts the model's `materialSlots`
+ * declaration.
  *
- * Dönüş tipi istenen yuvalara daraltılır, yani `materials.ember` sadece onu
- * isteyen modelde derlenir.
+ * The return type is narrowed to the requested slots, so `materials.ember`
+ * only compiles in a model that asked for it.
  */
 export function createMedievalMaterials<S extends MedievalSlot>(
   scope: ResourceScope,
@@ -117,21 +120,23 @@ export function createMedievalMaterials<S extends MedievalSlot>(
   const build: { [K in MedievalSlot]: () => SlotMaterial[K] } = {
     oak: () => new MeshStandardMaterial({
       name: 'medieval-kit / oak',
-      // Beyaz taban: tüm renk bilgisi vertex color'dan geliyor, materyal onu
-      // çarpmasın diye.
+      // White base: all colour information comes from the vertex colour, so
+      // the material must not multiply it away.
       color: 0xffffff,
       vertexColors: true,
       roughness: 0.82,
       metalness: 0,
     }),
-    // Demir iki hâlde bulunur ve bunlar TEK materyalle anlatılamaz. Örsün
-    // gövdesi dövülmüş, oksitli, mat; yüzü ise üstünde yıllarca çalışıldığı
-    // için ayna gibi. Aradaki fark rengin değil PÜRÜZLÜLÜĞÜN farkı — vertex
-    // color bunu taşıyamaz, çünkü roughness bir attribute değil.
+    // Iron occurs in two states and they cannot be told with ONE material.
+    // The anvil's body is forged, oxidised, matte; its face is like a mirror
+    // because it has been worked on for years. The difference between them is
+    // not one of colour but of ROUGHNESS — vertex colour cannot carry that,
+    // because roughness is not an attribute.
     //
-    // Bu yüzden iki yuva: `iron` dövme yüzey, `steel` işin değdiği yüzey.
-    // Bir modelin ikisini birden istemesi normaldir; ayrı çizim çağrısına
-    // değer, çünkü parlak bir kesici ağız modeli tek başına satar.
+    // Hence two slots: `iron` is the forged surface, `steel` is the surface
+    // the work has touched. It is normal for a model to want both; it is worth
+    // a separate draw call, because a bright cutting edge sells the model on
+    // its own.
     iron: () => new MeshStandardMaterial({
       name: 'medieval-kit / wrought iron',
       color: 0xffffff,
@@ -143,9 +148,9 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       name: 'medieval-kit / burnished steel',
       color: 0xffffff,
       vertexColors: true,
-      // Düşük roughness + yüksek metalness, yani neredeyse tamamen yansıtıcı.
-      // Bu ancak ortam haritası varsa işe yarar; environment'ı olmayan bir
-      // sahnede kapkara görünür. Viewer PMREM'li bir gökyüzü sağlıyor.
+      // Low roughness + high metalness, i.e. almost fully reflective. This
+      // only works if there is an environment map; in a scene without an
+      // environment it looks pitch black. The viewer supplies a PMREM sky.
       roughness: 0.19,
       metalness: 0.95,
     }),
@@ -156,11 +161,12 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       roughness: 0.38,
       metalness: 0.85,
     }),
-    // Saman ve bez tamamen mat: metalness 0, roughness neredeyse 1. Aradaki
-    // fark rakamlarda değil vertex renklerinde — ikisi de aynı ışık modeline
-    // uyuyor ama ayrı yuvada durmaları önemli, çünkü modelin `materialSlots`
-    // bildirimi bir SÖZLEŞMEDİR: samandan bir balyanın "meşe" yuvası
-    // bildirmesi tüketiciye söylenmiş bir yalan olurdu.
+    // Straw and cloth are fully matte: metalness 0, roughness almost 1. The
+    // difference between them is not in the numbers but in the vertex colours
+    // — both follow the same lighting model, but keeping them in separate
+    // slots matters, because a model's `materialSlots` declaration is a
+    // CONTRACT: a straw bale declaring an "oak" slot would be a lie told to
+    // the consumer.
     straw: () => new MeshStandardMaterial({
       name: 'medieval-kit / straw',
       color: 0xffffff,
@@ -179,13 +185,14 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       name: 'medieval-kit / leather',
       color: 0xffffff,
       vertexColors: true,
-      // Deri tamamen mat değildir; yağlandığı için hafif bir parlaklığı vardır.
+      // Leather is not fully matte; being oiled, it has a slight sheen.
       roughness: 0.66,
       metalness: 0,
     }),
-    // Cam ince bir KABUK, katı bir blok değil. İki sonucu var: `side`
-    // DoubleSide olmak zorunda (yoksa içeriden bakınca kayboluyor) ve
-    // `depthWrite` kapalı olmalı (yoksa arkasındaki fitili gizliyor).
+    // Glass is a thin SHELL, not a solid block. That has two consequences:
+    // `side` has to be DoubleSide (otherwise it disappears when seen from
+    // inside) and `depthWrite` has to be off (otherwise it hides the wick
+    // behind it).
     glass: () => new MeshStandardMaterial({
       name: 'medieval-kit / blown glass',
       color: 0xffffff,
@@ -197,9 +204,9 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       depthWrite: false,
       side: DoubleSide,
     }),
-    // Meyve kabuğu mumsu: tamamen mat değil ama metalik de değil. Ayrı bir
-    // yuva olmasının sebebi ad değil DAVRANIŞ — samanla aynı pürüzlülüğü
-    // verseydim elma kuru ot gibi görünürdü.
+    // Fruit skin is waxy: not fully matte, but not metallic either. The reason
+    // it is a separate slot is not the name but the BEHAVIOUR — had I given it
+    // the same roughness as straw, an apple would look like dry hay.
     produce: () => new MeshStandardMaterial({
       name: 'medieval-kit / produce',
       color: 0xffffff,
@@ -207,11 +214,12 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       roughness: 0.52,
       metalness: 0,
     }),
-    // Alev ışık ALMAZ, yayar. MeshStandardMaterial burada yanlış araç olurdu:
-    // `emissive` tek bir Color'dır, vertex renklerinden beslenmez — yani
-    // alevin dibinden ucuna renk geçişi yapılamaz. MeshBasicMaterial
-    // aydınlatmayı tamamen atlar ve vertex rengini olduğu gibi gösterir;
-    // toneMapped kapalı ki sahne pozlaması alevi söndürmesin.
+    // A flame does not TAKE light, it emits it. MeshStandardMaterial would be
+    // the wrong tool here: `emissive` is a single Color, it is not fed from
+    // vertex colours — so no colour gradient from the flame's base to its tip
+    // is possible. MeshBasicMaterial skips lighting entirely and shows the
+    // vertex colour as it is; toneMapped is off so the scene exposure cannot
+    // put the flame out.
     ember: () => new MeshBasicMaterial({
       name: 'medieval-kit / ember',
       color: 0xffffff,
@@ -229,10 +237,10 @@ export function createMedievalMaterials<S extends MedievalSlot>(
 
   const materials = {} as { [K in S]: SlotMaterial[K] }
   for (const slot of slots) {
-    // TypeScript ilişkili birleşimleri (correlated unions) takip edemiyor:
-    // `build[slot]` bir fonksiyon birleşimine genişliyor, dolayısıyla dönüşün
-    // tam olarak SlotMaterial[slot] olduğunu bilemiyor. Eşleme yukarıda elle
-    // kurulduğu için dönüşüm güvenli.
+    // TypeScript cannot follow correlated unions: `build[slot]` widens to a
+    // union of functions, so it cannot know that the return is exactly
+    // SlotMaterial[slot]. The cast is safe because the mapping is built by
+    // hand above.
     materials[slot] = scope.ownMaterial(build[slot]()) as SlotMaterial[S]
   }
   return materials

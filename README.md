@@ -58,7 +58,7 @@ bun run verify:glb    # export every model, read it back, compare
 bun run render        # renders/_sheet.png — actually look at the models
 ```
 
-`verify` runs ~430 browser-free checks against the installed sources: geometry
+`verify` runs ~500 browser-free checks against the installed sources: geometry
 validity, winding, coplanar-face (z-fighting) detection, bounding-box limits,
 stable root and anchor identity across `configure()`, deterministic seeding,
 material ownership, idempotent disposal, action semantics, and agreement
@@ -80,7 +80,8 @@ Four of those deserve a note, because each was written after a real bug:
   config field, that declared part names match the model's actual parts, and —
   most importantly — that no mesh uses an *undeclared* material slot. A missing
   declaration is a material the consumer cannot reach through
-  `materials.override()`. This check found real drift the day it was added.
+  `materials.override()`. This check found real drift in four models the day it
+  was added: a `steel` slot had been used but never declared.
 - **Frame-rate independence** for animated models: the same elapsed time is
   stepped at two different frame rates and the results must agree. A naive lerp
   fails this.
@@ -101,12 +102,13 @@ what those PNGs showed.
 my-registry/
   models/core/          shared palette, RNG, geometry vocabulary, part slots
   models/<model-id>/    one procedural model per folder
+  meta.ts               single source for catalogue metadata
   build.ts              compiles models/ into dist/registry.json
-  viewer.ts             the model inspector
+  drafts/               kept in the tree, kept out of the build
+src/
   lib/vibe3d/           Vibe3D contracts installed by `vibe3d init`
   models/               installed model source (owned, editable)
-  meta.ts               single source for catalogue metadata
-src/
+  viewer.ts             the model inspector
   glb.ts                GLB export, shared by the viewer and the CLI
   catalog.ts            viewer catalogue, derived from meta.ts
 scripts/

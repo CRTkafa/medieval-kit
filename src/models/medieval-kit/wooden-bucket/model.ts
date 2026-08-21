@@ -1,12 +1,13 @@
 /**
  * @medieval-kit/wooden-bucket
  *
- * Kova aslında küçük bir fıçıdır: daralan tahtalar, demir çember, tabanı içeri
- * gömülü. Fıçıyla aynı `staveGeometry`'yi kullanması tesadüf değil — yan yana
- * konduklarında aynı katalogdan geldikleri bir bakışta okunsun diye.
+ * A bucket is really a small barrel: tapering staves, an iron hoop, a base sunk
+ * inside. It using the same `staveGeometry` as the barrel is no accident — so
+ * that when the two stand side by side you read at a glance that they come from
+ * the same catalogue.
  *
- * Fıçıdan farkı: konik (fıçı gibi göbekli değil), üstü açık, ve demir bir kulbu
- * var.
+ * Where it differs from the barrel: conical (no belly), open at the top, and it
+ * has an iron handle.
  */
 import { Color, type BufferGeometry } from 'three'
 
@@ -23,17 +24,17 @@ import {
 } from '../core/index.ts'
 
 export interface WoodenBucketConfig {
-  /** Yükseklik (metre). */
+  /** Height (metres). */
   readonly height: number
-  /** Ağız yarıçapı. Taban her zaman daha dar. */
+  /** Mouth radius. The base is always narrower. */
   readonly radius: number
-  /** Tabanın ağza göre daralması. 0.25 = taban %75 genişlikte. */
+  /** How far the base narrows against the mouth. 0.25 = base at 75% width. */
   readonly taper: number
-  /** Tahta sayısı. */
+  /** Stave count. */
   readonly staveCount: number
-  /** Demir çember sayısı. */
+  /** Iron hoop count. */
   readonly hoopCount: number
-  /** Kulp var mı (1) yok mu (0). */
+  /** Handle present (1) or not (0). */
   readonly handle: number
   readonly seed: number
 }
@@ -50,7 +51,7 @@ export const woodenBucketDefaults: WoodenBucketConfig = {
 
 export type WoodenBucketParts = 'staves' | 'base' | 'hoops' | 'handle'
 
-/** t ∈ [0,1], 0 = taban, 1 = ağız. */
+/** t ∈ [0,1], 0 = base, 1 = mouth. */
 function profileAt(t: number, taper: number): number {
   return 1 - taper * (1 - t)
 }
@@ -65,13 +66,13 @@ export function createModel(overrides: Partial<WoodenBucketConfig> = {}) {
       const wall = config.radius * 0.11
       const tint = new Color()
 
-      // --- duvar tahtaları ---
+      // --- wall staves ---
       const step = (Math.PI * 2) / config.staveCount
-      // Tahtalar arasında BOŞLUK YOK. Fıçıda görünür bir dikiş hoş duruyordu
-      // ama kova su taşır: 11 tahta arasındaki 4 mm'lik yarıklar kovayı süzgece
-      // çeviriyordu. Dikiş okunuşu artık tahta başına yarıçap sapmasından
-      // geliyor — komşusundan biraz farklı çıkan her tahta kendi gölgesini
-      // düşürüyor, ama delik bırakmıyor.
+      // NO GAP between the staves. On the barrel a visible seam looked good,
+      // but a bucket carries water: the 4 mm slots between the 11 staves turned
+      // the bucket into a sieve. The seam now reads out of the per-stave radius
+      // deviation — every stave that comes out slightly different from its
+      // neighbour casts its own shadow, without leaving a hole.
       const gap = 0
       const levels = [0, 0.5, 1]
       const staves: BufferGeometry[] = []
@@ -88,16 +89,16 @@ export function createModel(overrides: Partial<WoodenBucketConfig> = {}) {
         staves.push(staveGeometry(shaped, i * step + gap / 2, (i + 1) * step - gap / 2, wall, tint))
       }
 
-      // --- taban: gövdenin içine oturur ---
+      // --- base: seats inside the body ---
       const baseRadius = config.radius * profileAt(0, config.taper) - wall * 0.85
       tint.copy(MEDIEVAL_PALETTE.oakEnd)
       tint.offsetHSL(0, jitter(random, 0.03), jitter(random, 0.04))
       const base = headGeometry(baseRadius, -half + config.height * 0.07, config.staveCount, 'up', tint, 3, 0.05)
 
-      // --- demir çemberler ---
+      // --- iron hoops ---
       const hoops: BufferGeometry[] = []
       for (let i = 0; i < config.hoopCount; i += 1) {
-        // Üstten ve alttan içe doğru; tek çember varsa ortada.
+        // From the top and the bottom inwards; a single hoop sits in the middle.
         const t = config.hoopCount === 1 ? 0.5 : 0.14 + (0.72 * i) / (config.hoopCount - 1)
         tint.copy(MEDIEVAL_PALETTE.iron)
         tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.05))
@@ -111,14 +112,14 @@ export function createModel(overrides: Partial<WoodenBucketConfig> = {}) {
         ))
       }
 
-      // --- kulp (bail): ağzın hemen üstünde yarım yay ---
+      // --- handle (bail): a half arc just above the mouth ---
       let handle: BufferGeometry | undefined
       if (config.handle >= 0.5) {
         tint.copy(MEDIEVAL_PALETTE.iron)
         tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.04))
         const span = config.radius * profileAt(1, config.taper) + config.radius * 0.02
-        // Yay XY düzleminde üretiliyor; kova ekseni Y olduğu için olduğu gibi
-        // duruyor, sadece ağız hizasına kaydırılıyor.
+        // The arc is produced in the XY plane; since the bucket's axis is Y it
+        // stands as it is, and is only shifted up level with the mouth.
         handle = arcBarGeometry(span, config.radius * 0.055, 0, Math.PI, 9, [0, half * 0.92, 0], tint)
       }
 

@@ -1,13 +1,13 @@
 /**
- * Deterministik rastgelelik.
+ * Deterministic randomness.
  *
- * Prosedürel bir kitte varyasyon şart — mükemmel simetri "üretilmiş" gibi
- * okunur. Ama varyasyon tekrarlanabilir olmalı: aynı seed her zaman aynı
- * modeli vermeli, yoksa ne önizleme, ne test, ne de sanat yönetimi tutar.
- * Math.random() bu yüzden kullanılmıyor.
+ * A procedural kit needs variation — perfect symmetry reads as "generated".
+ * But the variation has to be repeatable: the same seed must always give the
+ * same model, otherwise neither previews, nor tests, nor art direction hold
+ * up. That is why Math.random() is not used.
  *
- * mulberry32: 32-bit durum, hızlı, kriptografik değil ama görsel varyasyon
- * için fazlasıyla yeterli.
+ * mulberry32: 32-bit state, fast, not cryptographic but far more than enough
+ * for visual variation.
  */
 export function createRandom(seed: number): () => number {
   let state = seed >>> 0
@@ -20,7 +20,7 @@ export function createRandom(seed: number): () => number {
   }
 }
 
-/** -amount .. +amount aralığında simetrik sapma. */
+/** Symmetric deviation in the range -amount .. +amount. */
 export function jitter(random: () => number, amount: number): number {
   return (random() * 2 - 1) * amount
 }

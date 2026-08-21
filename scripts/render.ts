@@ -1,19 +1,19 @@
 /**
- * Çevrimdışı model görüntüleyici — tarayıcısız, GPU'suz.
+ * Offline model viewer — no browser, no GPU.
  *
- * Neden var: kitin bugüne kadarki bütün doğrulaması GEOMETRİKTİ. Üçgen sayısı,
- * sarım yönü, eş düzlem yüzler, sınır kutusu... Hepsi gerçek hataları yakaladı
- * ama hiçbiri "bu kürek küreğe benzemiyor" diyemedi. O cümleyi kurabilmek için
- * modele BAKMAK gerekiyor.
+ * Why it exists: every check the kit had until now was GEOMETRIC. Triangle
+ * count, winding order, coplanar faces, bounding box... all of them caught real
+ * bugs, but none of them could say "this shovel does not look like a shovel".
+ * To say that sentence you have to LOOK at the model.
  *
- * Bu yüzden burada minik bir yazılım rasterleyici var: üçgenleri topluyor,
- * kamerayla yansıtıyor, z-tamponuyla dolduruyor ve PNG yazıyor. Amaç güzel
- * görüntü değil OKUNUR SİLUET — gölgeleme, siluetin ne olduğunu anlamaya
- * yetecek kadar var, bir milim fazlası yok.
+ * So there is a tiny software rasteriser here: it collects the triangles,
+ * projects them through a camera, fills them with a z-buffer and writes a PNG.
+ * The goal is not a pretty image but a READABLE SILHOUETTE — there is just
+ * enough shading to work out what the silhouette is, not a millimetre more.
  *
- * Kullanım:
- *   bun scripts/render.ts                    → hepsini + kontak sayfası
- *   bun scripts/render.ts --one wooden-chest → tek model, büyük
+ * Usage:
+ *   bun scripts/render.ts                    → all of them + contact sheet
+ *   bun scripts/render.ts --one wooden-chest → one model, large
  *   bun scripts/render.ts --size 640
  */
 import { deflateSync } from 'node:zlib'
@@ -30,19 +30,19 @@ import {
 
 import { CATALOG } from '@/catalog.ts'
 
-/* ------------------------------------------------------------------ üçgenler */
+/* ---------------------------------------------------------------- triangles */
 
 interface Triangle {
   readonly a: Vector3
   readonly b: Vector3
   readonly c: Vector3
-  /** Köşe renkleri, LİNEER uzayda. */
+  /** Vertex colours, in LINEAR space. */
   readonly ca: [number, number, number]
   readonly cb: [number, number, number]
   readonly cc: [number, number, number]
   readonly metalness: number
   readonly roughness: number
-  /** Işık almayan yüzey (alev). Vertex rengi doğrudan sonuçtur. */
+  /** Unlit surface (flame). The vertex colour is the result directly. */
   readonly unlit: boolean
   readonly opacity: number
 }
@@ -93,13 +93,13 @@ function collect(root: Object3D): Triangle[] {
   return out
 }
 
-/* ---------------------------------------------------------------- rasterleme */
+/* -------------------------------------------------------------- rasterising */
 
 const LIGHT = new Vector3(0.48, 0.82, 0.31).normalize()
 const SKY: [number, number, number] = [0.42, 0.52, 0.68]
 const GROUND: [number, number, number] = [0.24, 0.2, 0.16]
 
-/** Lineer → sRGB. Palet renkleri three içinde lineer saklanıyor. */
+/** Linear → sRGB. The palette colours are stored linear inside three. */
 function encode(value: number): number {
   const v = Math.min(1, Math.max(0, value))
   const s = v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055
@@ -115,8 +115,8 @@ interface Frame {
 
 function newFrame(width: number, height: number): Frame {
   const colour = new Float32Array(width * height * 3)
-  // Arka plan: üstten alta doğru koyulaşan sakin bir gri-mavi. Düz renk,
-  // modelin siluetini okumayı zorlaştıran tek şeydi.
+  // Background: a calm grey-blue that darkens from top to bottom. A flat
+  // colour was the one thing that made the model's silhouette hard to read.
   for (let y = 0; y < height; y += 1) {
     const t = y / (height - 1)
     const r = 0.052 + 0.028 * (1 - t)
@@ -143,10 +143,10 @@ function project(point: Vector3, camera: PerspectiveCamera, frame: Frame): Proje
     x: (v.x * 0.5 + 0.5) * frame.width,
     y: (1 - (v.y * 0.5 + 0.5)) * frame.height,
     z: v.z,
-    // Kameranın arkasındaki köşeler yansıtıldığında işaret değiştirip üçgeni
-    // ekranın karşı tarafına savuruyor. Kırpma yapmak yerine böyle üçgenleri
-    // tamamen atıyoruz — inceleyici kamerası her zaman modeli çerçeveliyor,
-    // dolayısıyla bu durum ancak bir hata varsa oluşur.
+    // Vertices behind the camera flip sign when projected and fling the
+    // triangle to the opposite side of the screen. Instead of clipping we drop
+    // such triangles entirely — the viewer camera always frames the model, so
+    // this can only happen when something is wrong.
     behind: v.z < -1 || v.z > 1,
   }
 }
@@ -155,9 +155,9 @@ function shade(tri: Triangle, normal: Vector3, albedo: [number, number, number])
   if (tri.unlit) return albedo
 
   const ndl = Math.max(0, normal.dot(LIGHT))
-  // Yarıküre ortamı: yukarı bakan yüzeyler gökyüzünü, aşağı bakanlar yeri
-  // görür. Metaller neredeyse tamamen buradan besleniyor — çevre haritası
-  // olmayan bir metal aksi hâlde kapkara çıkar.
+  // Hemisphere ambient: surfaces facing up see the sky, ones facing down see
+  // the ground. Metals are fed almost entirely from here — a metal with no
+  // environment map would otherwise come out pitch black.
   const up = normal.y * 0.5 + 0.5
   const ambient: [number, number, number] = [
     GROUND[0] + (SKY[0] - GROUND[0]) * up,
@@ -169,7 +169,7 @@ function shade(tri: Triangle, normal: Vector3, albedo: [number, number, number])
   const diffuseStrength = (1 - metal * 0.85) * (0.28 + ndl * 1.05)
   const envStrength = 0.35 + metal * 0.9
 
-  // Blinn-Phong parlaklık: pürüzlülükten üs türetiliyor.
+  // Blinn-Phong highlight: the exponent is derived from the roughness.
   const exponent = Math.pow(2, (1 - tri.roughness) * 10) + 1
   const half = LIGHT.clone().add(new Vector3(0, 0, 1)).normalize()
   const spec = Math.pow(Math.max(0, normal.dot(half)), exponent) * (1 - tri.roughness) * 1.6
@@ -177,15 +177,15 @@ function shade(tri: Triangle, normal: Vector3, albedo: [number, number, number])
   return [0, 1, 2].map((i) => {
     const base = albedo[i]!
     const lit = base * diffuseStrength + base * ambient[i]! * envStrength
-    // Metalde yansıma rengi albedodan gelir, dielektrikte beyazdır.
+    // On metal the reflection colour comes from albedo, on a dielectric white.
     const tint = metal > 0.5 ? base : 1
     return lit + spec * tint * (0.35 + metal * 0.9)
   }) as [number, number, number]
 }
 
 function raster(frame: Frame, camera: PerspectiveCamera, triangles: readonly Triangle[]): void {
-  // Saydamlar en sona: derinlik testi yapıyorlar ama derinlik YAZMIYORLAR,
-  // yoksa camın arkasındaki fitil kayboluyor.
+  // Transparent triangles go last: they test depth but do NOT write depth,
+  // otherwise the wick behind the glass disappears.
   const ordered = [...triangles].sort((a, b) => (a.opacity === b.opacity ? 0 : a.opacity < 1 ? 1 : -1))
 
   for (const tri of ordered) {
@@ -194,9 +194,9 @@ function raster(frame: Frame, camera: PerspectiveCamera, triangles: readonly Tri
     const pc = project(tri.c, camera, frame)
     if (pa.behind || pb.behind || pc.behind) continue
 
-    // Ekran uzayında işaretli alan: negatifse üçgen bize arkasını dönüyor.
-    // Arka yüz ayıklaması burada ÖNEMLİ — sarım yönü hatası yapan bir model
-    // görüntüde içi dışına çıkmış görünsün istiyoruz, gizlenmesin.
+    // Signed area in screen space: if negative the triangle has its back to
+    // us. Back-face culling MATTERS here — a model with a winding-order bug
+    // should look inside-out in the image, not be hidden.
     const area = (pb.x - pa.x) * (pc.y - pa.y) - (pc.x - pa.x) * (pb.y - pa.y)
     if (area >= 0) continue
 
@@ -218,7 +218,7 @@ function raster(frame: Frame, camera: PerspectiveCamera, triangles: readonly Tri
         const w2 = 1 - w0 - w1
         if (w0 < 0 || w1 < 0 || w2 < 0) continue
 
-        // w1 → a, w2 → b, w0 → c (kenar fonksiyonlarının karşı köşeleri)
+        // w1 → a, w2 → b, w0 → c (opposite vertices of the edge functions)
         const z = pa.z * w1 + pb.z * w2 + pc.z * w0
         const at = y * frame.width + x
         if (z >= frame.depth[at]!) continue
@@ -240,7 +240,7 @@ function raster(frame: Frame, camera: PerspectiveCamera, triangles: readonly Tri
   }
 }
 
-/** Zemin teması gölgesi: modeli y=taban düzlemine yassıltıp koyu çiziyoruz. */
+/** Contact shadow: flatten the model onto the y=floor plane and draw it dark. */
 function contactShadow(frame: Frame, camera: PerspectiveCamera, triangles: readonly Triangle[], floor: number): void {
   for (const tri of triangles) {
     if (tri.unlit) continue
@@ -318,8 +318,8 @@ function encodePng(frame: Frame): Uint8Array {
   const view = new DataView(ihdr.buffer)
   view.setUint32(0, width)
   view.setUint32(4, height)
-  ihdr[8] = 8      // bit derinliği
-  ihdr[9] = 2      // renk tipi: truecolour
+  ihdr[8] = 8      // bit depth
+  ihdr[9] = 2      // colour type: truecolour
   const parts = [
     new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
     chunk('IHDR', ihdr),
@@ -333,16 +333,16 @@ function encodePng(frame: Frame): Uint8Array {
   return png
 }
 
-/* ------------------------------------------------------------------- çerçeve */
+/* ------------------------------------------------------------------ framing */
 
-/** Modeli kadraja oturtan kamera. Viewer'daki çerçevelemenin aynısı. */
+/** Camera that fits the model into frame. Same framing as in the viewer. */
 function frameCamera(root: Object3D, width: number, height: number): { camera: PerspectiveCamera; floor: number } {
   const box = new Box3().setFromObject(root)
   const sphere = box.getBoundingSphere(new Sphere())
   const camera = new PerspectiveCamera(32, width / height, 0.01, 100)
   const distance = (sphere.radius / Math.sin((camera.fov * Math.PI) / 360)) * 1.12
-  // Dörtte üç görüş: iki yüzü birden gösteren tek açı. Tam karşıdan bakmak
-  // derinliği tamamen gizliyor.
+  // Three-quarter view: the one angle that shows two faces at once. Looking
+  // straight on hides depth completely.
   const direction = new Vector3(0.78, 0.5, 1).normalize()
   camera.position.copy(sphere.center).addScaledVector(direction, distance)
   camera.lookAt(sphere.center)
@@ -354,18 +354,18 @@ function renderOne(
   id: string,
   size: number,
   patch?: Record<string, number>,
-  /** Modelin Y ekseni etrafında ön dönüşü (radyan). Turntable için. */
+  /** Pre-rotation of the model around the Y axis (radians). For turntables. */
   spin = 0,
 ): Frame {
   const entry = CATALOG[id]
-  if (!entry) throw new Error(`katalogda yok: ${id}`)
+  if (!entry) throw new Error(`not in catalog: ${id}`)
   const built = entry.build()
   if (patch && built.params) built.params.apply(patch)
-  // Animasyonlu modelleri hareketin ortasında yakala: sabit alev, alevin
-  // titrediğini göstermez.
+  // Catch animated models mid-motion: a frozen flame does not show that the
+  // flame flickers.
   built.update?.(0.42)
-  // Kamerayı değil MODELİ döndürüyoruz: çerçeveleme ve gölge hesabı sabit
-  // yönde kalıyor, dolayısıyla turntable kareleri birebir karşılaştırılabilir.
+  // We rotate the MODEL, not the camera: framing and the shadow computation
+  // stay in a fixed direction, so turntable frames compare one to one.
   built.root.rotation.y = spin
   const triangles = collect(built.root)
   const frame = newFrame(size, size)
@@ -376,7 +376,7 @@ function renderOne(
   return frame
 }
 
-/* ------------------------------------------------------------------ giriş */
+/* -------------------------------------------------------------------- entry */
 
 const args = process.argv.slice(2)
 const flag = (name: string): string | undefined => {
@@ -393,10 +393,10 @@ const only = flag('ids')?.split(',')
 await mkdir(outDir, { recursive: true })
 
 function ids0(): string {
-  throw new Error('--sweep için --one <model> gerekli')
+  throw new Error('--sweep needs --one <model>')
 }
 
-/** Kareleri ızgaraya dizer. */
+/** Lays the frames out on a grid. */
 function tile(list: readonly Frame[], size: number, columns: number): Frame {
   const rows = Math.ceil(list.length / columns)
   const sheet = newFrame(columns * size, rows * size)
@@ -416,20 +416,20 @@ function tile(list: readonly Frame[], size: number, columns: number): Frame {
   return sheet
 }
 
-// Süpürme: aynı modeli tek bir parametrenin farklı değerleriyle yan yana
-// koyar. Bir oranı gözle seçmek, sayıyı değiştirip tek tek bakmaktan çok daha
-// hızlı — çapanın ağız açısını böyle seçtim.
-// Turntable: aynı modeli Y ekseni etrafında eşit aralıklarla döndürüp yan yana
-// koyar. Tek bir 3/4 açı yanıltıcı olabiliyor — çit ancak tam yandan bakınca
-// "cılız" görünüyor, süpürge ancak tepeden bakınca "seyrek".
+// Sweep: puts the same model side by side with different values of a single
+// parameter. Picking a ratio by eye is far faster than changing the number and
+// looking at each one on its own — that is how I picked the hoe's blade angle.
+// Turntable: rotates the same model around the Y axis at equal steps and puts
+// the results side by side. A single 3/4 angle can mislead — the fence only
+// looks "thin" straight from the side, the besom only "sparse" from above.
 const angles = Number(flag('angles') ?? 0)
 if (angles > 1) {
   const target = one ?? (only?.[0])
-  if (!target) throw new Error('--angles için --one <model> ya da --ids gerekli')
+  if (!target) throw new Error('--angles needs --one <model> or --ids')
   const frames = Array.from({ length: angles }, (_, i) =>
     renderOne(target, size, undefined, (i / angles) * Math.PI * 2))
   await writeFile(`${outDir}/_turntable.png`, encodePng(tile(frames, size, angles)))
-  console.log(`${target} · ${angles} açı → ${outDir}/_turntable.png`)
+  console.log(`${target} · ${angles} angles → ${outDir}/_turntable.png`)
   process.exit(0)
 }
 
@@ -456,11 +456,11 @@ for (const id of ids) {
 }
 
 if (!one && frames.size > 1) {
-  // Kontak sayfası: hepsi tek görüntüde. Modelleri tek tek açmak yerine
-  // yan yana görmek, aralarındaki ölçek ve ton tutarsızlıklarını gösteriyor —
-  // ki bunlar tek başına bakınca fark edilmeyen türden hatalar.
+  // Contact sheet: all of them in one image. Seeing the models side by side
+  // instead of opening them one by one exposes the scale and tone
+  // inconsistencies between them — the kind of bug you miss looking at one.
   const columns = Number(flag('columns') ?? 6)
   const sheet = tile([...frames.values()], size, columns)
   await writeFile(`${outDir}/_sheet.png`, encodePng(sheet))
-  console.log(`\n${frames.size} model → ${outDir}/_sheet.png (${sheet.width}×${sheet.height})`)
+  console.log(`\n${frames.size} models → ${outDir}/_sheet.png (${sheet.width}×${sheet.height})`)
 }

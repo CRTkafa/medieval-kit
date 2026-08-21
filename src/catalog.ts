@@ -1,14 +1,14 @@
 /**
- * Viewer kataloğu.
+ * The viewer catalogue.
  *
- * Buradaki her şey `my-registry/meta.ts`'ten türetiliyor — kaydırıcı
- * aralıkları, başlıklar, açıklamalar. Önceden viewer kendi listesini elle
- * tutuyordu ve aynı bilgi iki yerde yaşıyordu; on yedi modelde bu ayrışmaya
- * başlamıştı.
+ * Everything here is derived from `my-registry/meta.ts` — slider ranges,
+ * titles, descriptions. The viewer used to keep its own list by hand and the
+ * same information lived in two places; at seventeen models the two had started
+ * to drift apart.
  *
- * Elle kalan tek şey iki eşleme: modelin FABRİKASI (`createModel`) ve varsa
- * EYLEMİ. İkisi de metadata'dan türetilemez, çünkü biri kod diğeri modele
- * özgü bir arayüz.
+ * The only things left by hand are two mappings: the model's FACTORY
+ * (`createModel`) and its ACTION, if it has one. Neither can be derived from
+ * metadata, because one is code and the other is a model-specific interface.
  */
 import { Box3, Group, Vector3 } from 'three/webgpu'
 import type { Color, Material, Object3D } from 'three/webgpu'
@@ -60,22 +60,22 @@ export interface ParamGroup {
 }
 
 /**
- * Modelin PROTOKOL yüzeyi — inceleyicinin asıl gösterdiği şey.
+ * The model's PROTOCOL surface — what the inspector actually shows.
  *
- * vibe3d'nin kendi inceleyicisi modeli tek bir blok olarak gösteriyor. Oysa
- * protokolün vaadi tam olarak bunun tersi: model semantik PARÇALARDAN oluşuyor
- * ve materyalleri YUVA yuva değiştirilebiliyor. Bunlar görünmezse tüketici
- * neyi satın aldığını bilmiyor demektir.
+ * vibe3d's own inspector shows the model as a single block. But the promise of
+ * the protocol is exactly the opposite: the model is made of semantic PARTS and
+ * its materials can be swapped SLOT by slot. If those are not visible, the
+ * consumer does not know what they bought.
  */
 export interface Inspection {
   readonly parts: readonly string[]
   readonly slots: readonly string[]
-  /** Parçayı gizler/gösterir. Anchor üzerinde çalışır, yani rebuild'i atlatır. */
+  /** Hides/shows the part. Works on the anchor, so it survives a rebuild. */
   setPartVisible(part: string, visible: boolean): void
   isPartVisible(part: string): boolean
-  /** Yuvanın şu anki rengi (#rrggbb). */
+  /** The slot's current colour (#rrggbb). */
   slotColour(slot: string): string
-  /** Yuvayı geçici bir tonla boyar. Varsayılan materyale DOKUNMAZ. */
+  /** Paints the slot with a temporary tint. Does NOT touch the default material. */
   tintSlot(slot: string, hex: string): void
   resetSlot(slot: string): void
   isTinted(slot: string): boolean
@@ -86,7 +86,7 @@ export interface Entry {
   readonly namespace: string
   readonly address: string
   readonly who: string
-  /** Modeli kurar; kök + isteğe bağlı update/action döndürür. */
+  /** Builds the model; returns the root plus optional update/action. */
   build(): {
     root: Group
     update?: (deltaSeconds: number) => void
@@ -98,13 +98,13 @@ export interface Entry {
 }
 
 /**
- * Viewer'ın bir modelden ihtiyaç duyduğu her şey.
+ * Everything the viewer needs from a model.
  *
- * Bilerek yapısal: viewer hiçbir modelin config tipini bilmiyor, sadece
- * "sayısal alanları olan bir nesne" görüyor. Anahtarların gerçekten var
- * olduğunu `scripts/verify-model.ts` çalışma zamanında denetliyor — hem de
- * derleyicinin yapabileceğinden daha geniş kapsamda, çünkü `parts` ve
- * `materialSlots` bildirimlerini de aynı anda doğruluyor.
+ * Structural on purpose: the viewer knows no model's config type, it only sees
+ * "an object with numeric fields". That the keys really exist is checked at
+ * runtime by `scripts/verify-model.ts` — and over a wider scope than the
+ * compiler could manage, because it validates the `parts` and `materialSlots`
+ * declarations at the same time.
  */
 interface KitModel {
   readonly root: Group
@@ -123,7 +123,7 @@ interface KitModel {
 
 const as = (make: () => unknown) => make as () => KitModel
 
-/** Registry adı → fabrika. Metadata'dan türetilemeyen ilk şey. */
+/** Registry name → factory. The first thing that cannot be derived from metadata. */
 const FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'wooden-barrel': as(createBarrel),
   'wooden-bucket': as(createBucket),
@@ -155,52 +155,53 @@ const FACTORIES: Readonly<Record<string, () => KitModel>> = {
 }
 
 /**
- * Eylemi olan modeller. Metadata'dan türetilemeyen ikinci şey: her eylemin
- * arayüzü kendine özgü, ortak bir "action" şeması yok — ve olması da istenmez,
- * çünkü `setOpen(boolean)` ile `setLit(boolean)` aynı şey değil.
+ * The models that have an action. The second thing that cannot be derived from
+ * metadata: every action has its own interface, there is no common "action"
+ * schema — and there should not be one, because `setOpen(boolean)` and
+ * `setLit(boolean)` are not the same thing.
  */
 const ACTIONS: Readonly<Record<string, (model: KitModel) => { label(): string; run(): void }>> = {
   'wooden-chest': (model) => {
     const chest = model.actions as { isOpen(): boolean; toggle(): boolean }
     return {
-      label: () => (chest.isOpen() ? 'Kapağı kapat' : 'Kapağı aç'),
+      label: () => (chest.isOpen() ? 'Close the lid' : 'Open the lid'),
       run: () => { chest.toggle() },
     }
   },
   'pitch-torch': (model) => {
     const torch = model.actions as { isLit(): boolean; setLit(lit: boolean): void }
     return {
-      label: () => (torch.isLit() ? 'Söndür' : 'Yak'),
+      label: () => (torch.isLit() ? 'Snuff out' : 'Light'),
       run: () => { torch.setLit(!torch.isLit()) },
     }
   },
   'iron-lantern': (model) => {
     const lantern = model.actions as { isLit(): boolean; setLit(lit: boolean): void }
     return {
-      label: () => (lantern.isLit() ? 'Söndür' : 'Yak'),
+      label: () => (lantern.isLit() ? 'Snuff out' : 'Light'),
       run: () => { lantern.setLit(!lantern.isLit()) },
     }
   },
   'bronze-bell': (model) => {
     const bell = model.actions as { ring(): void; strikes(): number }
     return {
-      // Etiket vuruş sayacını gösteriyor: modelin sesi yok, ama tüketicinin
-      // ses çalmak için okuyacağı sinyalin gerçekten çalıştığı böyle görünüyor.
-      label: () => `Çal${bell.strikes() > 0 ? ` · ${bell.strikes()} vuruş` : ''}`,
+      // The label shows the strike counter: the model has no sound, but this is
+      // how you see that the signal a consumer would read to play one works.
+      label: () => `Ring${bell.strikes() > 0 ? ` · ${bell.strikes()} strikes` : ''}`,
       run: () => { bell.ring() },
     }
   },
   'tavern-sign': (model) => {
     const sign = model.actions as { push(strength?: number): void }
-    return { label: () => 'İt', run: () => { sign.push() } }
+    return { label: () => 'Push', run: () => { sign.push() } }
   },
 }
 
 function entryFor(id: string): Entry {
   const meta = MODEL_META[id]
-  if (!meta) throw new Error(`${id} için MODEL_META girdisi yok`)
+  if (!meta) throw new Error(`no MODEL_META entry for ${id}`)
   const factory = FACTORIES[id]
-  if (!factory) throw new Error(`${id} için fabrika kaydı yok`)
+  if (!factory) throw new Error(`no factory registration for ${id}`)
 
   const specs: ParamSpec[] = Object.entries(meta.controls).map(([key, control]) => ({
     key,
@@ -220,17 +221,17 @@ function entryFor(id: string): Entry {
       const model = factory()
       const action = ACTIONS[id]?.(model)
 
-      // Yuvaların VARSAYILAN materyalleri, herhangi bir override'dan önce.
-      // Ton verirken bunların kopyası alınıyor: override edilmiş bir
-      // materyalin kopyasını almak tonları üst üste biriktirirdi.
+      // The slots' DEFAULT materials, before any override. Tinting clones
+      // these: cloning an already-overridden material would stack the tints on
+      // top of each other.
       const defaults = new Map<string, Material>()
       for (const slot of meta.materialSlots) {
         const material = model.materials.get(slot)
         if (material) defaults.set(slot, material)
       }
-      // Inceleyicinin ÜRETTİĞİ materyaller. Model bunları sahiplenmiyor
-      // (`dispose()` ödünç materyallere dokunmuyor), dolayısıyla bırakmak
-      // bizim işimiz.
+      // The materials the inspector CREATES. The model does not own them
+      // (`dispose()` does not touch borrowed materials), so disposing them is
+      // our job.
       const owned = new Map<string, Material>()
 
       const inspect: Inspection = {
@@ -248,10 +249,11 @@ function entryFor(id: string): Entry {
         tintSlot: (slot, hex) => {
           const base = defaults.get(slot)
           if (!base) return
-          // Materyalin `color`'ı vertex rengiyle ÇARPILIYOR. Yani ton vermek
-          // modelin kendi varyasyonunu silmiyor, üstüne biniyor — kitin bütün
-          // renk bilgisi geometride olduğu için renk yapılandırması protokole
-          // yeni bir alan eklemeden zaten mümkün.
+          // The material's `color` is MULTIPLIED with the vertex colour. So
+          // tinting does not erase the model's own variation, it rides on top
+          // of it — because all of the kit's colour information lives in the
+          // geometry, colour configuration is already possible without adding
+          // a new field to the protocol.
           const tinted = base.clone()
           tinted.name = `${base.name} · viewer tint`
           ;(tinted as unknown as { color?: Color }).color?.set(hex)
@@ -287,7 +289,7 @@ function entryFor(id: string): Entry {
   }
 }
 
-/** Kitin sırası: sahne kurarken hangisine önce uzanılacağı düşünülerek. */
+/** The kit's order: arranged by what you reach for first when dressing a scene. */
 const MEDIEVAL_ORDER = [
   'wooden-chest', 'wooden-barrel', 'wooden-crate', 'wooden-bucket',
   'trestle-table', 'wooden-bench', 'wooden-stool',
@@ -299,42 +301,44 @@ const MEDIEVAL_ORDER = [
   'wooden-hoe', 'wooden-shovel', 'wooden-pitchfork',
 ] as const
 
-// Sıra listesi ile fabrika listesi ayrışmasın: biri eklenip diğeri unutulursa
-// model sessizce viewer'dan kaybolurdu.
+// Keep the order list and the factory list from drifting apart: if one gets an
+// entry and the other is forgotten, the model would silently vanish from the viewer.
 const missing = Object.keys(FACTORIES).filter((id) => !MEDIEVAL_ORDER.includes(id as never))
-if (missing.length > 0) throw new Error(`sıralamada eksik model: ${missing.join(', ')}`)
+if (missing.length > 0) throw new Error(`model missing from the ordering: ${missing.join(', ')}`)
 
 
 /**
- * Kitin TAMAMI tek sahnede.
+ * The WHOLE kit in one scene.
  *
- * vibe3d'nin inceleyicisi tek seferde tek model gösteriyor ve bu, bir MODEL
- * için doğru. Ama bir KİT için sorulan soru başka: "bunlar birbirine ait mi?"
- * Ölçek tutarsızlığı, ton kayması ve stil kopması ancak modeller yan yana
- * konduğunda görünüyor — tek tek bakarken hepsi iyi duruyor.
+ * vibe3d's inspector shows one model at a time, and that is right for a MODEL.
+ * But the question asked of a KIT is a different one: "do these belong
+ * together?" Scale inconsistency, tone drift and style breaks only become
+ * visible when the models are placed side by side — looked at one at a time,
+ * they all look fine.
  *
- * Bu görünüm o soruyu cevaplıyor. Aynı zamanda kitin ne olduğunu tek bakışta
- * gösteren şey, yani hem bir doğrulama aracı hem bir vitrin.
+ * This view answers that question. It is also what shows what the kit is at a
+ * glance, so it is both a verification tool and a shop window.
  *
- * Yerleşim raf paketlemesi: modeller sırayla +X boyunca diziliyor, satır hedef
- * genişliği aşınca +Z'ye iniliyor. Her model KENDİ ayak izine göre yer alıyor,
- * dolayısıyla ince bir alet geniş bir masa kadar yer kaplamıyor.
+ * The layout is shelf packing: models are laid out in order along +X, and when
+ * a row exceeds the target width it drops down along +Z. Every model takes
+ * space according to its OWN footprint, so a thin tool does not occupy as much
+ * room as a wide table.
  */
 function kitEntry(): Entry {
   return {
     id: 'kit',
     namespace: '@medieval-kit',
     address: '@medieval-kit',
-    who: `kitin tamamı · ${MEDIEVAL_ORDER.length} model tek sahnede · ölçek ve ton tutarlılığı buradan görünür`,
+    who: `the whole kit · ${MEDIEVAL_ORDER.length} models in one scene · scale and tone consistency show up here`,
     build: () => {
       const root = new Group()
       root.name = 'medieval-kit'
       const models = MEDIEVAL_ORDER.map((id) => ({ id, model: FACTORIES[id]!() }))
 
-      // Sıra: YÜKSEKTEN alçağa. İlk yerleştirilen satır en ARKADA kalıyor
-      // (küçük Z), dolayısıyla uzun parçalar geriye, küçük proplar öne
-      // düşüyor ve kit bir tezgâh gibi okunuyor. Ters sırada merdiven ve çit
-      // öne gelip arkadaki her şeyi kapatıyordu.
+      // Order: TALLEST to shortest. The first row placed ends up FURTHEST BACK
+      // (small Z), so the tall pieces fall to the back and the small props to
+      // the front, and the kit reads like a market stall. In the reverse order
+      // the ladder and the fence came to the front and hid everything behind them.
       const placed = models.map(({ id, model }) => {
         const box = new Box3().setFromObject(model.root)
         return { id, model, box, size: box.getSize(new Vector3()) }
@@ -354,8 +358,8 @@ function kitEntry(): Entry {
           rowDepth = 0
         }
         const centre = item.box.getCenter(new Vector3())
-        // Modeli hücresinin ortasına ve YERE oturt: kitler ancak ortak bir
-        // zemin düzlemi paylaşırsa karşılaştırılabilir.
+        // Seat the model in the centre of its cell and on the GROUND: kits are
+        // only comparable if they share a common ground plane.
         item.model.root.position.set(
           cursorX + item.size.x / 2 - centre.x,
           -item.box.min.y,
@@ -366,7 +370,7 @@ function kitEntry(): Entry {
         rowDepth = Math.max(rowDepth, item.size.z)
       }
 
-      // Bütün kiti ORİJİNE ortala, yoksa kamera çerçevelemesi bir köşeye bakar.
+      // Centre the whole kit on the ORIGIN, otherwise the camera framing looks at a corner.
       const whole = new Box3().setFromObject(root)
       const middle = whole.getCenter(new Vector3())
       for (const item of placed) {
@@ -374,8 +378,8 @@ function kitEntry(): Entry {
         item.model.root.position.z -= middle.z
       }
 
-      // Yuvaların birleşimi: bir yuvayı boyamak onu KULLANAN her modeli
-      // etkiliyor. Kitin tonunu tek hamlede değiştirmek tam olarak bu.
+      // The union of the slots: tinting one slot affects every model that USES
+      // it. Changing the kit's tone in a single move is exactly this.
       const slots = [...new Set(MEDIEVAL_ORDER.flatMap((id) => MODEL_META[id]!.materialSlots))]
       const owned = new Map<string, Material[]>()
       const withSlot = (slot: string) =>
@@ -417,11 +421,11 @@ function kitEntry(): Entry {
         root,
         update: (dt) => { for (const { model } of placed) model.update(dt) },
         action: {
-          label: () => 'Hepsini oynat',
+          label: () => 'Play them all',
           run: () => {
-            // Eylemi olan her modeli birden tetikliyor: kitin hareketli
-            // parçalarının hepsini aynı anda görmek, tek tek bakmaktan çok
-            // daha hızlı bir denetim.
+            // Fires every model that has an action at once: seeing all of the
+            // kit's moving parts at the same time is a far quicker check than
+            // looking at them one by one.
             for (const { id, model } of placed) ACTIONS[id]?.(model).run()
           },
         },
@@ -447,7 +451,7 @@ export const REGISTRIES = [
     namespace: '@medieval-kit',
     scheme: 'file:',
     rest: 'my-registry/dist/registry.json',
-    // 'kit' başta: inceleyiciyi açan kişinin ilk gördüğü şey kitin tamamı.
+    // 'kit' first: what whoever opens the inspector sees first is the whole kit.
     entries: ['kit', ...MEDIEVAL_ORDER] as readonly string[],
   },
 ] as const
@@ -457,13 +461,13 @@ export const CATALOG: Record<string, Entry> = {
     id: 'pressure-gauge',
     namespace: '@scifi-kit',
     address: '@scifi-kit/pressure-gauge',
-    who: 'vibe3d ekibi yazdı · <b>npm</b>\'den kuruldu · 539 satır TypeScript',
+    who: 'written by the vibe3d team · installed from <b>npm</b> · 539 lines of TypeScript',
     build: () => {
       const gauge = createGauge()
       return {
         root: gauge.root,
         update: gauge.update,
-        action: { label: () => 'Basınç testi', run: () => gauge.triggerPressureTest() },
+        action: { label: () => 'Pressure test', run: () => gauge.triggerPressureTest() },
         dispose: () => gauge.dispose(),
       }
     },

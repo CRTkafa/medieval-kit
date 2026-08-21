@@ -1,15 +1,16 @@
 /**
  * @medieval-kit/wooden-bench
  *
- * Sehpa masanın yanına oturan bank. Ortaçağda sandalye statü nesnesiydi;
- * insanların oturduğu şey banktı, o yüzden bir salon sahnesinde masadan bile
- * çok gerekir.
+ * The bench that sits beside the trestle table. In the middle ages a chair was
+ * a status object; what people actually sat on was a bench, so a hall scene
+ * needs one even more than it needs the table.
  *
- * Yapısı masanınkinin sadeleştirilmişi: iki kalın uç tahtası, aralarında bir
- * gergi, üstte oturak. Ama masadan bir farkı var — oturak ayaklara ÇAKILI.
- * Masanın tablası kaldırılabilirdi, bankın oturağı kaldırılmaz; bu yüzden
- * ayaklar oturağın içine geçen zıvanalarla bağlanıyor ve o zıvanalar oturağın
- * üstünden görünüyor. Ortaçağ marangozluğunun imzası bu.
+ * Its structure is a simplified version of the table's: two thick end boards, a
+ * stretcher between them, the seat on top. But one thing differs from the
+ * table — the seat IS fixed to the legs. The table's top could be lifted away,
+ * a bench's seat cannot; so the legs are joined by tenons that run into the
+ * seat, and those tenons show through the top of it. That is the signature of
+ * medieval joinery.
  */
 import {
   boxGeometry,
@@ -22,15 +23,15 @@ import {
 } from '../core/index.ts'
 
 export interface WoodenBenchConfig {
-  /** Bank uzunluğu (metre). */
+  /** Bench length (metres). */
   readonly length: number
-  /** Oturak yüksekliği (metre). */
+  /** Seat height (metres). */
   readonly height: number
-  /** Oturak genişliği (metre). */
+  /** Seat width (metres). */
   readonly width: number
-  /** Ayakların dışa açıklığı. 0 = dik. */
+  /** Outward splay of the legs. 0 = upright. */
   readonly splay: number
-  /** Ayakların uçlardan ne kadar içeride durduğu, uzunluğun oranı olarak. */
+  /** How far the legs stand in from the ends, as a fraction of the length. */
   readonly inset: number
   readonly seed: number
 }
@@ -59,9 +60,9 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
       const seatBottom = seatTop - seatThickness
       const timber = config.width * 0.09
 
-      // --- Oturak --------------------------------------------------------
-      // Tek bir kalın tahta. Bankta iki tahta kullanmak masadaki gibi doğal
-      // değil: oturağın arası boş olmamalı.
+      // --- Seat ----------------------------------------------------------
+      // A single thick board. Using two boards is not as natural on a bench
+      // as it is on the table: the seat must not have a gap down the middle.
       const seatPieces = [chamferedBoxGeometry(
         [config.length, config.width * 0.95],
         [config.length * 0.995, config.width],
@@ -71,7 +72,7 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
         tint('oak', 0.05),
       )]
 
-      // --- Ayaklar -------------------------------------------------------
+      // --- Legs ----------------------------------------------------------
       const legX = config.length * (0.5 - config.inset)
       const legHeight = seatBottom - (-half)
       const legWidth = config.width * 0.66
@@ -79,10 +80,10 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
 
       const legPieces = []
       for (const side of [-1, 1]) {
-        // Ayak tahtası: aşağı doğru yayvanlaşıyor. Yayvanlık ölçüde, açıda
-        // değil — döndürmek yerine alt yüzü genişletmek hem daha ucuz hem de
-        // tabanı yere TAM basıyor, oysa döndürülmüş bir ayak kenarı üstünde
-        // durur.
+        // Leg board: it widens on the way down. The splay is in the measure,
+        // not in the angle — widening the bottom face instead of rotating is
+        // both cheaper and lets the foot sit FLAT on the ground, whereas a
+        // rotated leg stands on its edge.
         legPieces.push(taperedBoxGeometry(
           [legWidth + spread * 2, timber * 1.35],
           [legWidth, timber * 1.35],
@@ -91,8 +92,9 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
           tint('oak', -0.02),
         ))
 
-        // Zıvana: ayağın oturağın İÇİNDEN geçip üstünde görünen ucu. Oturağın
-        // üst yüzünü de aşıyor — ortaçağ bankının en tanınır detayı bu.
+        // Tenon: the end of the leg that runs THROUGH the seat and shows on
+        // top of it. It overshoots the seat's top face — the most recognisable
+        // detail of a medieval bench.
         legPieces.push(chamferedBoxGeometry(
           [legWidth * 0.34, timber * 0.85],
           [legWidth * 0.32, timber * 0.8],
@@ -103,9 +105,9 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
         ))
       }
 
-      // --- Gergi ---------------------------------------------------------
-      // İki ayağı birbirine bağlayan çıta. Ayakların İÇİNE giriyor: uçları
-      // katı malzemenin içinde kalsın ki hiçbir yüz aynı düzleme oturmasın.
+      // --- Stretcher -----------------------------------------------------
+      // The batten tying the two legs together. It runs INTO the legs: its
+      // ends stay inside solid material so that no face ends up coplanar.
       const stretcherY = -half + legHeight * 0.34
       const stretcher = mergeColoured([boxGeometry(
         [legX * 2 + legWidth * 0.4, timber * 1.5, timber * 0.95],

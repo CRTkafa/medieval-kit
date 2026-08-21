@@ -1,17 +1,17 @@
 /**
  * @medieval-kit/oak-tankard
  *
- * Meşe maşrapa: fıçının avuç içi boyutundaki hâli. Aynı tahta dili, aynı demir
- * çember, sadece ölçek değişiyor — kitin kendi sözlüğünü ne kadar taşıdığını
- * gösteren örnek.
+ * Oak tankard: the barrel at palm size. Same stave language, same iron hoop,
+ * only the scale changes — the example that shows how far the kit carries its
+ * own vocabulary.
  *
- * Cam kupa ARAMAYIN: ortaçağda içki kabı tahta, deri ya da kalaydı. Şeffaf cam
- * bardak dönem hatası olurdu ve kitin geri kalanının yanında da yabancı
- * dururdu.
+ * Do NOT look for a glass mug: a medieval drinking vessel was wood, leather or
+ * pewter. A clear glass would be a period error, and it would also look foreign
+ * next to the rest of the kit.
  *
- * Kulp bir mesele oldu. Yuvarlak bir çubuk kulp modern kupa gibi duruyordu;
- * gerçek maşrapanın kulpu YASSI bir tahta ya da demir şerittir, gövdeye iki
- * noktadan tutturulur. Kavis `bendGeometry` ile veriliyor.
+ * The handle turned into a problem. A round rod handle looked like a modern
+ * mug; a real tankard's handle is a FLAT strap of wood or iron, fixed to the
+ * body at two points. The curve comes from `bendGeometry`.
  */
 import type { BufferGeometry } from 'three'
 
@@ -29,17 +29,17 @@ import {
 } from '../core/index.ts'
 
 export interface OakTankardConfig {
-  /** Yükseklik (metre). */
+  /** Height (metres). */
   readonly height: number
-  /** Ağız yarıçapı (metre). */
+  /** Rim radius (metres). */
   readonly radius: number
-  /** Tabana doğru daralma. 0 = silindir. */
+  /** Narrowing towards the base. 0 = cylinder. */
   readonly taper: number
-  /** Tahta sayısı. */
+  /** Number of staves. */
   readonly staveCount: number
-  /** Demir çember sayısı. */
+  /** Number of iron hoops. */
   readonly hoopCount: number
-  /** Kulp var mı (0/1). */
+  /** Whether there is a handle (0/1). */
   readonly handle: number
   readonly seed: number
 }
@@ -68,12 +68,12 @@ export function createModel(overrides: Partial<OakTankardConfig> = {}) {
       const thickness = config.radius * 0.13
       const bottomRadius = config.radius * (1 - config.taper)
 
-      // --- Tahtalar ---------------------------------------------------------
+      // --- Staves -----------------------------------------------------------
       const stavePieces: BufferGeometry[] = []
       const step = (Math.PI * 2) / staves
       for (let i = 0; i < staves; i += 1) {
-        // Tahtalar arasında ince bir pay: bitişik tahtalar yan yüzlerinden
-        // aynı düzleme oturuyordu ve fıçıda bu titremeye yol açmıştı.
+        // A thin gap between staves: adjacent staves were coplanar along their
+        // side faces, and on the barrel that caused z-fighting.
         const gap = step * 0.035
         const levels: Level[] = [
           { y: -half, radius: bottomRadius * (1 + jitter(random, 0.012)) },
@@ -86,14 +86,14 @@ export function createModel(overrides: Partial<OakTankardConfig> = {}) {
         ))
       }
 
-      // --- Taban -------------------------------------------------------------
-      // Tahtaların içine oturan disk; kenarı onların içinde kalıyor.
+      // --- Base --------------------------------------------------------------
+      // A disc seated inside the staves; its edge stays within them.
       const base = headGeometry(
         bottomRadius - thickness * 0.55, -half + config.height * 0.055,
         staves, 'up', tint('oakEnd', 0.02), 3, 0.06,
       )
 
-      // --- Çemberler ----------------------------------------------------------
+      // --- Hoops --------------------------------------------------------------
       const hoops = Math.max(0, Math.round(config.hoopCount))
       const hoopPieces: BufferGeometry[] = []
       for (let i = 0; i < hoops; i += 1) {
@@ -106,7 +106,7 @@ export function createModel(overrides: Partial<OakTankardConfig> = {}) {
         ))
       }
 
-      // --- Kulp ----------------------------------------------------------------
+      // --- Handle --------------------------------------------------------------
       let handle: BufferGeometry | undefined
       if (config.handle >= 0.5) {
         const span = config.height * 0.72
@@ -115,19 +115,21 @@ export function createModel(overrides: Partial<OakTankardConfig> = {}) {
           [0, 0, 0],
           tint('oak', -0.05),
         )
-        // Yassı şerit, gövdeden dışa doğru kavisleniyor. Kavis merkezi
-        // orijinde olduğu için iki ucu da gövdeye yaklaşıyor — kulpun
-        // gövdeye tutunduğu izlenimi tam olarak buradan geliyor.
+        // The flat strap curves outwards away from the body. Because the centre
+        // of the curve is at the origin, both ends come back towards the body —
+        // that is exactly where the impression of a handle gripping the body
+        // comes from.
         bendGeometry(strap, -2.05 / span)
-        // Kaydırma miktarı hesapla bulunuyor, gözle değil: yay orta noktasını
-        // yerinde bırakıp UÇLARINI geriye çekiyor, dolayısıyla kulbun ortası
-        // gövdeden yeterince uzağa itilmezse uçlar değil ORTASI tahtanın
-        // içinde kalıyor. İlk denemede kulp tamamen görünmezdi.
+        // The offset is found by calculation, not by eye: the bend leaves the
+        // midpoint of the arc in place and pulls its ENDS back, so if the
+        // middle of the handle is not pushed far enough away from the body it
+        // is not the ends but the MIDDLE that ends up inside the stave. On the
+        // first attempt the handle was completely invisible.
         //
-        // Yarım açı a = (span/2)·k, uçların geri çekilmesi (1−cos a)/k.
+        // Half-angle a = (span/2)·k, the ends pull back by (1−cos a)/k.
         const drop = (1 - Math.cos(span * 0.5 * (2.05 / span))) / (2.05 / span)
         strap.translate(0, 0, config.radius + drop + thickness * 0.6)
-        // İki uç gövdenin İÇİNE girsin diye küçük takozlar.
+        // Small pegs so that both ends go INSIDE the body.
         const pegs = [1, -1].map((sign) => boxGeometry(
           [config.radius * 0.3, thickness * 1.6, config.radius * 0.55],
           [0, sign * span * 0.42, config.radius * 0.88],
