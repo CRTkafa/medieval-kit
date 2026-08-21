@@ -673,6 +673,21 @@ export function mergeColoured(geometries: readonly BufferGeometry[]): BufferGeom
  * yarıçapı 1/curvature olan bir çemberin üstüne SARILIYOR, dolayısıyla merkez
  * hattının uzunluğu korunuyor.
  *
+ * İKİ TUZAK, ikisi de ölçülerek bulundu:
+ *
+ * 1. Yay y=0 etrafında sarılıyor, dolayısıyla SONUÇ GEOMETRİNİN Y'DE NEREDE
+ *    DURDUĞUNA BAĞLI. Tabanı orijinde olan bir çubuk gerçekten kıvrılır; y=0'da
+ *    ORTALANMIŞ bir gövde ise simetrik bükülür — iki ucu aynı yöne gider, orta
+ *    yerinde kalır ve siluet neredeyse hiç değişmez. Çapanın ağzında tam bu
+ *    olmuştu: 0.235 m'lik ağızda kıvrılma 14 mm kayma üretiyor ama Z aralığını
+ *    0.0337'den 0.0327'ye DÜŞÜRÜYORDU. Aynı ağzı tabanı orijinde kurup bükünce
+ *    kaçış 44 mm, aralık 0.078 oluyor. Bükmek istediğin şeyi orijinden BAŞLAT.
+ *
+ * 2. Yay, geometrinin Y ekseni boyunca kaç KESİTİ olduğu kadar pürüzsüz.
+ *    İki seviyeli bir kutu (chamferedBoxGeometry) bükülünce yay değil
+ *    eğrilmiş bir kutu verir. Gerçek yay için `latheGeometry` gibi ara
+ *    seviyeleri olan bir gövde gerekiyor.
+ *
  * @param curvature 1/yarıçap. Pozitif değer +Z yönüne büker. 0 hiçbir şey yapmaz.
  */
 export function bendGeometry(geometry: BufferGeometry, curvature: number): BufferGeometry {

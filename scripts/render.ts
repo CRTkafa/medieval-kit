@@ -350,7 +350,13 @@ function frameCamera(root: Object3D, width: number, height: number): { camera: P
   return { camera, floor: box.min.y }
 }
 
-function renderOne(id: string, size: number, patch?: Record<string, number>): Frame {
+function renderOne(
+  id: string,
+  size: number,
+  patch?: Record<string, number>,
+  /** Modelin Y ekseni etrafında ön dönüşü (radyan). Turntable için. */
+  spin = 0,
+): Frame {
   const entry = CATALOG[id]
   if (!entry) throw new Error(`katalogda yok: ${id}`)
   const built = entry.build()
@@ -358,6 +364,9 @@ function renderOne(id: string, size: number, patch?: Record<string, number>): Fr
   // Animasyonlu modelleri hareketin ortasında yakala: sabit alev, alevin
   // titrediğini göstermez.
   built.update?.(0.42)
+  // Kamerayı değil MODELİ döndürüyoruz: çerçeveleme ve gölge hesabı sabit
+  // yönde kalıyor, dolayısıyla turntable kareleri birebir karşılaştırılabilir.
+  built.root.rotation.y = spin
   const triangles = collect(built.root)
   const frame = newFrame(size, size)
   const { camera, floor } = frameCamera(built.root, size, size)
@@ -378,6 +387,8 @@ const flag = (name: string): string | undefined => {
 const outDir = flag('out') ?? 'renders'
 const one = flag('one')
 const size = Number(flag('size') ?? (one ? 720 : 300))
+
+const only = flag('ids')?.split(',')
 
 await mkdir(outDir, { recursive: true })
 
@@ -405,10 +416,23 @@ function tile(list: readonly Frame[], size: number, columns: number): Frame {
   return sheet
 }
 
-const only = flag('ids')?.split(',')
 // Süpürme: aynı modeli tek bir parametrenin farklı değerleriyle yan yana
 // koyar. Bir oranı gözle seçmek, sayıyı değiştirip tek tek bakmaktan çok daha
 // hızlı — çapanın ağız açısını böyle seçtim.
+// Turntable: aynı modeli Y ekseni etrafında eşit aralıklarla döndürüp yan yana
+// koyar. Tek bir 3/4 açı yanıltıcı olabiliyor — çit ancak tam yandan bakınca
+// "cılız" görünüyor, süpürge ancak tepeden bakınca "seyrek".
+const angles = Number(flag('angles') ?? 0)
+if (angles > 1) {
+  const target = one ?? (only?.[0])
+  if (!target) throw new Error('--angles için --one <model> ya da --ids gerekli')
+  const frames = Array.from({ length: angles }, (_, i) =>
+    renderOne(target, size, undefined, (i / angles) * Math.PI * 2))
+  await writeFile(`${outDir}/_turntable.png`, encodePng(tile(frames, size, angles)))
+  console.log(`${target} · ${angles} açı → ${outDir}/_turntable.png`)
+  process.exit(0)
+}
+
 const sweep = flag('sweep')
 if (sweep) {
   const [key, values] = sweep.split('=')

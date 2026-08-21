@@ -348,7 +348,7 @@ nitekim bir kez bayatlamıştı da.
 | `hay-bale` | Props | 674 | 3 | 1.09×0.46×0.46 | straw, cloth |  |
 | `linen-sack` | Props | 300 | 3 | 0.32×0.53×0.32 | cloth |  |
 | `oak-tankard` | Props | 366 | 4 | 0.09×0.17×0.10 | oak, iron |  |
-| `straw-broom` | Tools | 768 | 3 | 0.38×1.28×0.35 | oak, straw, cloth |  |
+| `straw-broom` | Tools | 880 | 3 | 0.20×1.22×0.19 | oak, straw, cloth |  |
 | `bronze-bell` | Props | 696 | 3 | 0.48×0.53×0.36 | brass, iron, oak | ✔ |
 | `tavern-sign` | Props | 516 | 2 | 0.54×0.75×0.63 | oak, iron | ✔ |
 | `wicker-basket` | Props | 1906 | 3 | 0.35×0.24×0.35 | straw, produce |  |
@@ -356,12 +356,12 @@ nitekim bir kez bayatlamıştı da.
 | `glass-phial` | Props | 321 | 3 | 0.06×0.14×0.06 | glass, ember, oak, char |  |
 | `coin-pouch` | Props | 546 | 3 | 0.18×0.11×0.19 | leather, cloth, brass |  |
 | `wooden-ladder` | Structure | 440 | 2 | 0.49×2.20×0.06 | oak |  |
-| `wooden-fence` | Structure | 440 | 2 | 4.89×1.10×0.09 | oak |  |
-| `wooden-hoe` | Tools | 220 | 3 | 0.21×1.17×0.25 | oak, iron, steel |  |
+| `wooden-fence` | Structure | 860 | 2 | 5.18×1.31×0.31 | oak |  |
+| `wooden-hoe` | Tools | 282 | 3 | 0.20×1.23×0.30 | oak, iron, steel |  |
 | `wooden-shovel` | Tools | 468 | 3 | 0.27×1.20×0.08 | oak, iron, steel |  |
 | `wooden-pitchfork` | Tools | 338 | 3 | 0.25×1.56×0.11 | oak, iron, steel |  |
 
-Toplam **14 831 üçgen**. Kitin tamamı bir sahnede, bütçesi tek bir orta
+Toplam **15 425 üçgen**. Kitin tamamı bir sahnede, bütçesi tek bir orta
 karmaşıklıktaki karakter modelinden az.
 
 ### 5.1 Tek kaynak: `my-registry/meta.ts`

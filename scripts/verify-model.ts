@@ -297,15 +297,15 @@ const CASES: readonly Case[] = [
   { id: 'wooden-ladder', make: as(createLadder), patch: { rungCount: 12 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ rungCount: 3 }, { taper: 0 }] , maxSize: [0.6, 2.4, 0.12] },
-  { id: 'wooden-fence', make: as(createFence), patch: { sections: 5, railCount: 3 },
+  { id: 'wooden-fence', make: as(createFence), patch: { sections: 5, railCount: 4 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
-    variants: [{ sections: 1 }, { railCount: 1 }, { railCount: 4 }] , maxSize: [5.2, 1.3, 0.2] },
+    variants: [{ sections: 1 }, { railCount: 1 }, { railCount: 4 }, { rough: 0 }, { brace: 0 }] , maxSize: [5.3, 1.5, 0.45] },
   { id: 'wooden-stool', make: as(createStool), patch: { legCount: 4, splay: 0.35 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ legCount: 5 }, { splay: 0 }] , maxSize: [0.5, 0.55, 0.5] },
-  { id: 'wooden-hoe', make: as(createHoe), patch: { bladeWidth: 0.24, bladeAngle: 120 },
+  { id: 'wooden-hoe', make: as(createHoe), patch: { bladeWidth: 0.26, neckSweep: 130 },
     parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
-    variants: [{ bladeAngle: 90 }, { bladeWidth: 0.3 }] , maxSize: [0.25, 1.6, 0.3] },
+    variants: [{ neckSweep: 45 }, { bladeWidth: 0.3 }, { dish: 0 }] , maxSize: [0.32, 1.6, 0.42] },
   { id: 'wooden-shovel', make: as(createShovel), patch: { bladeWidth: 0.3, bladeLength: 0.36, dish: 0.22 },
     parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
     variants: [{ bladeLength: 0.18 }, { bladeLength: 0.4 }, { dish: 0 }, { bladeAngle: 25 }] , maxSize: [0.3, 1.4, 0.15] },
@@ -334,10 +334,10 @@ const CASES: readonly Case[] = [
     parts: 3, ownSlot: 'cloth', borrowSlot: 'cloth', closed: true,
     variants: [{ ears: 0 }, { fill: 1 }, { collar: 0.28 }],
     maxSize: [0.5, 0.56, 0.5] },
-  { id: 'straw-broom', make: as(createBroom), patch: { bristles: 70, flare: 0.55 },
+  { id: 'straw-broom', make: as(createBroom), patch: { bristles: 52, tipRadius: 0.16 },
     parts: 3, ownSlot: 'cloth', borrowSlot: 'oak',
-    variants: [{ bindings: 0 }, { flare: 0 }, { bristles: 12 }],
-    maxSize: [0.55, 1.3, 0.55] },
+    variants: [{ bindings: 0 }, { tipRadius: 0.06 }, { bristles: 10 }],
+    maxSize: [0.42, 1.3, 0.42] },
   { id: 'oak-tankard', make: as(createTankard), patch: { staveCount: 14, hoopCount: 3 },
     parts: 4, ownSlot: 'iron', borrowSlot: 'oak', radial: true, radialPart: 'staves',
     variants: [{ handle: 0 }, { hoopCount: 0 }, { taper: 0.25 }],
@@ -432,6 +432,12 @@ for (const testCase of CASES) {
     expect('meta girdisi var', meta !== undefined)
     if (meta) {
       const config = model.getConfig() as Record<string, unknown>
+
+      const patchKeys = [testCase.patch, ...(testCase.variants ?? [])].flatMap(Object.keys)
+      const strayPatch = [...new Set(patchKeys)].filter((key) => !(key in config))
+      expect(`test yamaları gerçek alanlara işaret ediyor${strayPatch.length ? ' — YOK: ' + strayPatch.join(', ') : ''}`,
+        strayPatch.length === 0)
+
       const strayControls = Object.keys(meta.controls).filter((key) => !(key in config))
       expect(`meta.controls anahtarları config'te var${strayControls.length ? ' — YOK: ' + strayControls.join(', ') : ''}`,
         strayControls.length === 0)

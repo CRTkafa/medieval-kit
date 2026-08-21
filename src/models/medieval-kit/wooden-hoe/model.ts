@@ -1,14 +1,25 @@
 /**
  * @medieval-kit/wooden-hoe
  *
- * Çapayı çapa yapan şey ağzın sapa göre açısı. Dik değil — yaklaşık 105°, yani
- * ağız öne ve aşağı bakar; toprağı çekerken kendiliğinden gömülsün diye.
+ * Kaz boyunlu tarla çapası: dişbudak sap, sapın ucundan öne-aşağı kıvrılan
+ * dövme demir boyun ve onun ucundaki çukur ağız.
  *
- * Ağız dövme bir levha: alt kenarı ince (kesen taraf), sokete doğru kalınlaşır.
- * `taperedBoxGeometry` bunu tek parçada veriyor — alt ve üst dikdörtgeni farklı
- * olduğu için hem daralma hem incelme aynı anda çıkıyor.
+ * ÜÇÜNCÜ deneme ve öncekilerin ikisi de aynı şeyi kaçırmıştı: KAZ BOYNU.
+ * Çapayı çapa yapan şey ağız değil, ağzı sapın ekseninden ÖNE taşıyan kıvrık
+ * boyundur. Onsuz elde ettiğin şey bir direğin tepesine dengelenmiş yassı bir
+ * levha — render'da tam olarak "kürsü", "nota sehpası", "yol tabelası" diye
+ * okundu. Boyun ayrıca siluete negatif boşluk katıyor: sap ile ağız arasındaki
+ * o açıklık, nesneyi uzaktan ayırt eden şey.
+ *
+ * İkinci denemede ağza `bendGeometry` ile kavis vermeye çalışmış ve yorumda
+ * "bu tek detay siluetteki asıl sorunu çözüyor" yazmıştım. Ölçünce yanlış
+ * olduğu çıktı: ağız y=0'da ORTALANMIŞ kurulduğu için büküm simetrikti, iki uç
+ * aynı yöne gidiyor, orta yerinde kalıyordu. 0.235 m'lik ağızda Z aralığı
+ * 0.0337'den 0.0327'ye DÜŞÜYORDU, yani kavis siluette hiç görünmüyordu. Aynı
+ * ağız tabanı orijinde kurulunca kaçış 44 mm. Artık hem boyun hem ağız
+ * orijinden başlatılıyor.
  */
-import { Color, type BufferGeometry } from 'three'
+import type { BufferGeometry } from 'three'
 
 import {
   bendGeometry,
@@ -17,26 +28,32 @@ import {
   ironTint,
   steelTint,
   jitter,
+  latheGeometry,
   mergeColoured,
   toolShaft,
   toolSocket,
+  type Level,
 } from '../core/index.ts'
 
 export interface WoodenHoeConfig {
+  /** Sap boyu (metre). */
   readonly length: number
   readonly shaftRadius: number
-  /** Ağız genişliği (metre). */
+  /** Ağzın genişliği (metre). */
   readonly bladeWidth: number
-  /** Ağzın sapa göre açısı (derece). 90 = tam dik. */
-  readonly bladeAngle: number
+  /** Kaz boynunun toplam dönüşü (derece). 0 = düz boyun, çapa olmaktan çıkar. */
+  readonly neckSweep: number
+  /** Ağzın çukurluğu. 0 = düz levha. */
+  readonly dish: number
   readonly seed: number
 }
 
 export const woodenHoeDefaults: WoodenHoeConfig = {
-  length: 1.12,
+  length: 1.14,
   shaftRadius: 0.021,
-  bladeWidth: 0.215,
-  bladeAngle: 66,
+  bladeWidth: 0.2,
+  neckSweep: 112,
+  dish: 1,
   seed: 23,
 }
 
@@ -49,77 +66,86 @@ export function createModel(overrides: Partial<WoodenHoeConfig> = {}) {
     slots: ['oak', 'iron', 'steel'],
     build: ({ config, random }) => {
       const shaft = toolShaft({ length: config.length, radius: config.shaftRadius, random })
-      const socketLength = config.length * 0.055
+      const socketLength = config.length * 0.075
       const socket = toolSocket({
-        y: shaft.top - socketLength * 0.4,
+        y: shaft.top - socketLength * 0.42,
         shaftRadius: shaft.topRadius,
         length: socketLength,
         random,
       })
 
-      const bladeLength = config.length * 0.21
-      const thin = config.length * 0.009
-      const thick = config.length * 0.03
-
-      // Ağız: aşağı doğru hem genişler hem incelir. Alt kenar kesen taraf.
+      // --- Kaz boynu ----------------------------------------------------------
+      // Tabanı ORİJİNDE kuruluyor ve oradan bükülüyor; y=0'da ortalansaydı
+      // simetrik bükülür ve hiçbir şey olmazdı.
       //
-      // Oranlar iki kez değişti ve ikisinin de sebebi aynıydı: SİLUET.
-      //   - İlk hâlde ağız sapın onda biri kadardı, uzaktan çekiç gibi
-      //     okunuyordu. Çapayı çapa yapan şey geniş ağızdır.
-      //   - Sonra ağız boyun tarafında yarı genişlikteydi, yani öne doğru
-      //     ikiye katlanan bir yelpazeydi; tepeden bakınca bayrak gibi
-      //     duruyordu. Gerçek çapa ağzı neredeyse DİKDÖRTGENDİR, kesme
-      //     kenarına doğru sadece azıcık açılır.
+      // `latheGeometry` seçilmesinin sebebi ara seviyeleri olması: iki
+      // seviyeli bir kutuyu bükmek yay değil, eğrilmiş bir kutu verir.
+      const neckLength = config.length * 0.17
+      const bar = config.shaftRadius * 0.85
+      const sweep = (config.neckSweep * Math.PI) / 180
+      const curvature = sweep / neckLength
+
+      const neckLevels: Level[] = Array.from({ length: 7 }, (_, i) => {
+        const t = i / 6
+        return { y: neckLength * t, radius: bar * (1.05 - 0.28 * t) }
+      })
+      const neck = latheGeometry(neckLevels, 5, [0, 0, 0], ironTint(random, -0.02), {
+        colourTop: ironTint(random, 0.04),
+      })
+      // Dövme boyun yuvarlak değil YASSI: çekiçle enine dövülür. Ölçekleme
+      // bükümden ÖNCE ve yalnız X'te — Z'de ölçeklemek yayın düzlemini bozardı.
+      neck.scale(1.75, 1, 0.62)
+      bendGeometry(neck, curvature)
+      neck.translate(0, shaft.top - neckLength * 0.12, 0)
+
+      // Boynun UCU ve oradaki teğet, yay eşlemesinin kendisinden çıkıyor —
+      // gözle konumlandırmak yerine hesaplanıyor, böylece `neckSweep`
+      // değiştiğinde ağız kendiliğinden takip ediyor.
+      const tipY = shaft.top - neckLength * 0.12 + Math.sin(sweep) / curvature
+      const tipZ = (1 - Math.cos(sweep)) / curvature
+
+      // --- Ağız ----------------------------------------------------------------
+      // Boyun ucundan devam ediyor. Tabanı orijinde kuruluyor ki çukurluk
+      // gerçekten görünsün.
+      const bladeLength = config.length * 0.115
+      const thick = config.length * 0.028
+      const thin = config.length * 0.006
       const blade = chamferedBoxGeometry(
-        [config.bladeWidth * 0.88, thick],
+        [config.bladeWidth * 0.72, thick],
         [config.bladeWidth, thin],
         bladeLength,
-        config.shaftRadius * 0.3,
-        [0, 0, 0],
-        steelTint(random, -0.03),
-        steelTint(random, 0.03),
+        thin * 0.6,
+        [0, bladeLength / 2, 0],
+        steelTint(random, -0.04),
+        steelTint(random, 0.05),
       )
-      // Kavis: çapa ağzı düz bir levha DEĞİLDİR, kullanıcıya doğru hafifçe
-      // kıvrılır — toprağı iterken önünde tutabilmesi için. Üstelik bu tek
-      // detay siluetteki asıl sorunu çözüyor: düz bir levha yukarıdan bakınca
-      // raf gibi okunuyor, kıvrık olan "toprağa dalan ağız" gibi.
-      bendGeometry(blade, -0.5 / bladeLength)
-      // Dövme bir ağız kusursuz simetrik değildir; ufak bir eğiklik veriyoruz.
-      blade.rotateY(jitter(random, 0.05))
-      // Aşağı-öne çevir. 180° tam ters olurdu; bladeAngle sapla ağız arasındaki
-      // açıyı belirliyor. Varsayılan 66° gözle seçildi: 62–134 arasını yan yana
-      // render edip baktım. 98° civarında ağız neredeyse yatay kalıyor ve
-      // 3/4 açıdan bakan bir kameraya TAM KENARINDAN görünüyor — yani modelin
-      // en karakteristik yüzeyi siluetten tamamen siliniyor. Dar açıda ağzın
-      // yüzü öne dönüyor ve çapa ilk bakışta çapa olarak okunuyor.
-      blade.rotateX(Math.PI - (config.bladeAngle * Math.PI) / 180)
-      blade.translate(0, shaft.top - bladeLength * 0.12, bladeLength * 0.42)
+      // Çukurluk: kesme kenarı kullanıcıya doğru kıvrılıyor, toprağı önünde
+      // tutabilmesi için. NEGATİF eğrilik, yoksa çapa toprağı kendinden uzağa
+      // iten bir kepçeye dönüyor.
+      if (config.dish > 0) bendGeometry(blade, (-0.9 * config.dish) / bladeLength)
+      // Dövme bir ağız kusursuz simetrik değildir.
+      blade.rotateY(jitter(random, 0.04))
+      // Boynun ucundaki teğet yönüne hizala, sonra oraya taşı — sıra kritik.
+      blade.rotateX(sweep)
+      blade.translate(0, tipY, tipZ)
 
-      // Boyun: ağzı sokete bağlayan kısa demir. İkisinin de içine giriyor.
-      //
-      // SIRA KRİTİK: parça ORIGIN'de kurulur, döndürülür, SONRA yerine taşınır.
-      // Önce yerine koyup döndürmek onu origin etrafında savurur — boyun
-      // y≈0.71'de olduğu için 0.35 rad'lık dönüş onu 0.23 m öne fırlatıyordu.
-      const neckTint = new Color(ironTint(random, -0.02))
-      const neck = chamferedBoxGeometry(
-        [config.shaftRadius * 2.8, config.shaftRadius * 2.3],
-        [config.shaftRadius * 2.4, config.shaftRadius * 2],
-        config.length * 0.075,
-        config.shaftRadius * 0.3,
-        [0, 0, 0],
-        neckTint,
-      )
-      // Boyun ağzı takip etmeli: geriye yatan bir boyun sapın tepesinde
-      // baca gibi duruyordu.
-      neck.rotateX(0.5)
-      neck.translate(0, shaft.top - config.length * 0.012, config.length * 0.016)
+      // Bilezik: boyun ile ağzın birleştiği yerdeki dövme kalınlaşma. İki
+      // parçanın nasıl tutunduğu sorusunu cevaplayan tek detay.
+      const collar = latheGeometry([
+        { y: -bar * 0.9, radius: bar * 1.05 },
+        { y: 0, radius: bar * 1.5 },
+        { y: bar * 1.1, radius: bar * 1.15 },
+      ], 6, [0, 0, 0], ironTint(random, 0.06))
+      collar.scale(1.7, 1, 0.7)
+      collar.rotateX(sweep)
+      collar.translate(0, tipY, tipZ)
 
-      const head: BufferGeometry = mergeColoured([blade, neck])
+      const ironwork: BufferGeometry = mergeColoured([socket, neck, collar])
 
       return {
         shaft: { slot: 'oak', geometry: shaft.geometry },
-        socket: { slot: 'iron', geometry: socket },
-        blade: { slot: 'steel', geometry: head },
+        socket: { slot: 'iron', geometry: ironwork },
+        blade: { slot: 'steel', geometry: mergeColoured([blade]) },
       }
     },
   }, overrides)

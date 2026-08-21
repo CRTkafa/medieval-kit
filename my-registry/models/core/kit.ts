@@ -203,15 +203,24 @@ export function createKitModel<
 
     if (options.mottle !== false) {
       const amount = options.mottle?.amount ?? 0.125
-      // Leke büyüklüğü modelin ÖLÇEĞİNDEN türetiliyor: sabit bir hücre boyu
-      // bira bardağında kocaman leke, çitte görünmez benek verirdi.
+      // Leke büyüklüğü modelin ölçeğinden türetiliyor ama MUTLAK SINIRLARLA.
+      //
+      // Sınırlar sonradan eklendi ve gerçek bir hatayı kapattı: ölçek tek
+      // başına kullanılınca 4.89 m'lik çit 0.27 m'lik hücre alıyordu. Çitin
+      // direği 0.09 m — yani bütün direk TEK hücreye düşüyor ve tamamen düz
+      // renk çıkıyordu. Model doku sisteminin bedelini ödeyip karşılığında
+      // hiçbir şey almıyordu.
+      //
+      // Doğrusu şu: ahşabın damar lekesi 2–8 cm'dir ve nesnenin büyüklüğüyle
+      // ilgisi yoktur. Bir çit direği ile bir maşrapa tahtası aynı ağaçtan
+      // çıkıyor.
       const extent = built.reduce((largest, part) => {
         part.geometry.computeBoundingBox()
         const box = part.geometry.boundingBox
         if (!box) return largest
         return Math.max(largest, box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z)
       }, 0)
-      const cell = options.mottle?.cell ?? Math.max(0.012, extent * 0.055)
+      const cell = options.mottle?.cell ?? Math.min(0.08, Math.max(0.015, extent * 0.055))
       for (const part of built) {
         for (const body of [part, ...(part.extras ?? [])]) {
           mottleGeometry(body.geometry, amount * MOTTLE_BY_SLOT[body.slot], { cell, salt: 3 })

@@ -273,7 +273,7 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
   'straw-broom': {
     title: 'Straw Broom',
     description:
-      'Bir sopa, bir demet süpürge otu, iki tur ip — dönemin süpürgesi tam olarak buydu.',
+      'Besom: fındık sap, üç eşmerkezli halkadan kurulu çalı demeti, söğüt bağ.',
     category: 'Tools',
     tags: ['medieval', 'lowpoly', 'tools', 'household', 'procedural'],
     controls: {
@@ -282,10 +282,11 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
         type: 'number', label: 'Sap kalınlığı',
         min: 0.01, max: 0.03, step: 0.001, unit: 'm',
       },
-      headLength: { type: 'number', label: 'Demet boyu', min: 0.18, max: 0.5, step: 0.01 },
-      flare: { type: 'number', label: 'Açılma', min: 0, max: 0.8, step: 0.02 },
-      bristles: { type: 'number', label: 'Tel sayısı', min: 10, max: 90, step: 2 },
-      bindings: { type: 'number', label: 'Bağ sayısı', min: 0, max: 4, step: 1 },
+      headLength: { type: 'number', label: 'Demet boyu', min: 0.2, max: 0.55, step: 0.01 },
+      tieRadius: { type: 'number', label: 'Bağ yarıçapı', min: 0.03, max: 0.09, step: 0.002, unit: 'm' },
+      tipRadius: { type: 'number', label: 'Uç yarıçapı', min: 0.04, max: 0.2, step: 0.005, unit: 'm' },
+      bristles: { type: 'number', label: 'Çalı sayısı', min: 8, max: 60, step: 2 },
+      bindings: { type: 'number', label: 'Bağ sayısı', min: 0, max: 5, step: 1 },
       seed: { type: 'number', label: 'Varyasyon tohumu', min: 1, max: 64, step: 1 },
     },
     materialSlots: ['oak', 'straw', 'cloth'],
@@ -451,17 +452,16 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
   'wooden-fence': {
     title: 'Wooden Fence',
     description:
-      'Modüler çit bölümü; direkler kirişlerden dışa taşar, boyları eşit değildir.',
+      'Zıvanalı riven çit: kiriş direğin içinden geçiyor ve uçlarda karşı yüzden taşıyor.',
     category: 'Structure',
-    tags: ['medieval', 'lowpoly', 'structure', 'modular', 'procedural'],
+    tags: ['medieval', 'lowpoly', 'structure', 'farm', 'procedural'],
     controls: {
-      sections: { type: 'number', label: 'Bölüm', min: 1, max: 8, step: 1 },
-      sectionLength: {
-        type: 'number', label: 'Bölüm boyu',
-        min: 0.8, max: 3, step: 0.1, unit: 'm',
-      },
-      height: { type: 'number', label: 'Yükseklik', min: 0.5, max: 2, step: 0.05, unit: 'm' },
+      sections: { type: 'number', label: 'Bölüm', min: 1, max: 5, step: 1 },
+      sectionLength: { type: 'number', label: 'Bölüm boyu', min: 1.6, max: 3.4, step: 0.05, unit: 'm' },
+      height: { type: 'number', label: 'Yükseklik', min: 0.8, max: 1.7, step: 0.02, unit: 'm' },
       railCount: { type: 'number', label: 'Kiriş', min: 1, max: 4, step: 1 },
+      rough: { type: 'number', label: 'Düzensizlik', min: 0, max: 2, step: 0.05 },
+      brace: { type: 'number', label: 'Payanda', min: 0, max: 1, step: 1 },
       seed: { type: 'number', label: 'Varyasyon tohumu', min: 1, max: 64, step: 1 },
     },
     materialSlots: ['oak'],
@@ -470,20 +470,21 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
   'wooden-hoe': {
     title: 'Wooden Hoe',
     description:
-      'Sapa dik duran geniş ağız; toprakla temas eden yüzü parlamış çelik.',
+      'Kaz boyunlu tarla çapası: ağzı sapın ekseninden öne taşıyan kıvrık dövme boyun ve çukur ağız.',
     category: 'Tools',
     tags: ['medieval', 'lowpoly', 'tools', 'farm', 'procedural'],
     controls: {
-      length: { type: 'number', label: 'Boy', min: 0.8, max: 2, step: 0.02, unit: 'm' },
+      length: { type: 'number', label: 'Sap boyu', min: 0.8, max: 1.7, step: 0.02, unit: 'm' },
       shaftRadius: {
         type: 'number', label: 'Sap kalınlığı',
         min: 0.012, max: 0.035, step: 0.001, unit: 'm',
       },
       bladeWidth: {
         type: 'number', label: 'Ağız genişliği',
-        min: 0.08, max: 0.3, step: 0.005, unit: 'm',
+        min: 0.1, max: 0.3, step: 0.005, unit: 'm',
       },
-      bladeAngle: { type: 'number', label: 'Ağız açısı', min: 70, max: 125, step: 1, unit: '°' },
+      neckSweep: { type: 'number', label: 'Boyun dönüşü', min: 40, max: 150, step: 2, unit: '°' },
+      dish: { type: 'number', label: 'Çukurluk', min: 0, max: 2, step: 0.05 },
       seed: { type: 'number', label: 'Varyasyon tohumu', min: 1, max: 64, step: 1 },
     },
     materialSlots: ['oak', 'iron', 'steel'],

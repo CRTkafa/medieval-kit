@@ -124,7 +124,15 @@ export function bakeOcclusion(
   if (samples.length === 0) return
 
   const extent = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1e-6)
-  const radius = options.radius ?? extent * 0.14
+  // Yarıçap ölçekten türetiliyor ama MUTLAK bir tavanı var. Tavan olmadan
+  // 4.89 m'lik bir çit 0.69 m'lik bir yarıçap alıyor ve "komşu" tanımı
+  // anlamını yitiriyor: her şey her şeyin komşusu oluyor, kapanma temas
+  // noktalarını göstermek yerine modelin tamamına düz bir karartma sürüyor.
+  //
+  // Fiziksel anlamı da bunu söylüyor: bir yüzeyi gölgeleyen şey ona YAKIN
+  // olandır. Yarım metre öteki bir direk, tahtanın arasındaki gölgeyi
+  // yapmıyor.
+  const radius = options.radius ?? Math.min(0.16, Math.max(0.015, extent * 0.14))
   const grid = new Grid(samples, radius)
   // Doygunluk modelin ölçeğiyle orantılı olmalı: yarıçap büyüdükçe kapsanan
   // alan da büyür, sabit bir eşik küçük modelleri kapkara yapardı.
