@@ -19,6 +19,7 @@ import {
   headGeometry,
   jitter,
   mergeColoured,
+  prismGeometry,
   staveGeometry,
   type Level,
 } from '../core/index.ts'
@@ -34,6 +35,15 @@ export interface WoodenBarrelConfig {
   readonly staveCount: number
   /** Iron hoop count. */
   readonly hoopCount: number
+  /**
+   * Rivets per hoop.
+   *
+   * A hoop is a strip of iron bent into a circle and riveted where its ends
+   * overlap; a cooper then adds more along its length to stop it springing.
+   * They are small, but they are the detail that makes a dark band read as
+   * FORGED IRON rather than as a painted stripe, so they earn their triangles.
+   */
+  readonly rivets: number
   /** Variation seed. The same seed always gives the same barrel. */
   readonly seed: number
 }
@@ -42,8 +52,12 @@ export const woodenBarrelDefaults: WoodenBarrelConfig = {
   height: 1.04,
   radius: 0.41,
   taper: 0.17,
-  staveCount: 13,
-  hoopCount: 4,
+  // Stave and hoop counts come from a reference photograph of a real cask,
+  // not from taste. Thirteen staves left a visibly polygonal silhouette and
+  // four hoops read as too few for the height.
+  staveCount: 17,
+  hoopCount: 6,
+  rivets: 6,
   seed: 7,
 }
 
@@ -132,7 +146,11 @@ export function createModel(overrides: Partial<WoodenBarrelConfig> = {}) {
           // The head seats INSIDE the body, a little back from the end; the
           // collar (chime) the staves leave above it makes a barrel a barrel.
           const seatRadius = endRadius - wallThickness * 0.9
-          const inset = config.height * 0.055
+          // Deep enough to SEE. At 0.055 the collar existed in the geometry
+          // but was too shallow to read at any normal viewing distance, so the
+          // head looked flush with the stave ends — the one silhouette detail
+          // that distinguishes a cask from a bucket.
+          const inset = config.height * 0.07
           const tint = new Color(MEDIEVAL_PALETTE.oakEnd)
           tint.offsetHSL(0, jitter(random, 0.03), jitter(random, 0.03))
 
@@ -156,14 +174,68 @@ export function createModel(overrides: Partial<WoodenBarrelConfig> = {}) {
             tint.copy(MEDIEVAL_PALETTE.iron)
             tint.offsetHSL(0, jitter(random, 0.02), jitter(random, 0.05))
 
+            const bandRadius = seat + config.radius * 0.022
             pieces.push(bandGeometry(
-                seat + config.radius * 0.022,
+                bandRadius,
                 t * half,
                 bandHeight,
                 config.radius * 0.05,
                 config.staveCount,
                 tint,
             ))
+
+            // Rivets. Centred ON the band's outer face, so the inner half is
+            // buried in the iron rather than resting against it — the same
+            // deliberate interpenetration the rest of the kit uses instead of
+            // coplanar faces.
+            // Wide and shallow. The first attempt was long and thin and read
+            // as a row of nails driven through the hoop; a rivet is a domed
+            // button that barely stands off the iron. Only a quarter of the
+            // length shows — the rest is buried in the band.
+            const studLength = config.radius * 0.05
+            const studRadius = config.radius * 0.042
+            // Each hoop's rivets start at their own angle. Aligning them into
+            // vertical columns is the giveaway that a thing was generated.
+            const phase = random() * Math.PI * 2
+            // Rivets are struck iron: their domes are polished by the hammer
+            // and by every hand that has ever moved the cask, so they catch
+            // light the flat band does not. Without this they were the right
+            // shape in the right place and still invisible against the hoop.
+            const studTint = tint.clone()
+            studTint.offsetHSL(0, 0, 0.09)
+            for (let i = 0; i < config.rivets; i += 1) {
+              const angle = phase + (i / config.rivets) * Math.PI * 2
+              // The head FLARES outward, it does not taper. That is what a
+              // hammered rivet actually looks like — the smith spreads the end
+              // over the iron — and it is also the only version that keeps the
+              // radial winding check honest: a stud narrowing outwards tilts
+              // its side normals ~9.5 degrees back towards the barrel axis,
+              // which the check correctly reports as faces pointing inward.
+              const stud = prismGeometry(
+                studRadius * 0.72,
+                studRadius,
+                studLength,
+                4,
+                [0, 0, 0],
+                studTint,
+                // No back face. The rivet's inner end is buried in the band, so
+                // that cap is never visible — the same saving `bandGeometry`
+                // makes on the inside of a hoop. It is not only free: once the
+                // stud is seated deep enough to look right, the buried cap
+                // falls inside the 94% shell the radial check inspects, and a
+                // cap pointing at the axis is exactly what that check hunts.
+                { capBottom: false },
+              )
+              stud.rotateX(Math.PI / 2)
+              stud.rotateY(angle)
+              const seatDepth = bandRadius - studLength * 0.25
+              stud.translate(
+                Math.sin(angle) * seatDepth,
+                t * half,
+                Math.cos(angle) * seatDepth,
+              )
+              pieces.push(stud)
+            }
           }
 
           return mergeColoured(pieces)

@@ -16,6 +16,7 @@ import { Color, type BufferGeometry } from 'three'
 
 import {
   MEDIEVAL_PALETTE,
+  bandGeometry,
   chamferedBoxGeometry,
   createKitModel,
   jitter,
@@ -89,7 +90,13 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
 
       // --- spokes: from hub to felloe, tapering outward ---
       const spokePieces: BufferGeometry[] = []
-      const spokeLength = felloeInner - hubRadius * 0.6
+      // The spoke reaches PAST both ends it joins: it starts inside the hub and
+      // finishes inside the felloe. Sizing it to the exact gap left it merely
+      // touching, and at the extreme ends of the sliders — small radius, thick
+      // tyre — not even that, so the hub and spokes came away from the rim as a
+      // separate floating island.
+      const spokeInner = hubRadius * 0.45
+      const spokeLength = (felloeInner - spokeInner) + config.width * 0.35
       for (let i = 0; i < spokes; i += 1) {
         const angle = (i / spokes) * Math.PI * 2
         const spoke = chamferedBoxGeometry(
@@ -97,7 +104,7 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
           [config.width * 0.3, config.width * 0.38],
           spokeLength,
           config.width * 0.07,
-          [0, spokeLength / 2 + hubRadius * 0.6, 0],
+          [0, spokeLength / 2 + spokeInner, 0],
           oak(),
         )
         // A hand-carved spoke is never exactly centred; we add a small offset.
@@ -139,17 +146,38 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
       }
 
       // --- iron tyre: single-piece hoop wrapping the felloe ---
-      const tyre = latheGeometry([
-        { y: -config.width / 2, radius: config.radius },
-        { y: -config.width / 2 + tyreThickness * 0.3, radius: config.radius + tyreThickness * 0.06 },
-        { y: config.width / 2 - tyreThickness * 0.3, radius: config.radius + tyreThickness * 0.06 },
-        { y: config.width / 2, radius: config.radius },
-      ], segments, [0, 0, 0], iron(), { capTop: false, capBottom: false })
-      const tyreInner = latheGeometry([
-        { y: -config.width / 2, radius: felloeOuter * 0.995 },
-        { y: config.width / 2, radius: felloeOuter * 0.995 },
-      ], segments, [0, 0, 0], iron(-0.04), { capTop: false, capBottom: false })
-      const tyreRings = mergeColoured([tyre, tyreInner])
+      //
+      // A real BAND, not a surface. It used to be a lathe sitting at
+      // `config.radius` with no inner wall, while the felloe stopped a whole
+      // `tyreThickness` further in — so the two never touched. At the default
+      // thickness the gap was small enough that nothing noticed; at the top of
+      // the slider it was 6 cm and an arc of the tyre came away from the wheel
+      // entirely and sat on the ground as its own object.
+      //
+      // `bandGeometry` spans the radius properly: outer face at `config.radius`,
+      // inner face at `config.radius - tyreThickness`, which is exactly where
+      // the felloe's outer face is. It also gets `inner: true`, because unlike
+      // a barrel hoop this band is not wrapped tight around a body — the felloe
+      // is a POLYGON inside a circle, so the gap at the middle of each facet is
+      // visible and needs a surface.
+      const tyre = bandGeometry(
+        config.radius,
+        0,
+        // Wider than the felloe, and wider than the widest felloe piece can
+        // jitter to (±7%). A tyre exactly the felloe's width put its side faces
+        // in the same plane as any piece whose jitter came out near zero, and
+        // those pairs flickered. A real iron tyre is proud of the wood anyway —
+        // it is what takes the wear.
+        config.width * 1.1,
+        tyreThickness * 1.06,
+        segments * 2,
+        iron(),
+        { inner: true },
+      )
+      // A single closed band now, so the separate inner shell that used to
+      // sit against the felloe is gone: the band's own inner face is already
+      // inside `felloeOuter`.
+      const tyreRings = mergeColoured([tyre])
       tyreRings.rotateX(Math.PI / 2)
 
       return {

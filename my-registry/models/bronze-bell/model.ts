@@ -55,7 +55,7 @@ export const bronzeBellDefaults: BronzeBellConfig = {
   seed: 67,
 }
 
-export type BronzeBellParts = 'bell' | 'clapper' | 'yoke'
+export type BronzeBellParts = 'bell' | 'clapper' | 'yoke' | 'frame'
 
 export interface BronzeBellActions {
   /** Rings the bell: starts the pendulum off at a full swing. */
@@ -187,6 +187,68 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
       )
       const yokePieces: BufferGeometry[] = [beam]
 
+      // --- Frame -------------------------------------------------------------
+      // Two uprights and a pair of ground sills. Without them the whole
+      // assembly — bell, clapper, yoke — hangs in mid-air with nothing holding
+      // it, which is exactly the failure the support check exists to catch.
+      // A bell also does not come without its frame: the frame is what lets it
+      // swing, so modelling one without the other is modelling half an object.
+      //
+      // Consumers who want the bare bell for their own tower hide
+      // `parts.frame` — that is what semantic parts are for.
+      const standFoot = -half - config.height * 0.16
+      const legY = (beamY + standFoot) / 2
+      const legHeight = beamY - standFoot
+      const framePieces: BufferGeometry[] = []
+      for (const side of [-1, 1]) {
+        // The upright reaches PAST the rail it carries, so the joint is a real
+        // overlap rather than two faces meeting.
+        framePieces.push(chamferedBoxGeometry(
+          [radius * 0.2, radius * 0.34],
+          [radius * 0.15, radius * 0.26],
+          // Starts INSIDE the sill, not level with it: sharing the sill's
+          // bottom plane put two downward faces in the same place and they
+          // flickered against each other.
+          legHeight + radius * 0.22,
+          radius * 0.03,
+          [side * beamLength * 0.34, legY + radius * 0.19, 0],
+          tint('oak', -0.04),
+          tint('oak', 0.03),
+        ))
+        // Sill: the foot that spreads the load along the ground. It runs across
+        // the swing, because that is the direction a swinging bell tries to
+        // rock its frame.
+        framePieces.push(chamferedBoxGeometry(
+          [radius * 0.26, radius * 1.5],
+          [radius * 0.22, radius * 1.34],
+          radius * 0.22,
+          radius * 0.03,
+          [side * beamLength * 0.34, standFoot + radius * 0.11, 0],
+          tint('oak', -0.1),
+        ))
+        // Brace from sill to upright: the diagonal that stops the frame
+        // folding over, and the only non-vertical line in the silhouette.
+        const braceLength = Math.hypot(beamLength * 0.2, legHeight * 0.42)
+        const brace = chamferedBoxGeometry(
+          [radius * 0.13, radius * 0.2],
+          [radius * 0.1, radius * 0.16],
+          braceLength,
+          radius * 0.025,
+          [0, 0, 0],
+          tint('oak', -0.07),
+        )
+        brace.rotateZ(-side * Math.atan2(beamLength * 0.2, legHeight * 0.42))
+        // Outboard of the uprights, not in front of them. Sitting at +Z put
+        // the diagonal straight across the bell's silhouette, which is the one
+        // thing in the model that has to read cleanly.
+        brace.translate(
+          side * (beamLength * 0.34 + beamLength * 0.09),
+          standFoot + legHeight * 0.21 + radius * 0.1,
+          0,
+        )
+        framePieces.push(brace)
+      }
+
       // Bearings: the two iron ears carrying the rail. They carry it from ABOVE
       // — that is how a real bearing works, and when their top faces were level
       // with the rail's the two ended up coplanar and flickered.
@@ -210,6 +272,7 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
           geometry: mergeColoured([yokePieces[0]!]),
           extras: [{ slot: 'iron' as const, geometry: mergeColoured(yokePieces.slice(1)) }],
         },
+        frame: { slot: 'oak' as const, geometry: mergeColoured(framePieces) },
       }
     },
 

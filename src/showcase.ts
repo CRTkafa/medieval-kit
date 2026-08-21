@@ -314,6 +314,15 @@ export function createShowcase(host: ShowcaseHost, options: ShowcaseOptions = {}
         centre.y + Math.sin(lift) * distance,
         centre.z + Math.cos(orbit) * distance * Math.cos(lift),
       )
+      // The clip planes have to travel with the camera. The viewer sets them
+      // once, when a model is framed; the showcase then moves the camera from a
+      // 0.17 m tankard to a 5.2 m fence without rebuilding that framing, so the
+      // planes it inherited were wrong for most of the run and cut visible
+      // chunks out of the model.
+      const { radius: fitRadius } = host.framing()
+      host.camera.near = Math.max(0.005, distance - fitRadius * 4)
+      host.camera.far = distance + fitRadius * 12
+      host.camera.updateProjectionMatrix()
       // The look-at point sits slightly BELOW the bounding-sphere centre, which
       // lifts the model in frame. Aiming dead centre left the base of tall
       // models sitting under the caption and, on short wide windows, clipped

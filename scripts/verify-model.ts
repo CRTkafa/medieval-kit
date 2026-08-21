@@ -19,6 +19,7 @@
 import { Box3, Mesh, MeshStandardMaterial, Vector3, type Object3D } from 'three/webgpu'
 
 import { findZFighting } from './zfight.ts'
+import { findFloating } from './support.ts'
 import { MODEL_META } from '../my-registry/meta.ts'
 import { createModel as createGauge } from '@/models/scifi-kit/pressure-gauge/model.ts'
 import { createModel as createBarrel } from '@/models/medieval-kit/wooden-barrel/model.ts'
@@ -351,17 +352,23 @@ const CASES: readonly Case[] = [
     // shellRatio is high: the bell is HOLLOW and its inner shell's normals
     // deliberately face the axis. A lower threshold mistook it for the "outer
     // shell" and rightly failed — what we want here is only the outer surface.
-    parts: 3, ownSlot: 'iron', borrowSlot: 'brass', radial: true, radialPart: 'bell',
+    // The frame makes this bigger and adds a part. It is not optional: without
+    // it the bell, the clapper and the yoke hang in mid-air with nothing
+    // holding them, which the support check rejects — correctly.
+    parts: 4, ownSlot: 'iron', borrowSlot: 'brass', radial: true, radialPart: 'bell',
     shellRatio: 0.93, variants: [{ height: 0.6 }, { yoke: 1 }],
-    maxSize: [0.52, 0.55, 0.42] },
+    maxSize: [0.72, 0.85, 0.5] },
   { id: 'iron-lantern', make: as(createLantern), patch: { sides: 8, flameHeight: 0.3 },
     parts: 4, ownSlot: 'glass', borrowSlot: 'iron',
     variants: [{ sides: 4 }, { flicker: 0 }, { radius: 0.12 }],
     maxSize: [0.2, 0.36, 0.2] },
   { id: 'tavern-sign', make: as(createSign), patch: { plankCount: 4, width: 0.8 },
-    parts: 2, ownSlot: 'iron', borrowSlot: 'oak',
-    variants: [{ plankCount: 1 }, { drop: 0.3 }, { reach: 1 }],
-    maxSize: [0.6, 0.85, 0.75] },
+    // Now a standing signpost rather than a wall bracket, so it is much taller
+    // and carries a third part. A wall-mounted version floated: the model did
+    // not contain the wall it was bolted to.
+    parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
+    variants: [{ plankCount: 1 }, { drop: 0.3 }, { reach: 1 }, { postHeight: 3.2 }],
+    maxSize: [0.95, 3.7, 1.0] },
   { id: 'leather-book', make: as(createBook), patch: { bands: 5, clasps: 2 },
     parts: 3, ownSlot: 'brass', borrowSlot: 'leather', closed: true,
     variants: [{ bands: 0 }, { clasps: 0 }, { thickness: 0.14 }],
@@ -421,6 +428,30 @@ for (const testCase of CASES) {
       .filter(Boolean)
     expect(`dimensions within expected limits${over.length ? ' — EXCEEDS: ' + over.join(', ') : ''}`, over.length === 0)
   }
+  // --- Nothing may float ---------------------------------------------------
+  //
+  // The kit's hardest structural rule and the last one to get a test. Every
+  // other check here looks at surfaces — winding, coplanarity, triangle counts
+  // — and none of them can see a piece of the model hanging in the air with
+  // nothing holding it up. A chest lid separated from its chest passed all of
+  // them.
+  //
+  // The check runs on the CONFIGURED model as well as the default one, because
+  // a slider is allowed to change proportions and is not allowed to take the
+  // object apart. That distinction found real breakage: at the far end of its
+  // sliders the cart wheel shed an arc of its tyre onto the floor, the ladder's
+  // top rungs floated between rails that splayed the other way from what the
+  // rung length assumed, and the basket's fruit hung level with the rim of a
+  // basket deep enough to swallow it.
+  {
+    const report = findFloating(model.root as never, { resolution: 64 })
+    const detail = report.floating
+      .map((piece) => `${piece.parts.join('+')} @${piece.clearance}m`)
+      .join(', ')
+    expect(`nothing floats${detail ? ' — FLOATING: ' + detail : ''}`,
+      report.floating.length === 0)
+  }
+
   expect(`${testCase.parts} semantic parts`, Object.keys(model.parts).length === testCase.parts)
 
   // --- Does the metadata really describe the model? ------------------------

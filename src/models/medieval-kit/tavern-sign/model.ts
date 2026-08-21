@@ -25,6 +25,7 @@ import {
   createTinter,
   jitter,
   mergeColoured,
+  taperedBoxGeometry,
 } from '../core/index.ts'
 
 export interface TavernSignConfig {
@@ -34,6 +35,8 @@ export interface TavernSignConfig {
   readonly height: number
   /** How far the bracket projects from the wall (metres). */
   readonly reach: number
+  /** Height of the post the arm is bolted to (metres). */
+  readonly postHeight: number
   /** Length of the hanging chain (metres). */
   readonly drop: number
   /** Number of planks. */
@@ -44,9 +47,10 @@ export interface TavernSignConfig {
 }
 
 export const tavernSignDefaults: TavernSignConfig = {
-  width: 0.54,
-  height: 0.38,
+  width: 0.72,
+  height: 0.52,
   reach: 0.62,
+  postHeight: 2.15,
   drop: 0.12,
   plankCount: 3,
   damping: 0.42,
@@ -55,7 +59,7 @@ export const tavernSignDefaults: TavernSignConfig = {
 
 // The chains are NOT a separate part: they have to swing together with the
 // board, so they live as its `extras` body.
-export type TavernSignParts = 'bracket' | 'board'
+export type TavernSignParts = 'bracket' | 'board' | 'post'
 
 export interface TavernSignActions {
   /** Pushes the sign: wind, or someone coming out of the door. */
@@ -85,6 +89,36 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
 
       // --- Bracket -----------------------------------------------------------
       // Sits against the wall at Z zero and reaches out along +Z.
+      // --- Post ------------------------------------------------------------
+      // The bracket used to be bolted to a wall the model did not contain, so
+      // the whole sign floated in the air. A standing signpost is
+      // period-correct — plenty of inn signs were on posts rather than walls —
+      // and it is the version that can actually be dropped into a scene,
+      // because it holds itself up.
+      const postWidth = config.reach * 0.1
+      const postTop = pivotY + config.reach * 0.1
+      const postBase = postTop - config.postHeight
+      const timber: BufferGeometry[] = [chamferedBoxGeometry(
+        [postWidth, postWidth],
+        [postWidth * 0.82, postWidth * 0.82],
+        config.postHeight,
+        postWidth * 0.12,
+        [0, (postTop + postBase) / 2, 0],
+        tint('oak', -0.06),
+        tint('oak', 0.04),
+      )]
+      // Soil mound at the foot, the same device the fence uses: it explains how
+      // the post stays upright and hides where it meets the ground.
+      const soil = tint('oak', -0.2)
+      soil.offsetHSL(0, -0.28, 0)
+      timber.push(taperedBoxGeometry(
+        [postWidth * 3.2, postWidth * 3.2],
+        [postWidth * 1.6, postWidth * 1.6],
+        postWidth * 1.1,
+        [0, postBase + postWidth * 0.4, 0],
+        soil,
+      ))
+
       const iron: BufferGeometry[] = []
       iron.push(boxGeometry(
         [bar * 4.4, config.height * 0.9, bar * 1.6],
@@ -121,16 +155,54 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       curl.translate(0, armY + bar * 0.5, config.reach)
       iron.push(curl)
 
+      // Cross-bar at the end of the arm.
+      //
+      // Without it the board could not be attached at all: the arm is a single
+      // bar on the model's centre line, roughly 4 cm wide, while the board
+      // hangs from two chains set `width * 0.8` apart. The chains passed the
+      // arm on either side and touched nothing, so the entire board — planks,
+      // battens, chains and all — was a separate object hanging in the air.
+      // A real bracket has this piece for exactly the same reason.
+      iron.push(boxGeometry(
+        [hangX * 2 + bar * 2.4, bar * 1.2, bar * 1.5],
+        [0, armY + bar * 0.5, config.reach * 0.86],
+        tint('iron', 0.03, 0.7),
+      ))
+
       // --- Chains ----------------------------------------------------------------
       // They have to swing TOGETHER with the board, hence the board's `extras`
       // body. Were they a separate part, the chain would stay bolt upright
       // while the board swung.
+      //
+      // The link COUNT is derived from the drop, not fixed. It used to be three
+      // links whose radius scaled with `config.drop`, which is scale-invariant
+      // in the worst way: the spacing between links was always 0.5·drop while
+      // their diameter was always 0.32·drop, so the chain never actually
+      // interlocked at any setting. At the default drop the gap was small
+      // enough that nothing caught it; at the top of the slider the board came
+      // off the bracket completely.
+      //
+      // Now the link is sized from the iron stock and enough of them are made
+      // to overlap across whatever drop is asked for.
+      // The COUNT is fixed and the RADIUS is derived, not the other way round.
+      // Deriving the count from `drop` guaranteed the links overlap, but it also
+      // made the triangle count depend on a continuous slider — which meant the
+      // showcase could not morph this model and had to fall back to visibly
+      // stepped rebuilds. Fixing the count and growing the links instead keeps
+      // both properties: always interlocked, always the same topology.
+      const linkCount = 5
+      const linkRadius = Math.max(bar * 0.9, (config.drop / (linkCount - 1)) * 0.62)
       const links: BufferGeometry[] = []
       for (const side of [-1, 1]) {
-        const count = 3
+        const count = linkCount
         for (let i = 0; i < count; i += 1) {
-          const y = -config.drop * ((i + 0.5) / count)
-          const ring = bandGeometry(config.drop * 0.16, 0, bar * 0.6, bar * 0.35, 6,
+          // The first link sits INSIDE the arm and the last inside the board's
+          // ear, so the chain is a real connection rather than two things at
+          // roughly the same height. Spacing the links evenly across the drop
+          // (the old `(i + 0.5) / count`) left the top link short of the arm by
+          // drop/6, which detached the entire board.
+          const y = -config.drop * (i / Math.max(1, count - 1))
+          const ring = bandGeometry(linkRadius, 0, bar * 0.6, bar * 0.35, 6,
             tint('iron', jitter(random, 0.05), 0.7), { inner: true })
           // Successive links must pass through at right angles — that is what a
           // chain is.
@@ -175,6 +247,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       }
 
       return {
+        post: { slot: 'oak' as const, geometry: mergeColoured(timber) },
         bracket: { slot: 'iron' as const, geometry: mergeColoured(iron) },
         board: {
           slot: 'oak' as const,

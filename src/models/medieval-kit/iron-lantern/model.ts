@@ -101,8 +101,11 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
       const step = (Math.PI * 2) / sides
       for (let i = 0; i < sides; i += 1) {
         const a = i * step
+        // The post runs down INTO the base plate. It used to stop 4% of the
+        // height short of it, which left the whole cage — and the handle on top
+        // of it — as an island hovering over its own base.
         const post = boxGeometry(
-          [bar, glassTop - glassBottom + config.height * 0.1, bar * 1.15],
+          [bar, glassTop - glassBottom + config.height * 0.34, bar * 1.15],
           [0, 0, 0],
           tint('iron', jitter(random, 0.05), 0.7),
         )
@@ -110,7 +113,7 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
         post.rotateY(a)
         post.translate(
           Math.sin(a) * config.radius * 0.97,
-          (glassBottom + glassTop) / 2,
+          (glassBottom + glassTop) / 2 - config.height * 0.09,
           Math.cos(a) * config.radius * 0.97,
         )
         iron.push(post)
@@ -133,6 +136,9 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
       // --- Oil font and wick ------------------------------------------------------
       const fontTop = glassBottom + config.height * 0.16
       const font = latheGeometry([
+        // Seated in the base plate rather than floating above it: the font and
+        // the wick it carries were a second detached island.
+        { y: -half + config.height * 0.06, radius: config.radius * 0.44 },
         { y: glassBottom - config.height * 0.02, radius: config.radius * 0.5 },
         { y: glassBottom + config.height * 0.06, radius: config.radius * 0.62 },
         { y: fontTop, radius: config.radius * 0.44 },
@@ -166,7 +172,10 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
       )]
       // The tongue joining the hoop to the flue.
       handle.push(boxGeometry(
-        [bar * 1.1, config.height * 0.1, bar],
+        // Wide enough to reach the ring it carries. A tongue the width of the
+        // bar passed straight through the middle of the ring without touching
+        // it, so the handle hung above the lantern unattached.
+        [config.radius * 0.82, config.height * 0.1, bar],
         [0, half + config.height * 0.045, 0],
         tint('iron', 0.02, 0.7),
       ))

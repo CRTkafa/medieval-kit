@@ -59,7 +59,8 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       radius: { type: 'number', label: 'Radius', min: 0.15, max: 0.9, step: 0.01, unit: 'm' },
       taper: { type: 'number', label: 'End taper', min: 0, max: 0.34, step: 0.01 },
       staveCount: { type: 'number', label: 'Stave count', min: 6, max: 28, step: 1 },
-      hoopCount: { type: 'number', label: 'Hoop count', min: 0, max: 6, step: 1 },
+      hoopCount: { type: 'number', label: 'Hoop count', min: 0, max: 8, step: 1 },
+      rivets: { type: 'number', label: 'Rivets per hoop', min: 0, max: 8, step: 1 },
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
     materialSlots: ['oak', 'iron'],
@@ -325,7 +326,7 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
     materialSlots: ['brass', 'iron', 'oak'],
-    parts: ['bell', 'clapper', 'yoke'],
+    parts: ['bell', 'clapper', 'yoke', 'frame'],
   },
   'iron-lantern': {
     title: 'Iron Lantern',
@@ -360,7 +361,7 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
     materialSlots: ['oak', 'iron'],
-    parts: ['bracket', 'board'],
+    parts: ['post', 'bracket', 'board'],
   },
   'leather-book': {
     title: 'Leather Book',

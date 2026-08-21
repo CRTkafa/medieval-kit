@@ -110,10 +110,17 @@ export function createModel(overrides: Partial<GlassPhialConfig> = {}) {
       if (fill > 0.02) {
         const surfaceY = bodyBottom + config.height * 0.04
           + (bodyTop + neckLength * 0.4 - bodyBottom - config.height * 0.04) * fill
-        const inner = profile
-          .filter((level) => level.y < surfaceY)
-          .map((level) => ({ y: level.y, radius: level.radius * 0.88 }))
-        const radiusAt = (y: number): number => {
+        // A FIXED number of levels, sampled between the bottle's floor and the
+        // liquid surface. Filtering the bottle profile by height was the
+        // obvious way to do it and it made the vertex count depend on `fill` —
+        // which meant the showcase could not morph this model at all and fell
+        // back to rebuilding it in visible steps.
+        const steps = 5
+        const inner = Array.from({ length: steps }, (_, i) => {
+          const y = profile[0]!.y + (surfaceY - profile[0]!.y) * (i / steps)
+          return { y, radius: radiusAt(y) }
+        })
+        function radiusAt(y: number): number {
           for (let i = 1; i < profile.length; i += 1) {
             const a = profile[i - 1]!
             const b = profile[i]!

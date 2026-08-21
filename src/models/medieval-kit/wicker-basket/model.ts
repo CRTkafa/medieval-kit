@@ -192,16 +192,25 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
         ))
 
         // Placement: golden-angle spiral plus a distance growing with the square
-        // root. The fruit forms a dome level with the mouth, because a full
-        // basket does not end flat.
+        // root, and — critically — the heap RESTS ON THE BASE.
+        //
+        // It used to be positioned relative to the rim, which is wrong for any
+        // basket deeper than a fruit: the produce hung near the mouth with a
+        // gap underneath it. Fruit sits at the bottom and piles up from there;
+        // if there is more of it than the basket holds, the heap rises past
+        // the rim, which is also what really happens.
         const angle = i * 2.399963
         const ring = Math.sqrt((i + 0.4) / count)
-        const spread = config.radius * 0.62 * ring
+        const inner = Math.max(size, bottomRadius * 0.92 - size * 0.6)
+        const spread = inner * ring
+        const layer = Math.floor(i / Math.max(3, Math.round(count * 0.55)))
         fruit.rotateX(jitter(random, 0.6))
         fruit.rotateZ(jitter(random, 0.6))
         fruit.translate(
           Math.sin(angle) * spread,
-          half - size * (0.15 + ring * 0.75) + jitter(random, size * 0.1),
+          // Base top + one radius = resting on the floor of the basket.
+          -half + config.height * 0.05 + size * (0.92 + layer * 1.5)
+            - ring * size * 0.28 + jitter(random, size * 0.08),
           Math.cos(angle) * spread,
         )
         contents.push(fruit)

@@ -117,6 +117,10 @@ export function createModel(overrides: Partial<LinenSackConfig> = {}) {
       // a sack from a sealed bag: a tied mouth always has some cloth to spare.
       const collarPieces: BufferGeometry[] = []
       const flare: Level[] = [
+        // Starts BELOW the body's top, not above it. It used to begin at
+        // neckY − 0.02·h while the body ended at neckY − 0.06·h, so the collar
+        // and the cord were a separate island hanging over the sack.
+        { y: bodyTop - config.height * 0.03, radius: config.radius * 0.36 },
         { y: neckY - config.height * 0.02, radius: config.radius * 0.3 },
         { y: neckY + config.height * 0.03, radius: config.radius * 0.27 },
         { y: half - config.height * 0.02, radius: config.radius * 0.46 },

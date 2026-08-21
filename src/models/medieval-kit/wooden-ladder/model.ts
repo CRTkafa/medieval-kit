@@ -56,6 +56,24 @@ export function createModel(overrides: Partial<WoodenLadderConfig> = {}) {
       // The rails converge towards the top; this single detail stops the ladder
       // from being "two boards" and makes it a ladder.
       const lean = half * config.taper
+      /**
+       * Half-gap between the rails at height fraction `t`.
+       *
+       * This exists because the rung length and the rail placement used to be
+       * two separate expressions that disagreed. The rails are built upright
+       * and then rotated about Z, so at height y each one sits at
+       * `side·half − y·sin(θ)`; the rung length assumed `half − lean·t`, which
+       * narrows where the real rails widen. At the default taper the error was
+       * small enough to hide. At taper 0.4 on a 5 m ladder the top rungs came
+       * out half the length of the gap they were supposed to span and floated
+       * between the rails.
+       *
+       * Both now read from here, so they cannot drift apart again.
+       */
+      const railHalfAt = (t: number): number => {
+        const y = -config.height / 2 + t * config.height
+        return half - y * Math.sin(lean / config.height)
+      }
       const rails = [-1, 1].map((side) => {
         const rail = chamferedBoxGeometry(
         [railThickness, railThickness * 1.35],
@@ -78,7 +96,7 @@ export function createModel(overrides: Partial<WoodenLadderConfig> = {}) {
         const y = -config.height / 2 + t * config.height
         // The rung is a little LONGER than the rail gap at that height, so that
         // its ends stay inside the rails.
-        const span = (half - lean * t) * 2 + railThickness * 0.9
+        const span = railHalfAt(t) * 2 + railThickness * 0.9
         rungs.push(chamferedBoxGeometry(
         [span, railThickness * 1.05],
         [span, railThickness * 1.05],
