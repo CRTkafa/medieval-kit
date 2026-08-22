@@ -285,7 +285,7 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       },
       headLength: { type: 'number', label: 'Bundle length', min: 0.2, max: 0.55, step: 0.01 },
       tieRadius: { type: 'number', label: 'Binding radius', min: 0.03, max: 0.09, step: 0.002, unit: 'm' },
-      tipRadius: { type: 'number', label: 'Tip radius', min: 0.04, max: 0.2, step: 0.005, unit: 'm' },
+      tipRadius: { type: 'number', label: 'Tip radius', min: 0.04, max: 0.26, step: 0.005, unit: 'm' },
       bristles: { type: 'number', label: 'Bristle count', min: 8, max: 60, step: 2 },
       bindings: { type: 'number', label: 'Binding count', min: 0, max: 5, step: 1 },
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },

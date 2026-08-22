@@ -62,10 +62,17 @@ export interface StrawBroomConfig {
 export const strawBroomDefaults: StrawBroomConfig = {
   length: 1.2,
   shaftRadius: 0.018,
-  headLength: 0.42,
+  // Measured from the binding down, the old default left only 36% of the
+  // broom as bundle against roughly half in the reference -- the head looked
+  // stuck on the end of an over-long stick.
+  headLength: 0.52,
   tieRadius: 0.058,
-  tipRadius: 0.102,
-  bristles: 32,
+  // A 20-degree spray, not a 5-degree one. Derived rather than guessed:
+  // atan((tip - tie) / span), which at the old 0.102 came to five degrees and
+  // gave a narrow cone. The reference fans out until the spread at the sweeping
+  // end is comparable to the length of the bundle itself.
+  tipRadius: 0.17,
+  bristles: 46,
   bindings: 3,
   seed: 59,
 }
@@ -130,10 +137,30 @@ export function createModel(overrides: Partial<StrawBroomConfig> = {}) {
           // flattening the bundle. (The flat fan broom is a 19th-century Shaker
           // invention, an anachronism here.)
           const wear = 1 + 0.1 * Math.cos(angle - faceAngle)
-          const length = (span / Math.cos(flare)) * wear * (0.97 + random() * 0.06)
+          // Lengths vary by nearly a third, not by three percent.
+          //
+          // At +-0.03 every twig finished within a few millimetres of its
+          // neighbours and the bundle ended in a straight cut across the
+          // bottom. That single edge is what made the head read as a lampshade
+          // pushed onto a stick: no bundle of cut birch ends level, and the
+          // ragged, feathered tip is most of what identifies a besom in a
+          // photograph. Nothing is left floating by this -- every twig is held
+          // at the tie, and it is only the free end that varies.
+          // The spread runs DOWN from 1.0, never above it. Centring it on 1.0
+          // let the longest twigs overshoot the sweeping end and the model came
+          // out 1.32 m for a declared length of 1.2 -- caught by the size
+          // guard, and a real inconsistency, since `length` is supposed to mean
+          // the whole broom. The span is the longest twig; the rest fall short
+          // of it by up to a third.
+          const length = (span / Math.cos(flare)) * wear * (0.68 + random() * 0.32)
 
-          const width = config.shaftRadius * (1.7 + random() * 0.28)
-          const depth = config.shaftRadius * (0.78 + random() * 0.16)
+          // Narrower, and more of them. At 1.7 shaft radii each sheaf was a
+          // 31 mm slat, and thirty-two slats read as a fan of laths rather
+          // than as a bundle of twigs. Trading width for count keeps roughly
+          // the same mass in the bundle while making the individual pieces
+          // read at the right scale.
+          const width = config.shaftRadius * (1.05 + random() * 0.24)
+          const depth = config.shaftRadius * (0.6 + random() * 0.14)
           // The cross-section TAPERS DOWNWARDS. Previously it was exactly the
           // reverse — the lower end was both wider and thicker, i.e. the bundle
           // swelled towards the bottom; whereas the sweeping end wears thin
