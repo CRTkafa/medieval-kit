@@ -17,8 +17,8 @@
 import type { BufferGeometry } from 'three'
 
 import {
+  arcBarGeometry,
   bandGeometry,
-  bendGeometry,
   boxGeometry,
   chamferedBoxGeometry,
   createKitModel,
@@ -51,7 +51,10 @@ export const tavernSignDefaults: TavernSignConfig = {
   height: 0.52,
   reach: 0.62,
   postHeight: 2.15,
-  drop: 0.12,
+  // Long enough to see the chain. At 0.12 the board hung almost against the
+  // bracket and the five links that connect them were a smudge; the chain is
+  // half of what makes a hanging sign read as hanging.
+  drop: 0.28,
   plankCount: 3,
   damping: 0.42,
   seed: 73,
@@ -95,7 +98,11 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       // period-correct — plenty of inn signs were on posts rather than walls —
       // and it is the version that can actually be dropped into a scene,
       // because it holds itself up.
-      const postWidth = config.reach * 0.1
+      // A signpost is a structural timber, not a stake. At reach*0.1 it came
+      // out 62 mm square carrying a 0.72 m board two metres up -- thinner than
+      // the board is thick, and part of the same across-the-kit habit of
+      // under-sizing timber that the bench, the table and the fence all share.
+      const postWidth = config.reach * 0.19
       const postTop = pivotY + config.reach * 0.1
       const postBase = postTop - config.postHeight
       const timber: BufferGeometry[] = [chamferedBoxGeometry(
@@ -134,25 +141,37 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       // Brace: the curved support tying the arm back to the wall. Without it
       // the arm looks like it is hanging in the air and the eye's question of
       // "what is holding this up" goes unanswered.
-      const braceLength = config.reach * 0.72
-      const brace = boxGeometry(
-        [bar * 1.1, braceLength, bar * 1.1],
-        [0, braceLength / 2, 0],
+      // A real quarter-arc, not a sheared box.
+      //
+      // This and the curl below were both `boxGeometry` put through
+      // `bendGeometry`, and a box has two levels in Y. `bendGeometry` cannot
+      // bend two levels -- it shears them -- so neither piece was ever a
+      // curve. The sheared curl is what pushed the bracket's top to 0.579
+      // while the post it is bolted to ends at 0.442: an arm standing above
+      // its own post, which is why the sign read as broken rather than as
+      // ironwork.
+      //
+      // `arcBarGeometry` sweeps a real arc. Its ends are placed rather than
+      // corrected: one inside the post, one inside the arm.
+      const braceRadius = config.reach * 0.45
+      const brace = arcBarGeometry(
+        braceRadius, bar * 1.2, -Math.PI / 2, 0, 7, [0, 0, 0],
         tint('iron', -0.02, 0.7),
       )
-      bendGeometry(brace, -1.15 / braceLength)
-      brace.rotateX(Math.PI / 4)
-      brace.translate(0, armY - config.height * 0.42, bar)
+      // Built in XY; -90 degrees about Y carries +X into +Z, standing the arc
+      // in the plane the bracket occupies.
+      brace.rotateY(-Math.PI / 2)
+      brace.translate(0, armY + bar * 0.5, bar)
       iron.push(brace)
       // The curl at the end of the arm: the signature of forged iron.
-      const curl = boxGeometry(
-        [bar * 0.9, config.reach * 0.3, bar * 0.9],
-        [0, config.reach * 0.15, 0],
+      const curlRadius = config.reach * 0.11
+      const curl = arcBarGeometry(
+        curlRadius, bar * 0.9, -2.6, 1.9, 9, [0, 0, 0],
         tint('iron', 0.06, 0.7),
       )
-      bendGeometry(curl, 5.2 / (config.reach * 0.3))
-      curl.rotateX(Math.PI / 2)
-      curl.translate(0, armY + bar * 0.5, config.reach)
+      curl.rotateY(-Math.PI / 2)
+      // Hung under the end of the arm, where a smith finishes the bar.
+      curl.translate(0, armY + bar * 0.5 - curlRadius, config.reach - bar)
       iron.push(curl)
 
       // Cross-bar at the end of the arm.
@@ -204,11 +223,21 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
           const y = -config.drop * (i / Math.max(1, count - 1))
           const ring = bandGeometry(linkRadius, 0, bar * 0.6, bar * 0.35, 6,
             tint('iron', jitter(random, 0.05), 0.7), { inner: true })
+          // Each link is indexed a little differently about its own axis.
+          //
+          // The links are six-sided and they interlock, so consecutive ones
+          // share space; with every link built at the same phase their facets
+          // came out parallel and, where they overlapped, coplanar. Lengthening
+          // the drop made this visible because the links grew with it -- radius
+          // 0.0195 to 0.0434 -- and began to overlap in earnest. The offset is
+          // deterministic rather than random so the seeded stream is untouched,
+          // and a real chain does not index its links either.
+          ring.rotateY(i * 0.37 + side * 0.19)
           // Successive links must pass through at right angles — that is what a
           // chain is.
           ring.rotateX(i % 2 === 0 ? Math.PI / 2 : 0)
           ring.rotateZ(i % 2 === 0 ? 0 : Math.PI / 2)
-          ring.translate(side * hangX, y, config.reach * 0.86 * (side === 0 ? 1 : 1))
+          ring.translate(side * hangX, y, 0)
           links.push(ring)
         }
       }
@@ -224,7 +253,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
           [config.width * 0.997, config.height * 0.05],
           plankHeight * 0.94,
           config.height * 0.012,
-          [0, y, config.reach * 0.86],
+          [0, y, 0],
           tint('oak', jitter(random, 0.05)),
         ))
       }
@@ -233,7 +262,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       for (const side of [-1, 1]) {
         board.push(boxGeometry(
           [config.width * 0.07, config.height * 0.94, config.height * 0.045],
-          [side * config.width * 0.36, -config.drop - config.height / 2, config.reach * 0.86 - config.height * 0.045],
+          [side * config.width * 0.36, -config.drop - config.height / 2, -config.height * 0.045],
           tint('oak', -0.09),
         ))
       }
@@ -241,7 +270,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       for (const side of [-1, 1]) {
         links.push(boxGeometry(
           [bar * 1.2, config.drop * 0.4, bar * 1.4],
-          [side * hangX, -config.drop - config.drop * 0.06, config.reach * 0.86],
+          [side * hangX, -config.drop - config.drop * 0.06, 0],
           tint('iron', 0.04, 0.7),
         ))
       }
@@ -252,7 +281,21 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
         board: {
           slot: 'oak' as const,
           geometry: mergeColoured(board),
-          origin: [0, pivotY, 0] as const,
+          // The origin is the CROSS-BAR, not the post.
+          //
+          // Everything in this part is authored hanging from the bar at
+          // z = reach * 0.86, but the origin sat at z = 0 on the post's centre
+          // line -- half a metre away. At rest that is invisible; the moment
+          // the swing action runs, the whole assembly rotates about a point it
+          // does not hang from, and the tops of the chains sweep off the bar
+          // they are supposed to be looped through. The support audit caught it
+          // as a detached board the instant the sheared curl stopped
+          // accidentally filling the gap.
+          //
+          // Moving the origin means the geometry above is written relative to
+          // the bar, which is why every `config.reach * 0.86` in this part is
+          // now zero. Same place in the world, correct axis to turn about.
+          origin: [0, pivotY, config.reach * 0.86] as const,
           extras: [{ slot: 'iron' as const, geometry: mergeColoured(links) }],
         },
       }
