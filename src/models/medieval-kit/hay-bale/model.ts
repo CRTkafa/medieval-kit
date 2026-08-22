@@ -54,7 +54,7 @@ export const hayBaleDefaults: HayBaleConfig = {
   length: 0.88,
   height: 0.42,
   depth: 0.46,
-  ropeCount: 2,
+  ropeCount: 3,
   wisps: 34,
   rough: 1,
   seed: 47,
@@ -93,18 +93,30 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
         const x = -halfLength + config.length * t
         // The ends round off: the first and last hoop are clearly narrower, or
         // else the bundle looks like a pipe cut off at both ends.
-        const endFade = 1 - Math.pow(Math.abs(t - 0.5) * 2, 6) * 0.34
+        // 0.12, not 0.34. A bound bale has broad, nearly flat ends -- the
+        // cord holds the straw square against them. Pulling them in by a third
+        // turned the silhouette into a cinched sack, and combined with the
+        // roughening below there was no cylinder left to recognise.
+        const endFade = 1 - Math.pow(Math.abs(t - 0.5) * 2, 6) * 0.12
         return { y: x, radius: 0.5 * cinch(x) * endFade * (1 + jitter(random, 0.05)) }
       })
 
-      const body = latheGeometry(levels, 7, [0, 0, 0], tint('straw', -0.06, 1.6), {
+      // Thirteen segments, not seven. The body carries the only strong shape
+      // in the model and a seven-sided prism does not read as round.
+      const body = latheGeometry(levels, 13, [0, 0, 0], tint('straw', -0.06, 1.6), {
         colourTop: tint('strawPale', 0.02, 1.6),
       })
       // Built upright and then laid down: the lathe helper works around the Y
       // axis, whereas the bundle runs along X.
       body.rotateZ(Math.PI / 2)
       body.scale(1, config.height, config.depth)
-      roughenGeometry(body, config.height * 0.045 * config.rough, { salt: 11 })
+      // The displacement was 0.045 of the height -- 19 mm against a radius of
+      // 210 mm, nearly a tenth. Straw is not flat, but a tenth of the radius is
+      // not texture, it is deformation: the bale came out as an amorphous lump
+      // with no axis. The stray stalks are what should carry the impression of
+      // loose straw, and they can only do that against a body that holds its
+      // shape.
+      roughenGeometry(body, config.height * 0.016 * config.rough, { salt: 11 })
 
       // --- Stray stalks ----------------------------------------------------
       // The loose stalks on the surface and the stem ends spraying out of the
@@ -117,7 +129,9 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
 
       for (let i = 0; i < wispCount; i += 1) {
         const fromEnd = i % 3 === 0
-        const length = config.height * (fromEnd ? 0.2 + random() * 0.24 : 0.13 + random() * 0.17)
+        // Shorter on the sides. At up to 0.30 of the height these read as
+        // spikes driven into the bale rather than as stalks working loose.
+        const length = config.height * (fromEnd ? 0.16 + random() * 0.2 : 0.06 + random() * 0.09)
         const wisp = boxGeometry(
           [length, thickness * (0.6 + random() * 0.9), thickness],
           [length * 0.3, 0, 0],   // root behind the origin: buried in the body
@@ -158,10 +172,23 @@ export function createModel(overrides: Partial<HayBaleConfig> = {}) {
       // than from four bars. It goes through the same squashing transform, so
       // it sits exactly on the bundle's cross-section.
       const ropePieces: BufferGeometry[] = []
-      const cord = config.height * 0.03
+      const cord = config.height * 0.045
       for (const x of ropeXs) {
         // Free-standing hoop: it needs its inner face too, or it is not solid.
-        const ring = bandGeometry(0.5 * cinch(x) + cord * 0.35, 0, cord * 1.5, cord, 7,
+        // Radius and thickness in NORMALISED units, width in metres.
+        //
+        // The ring is built in the same radius-1 space as the body and squashed
+        // by the same transform, so anything radial has to be expressed the way
+        // the body is. The old line added `cord * 0.35` -- 4 mm in metres -- to
+        // a normalised 0.5, which left the hoop standing 0.0044 proud before
+        // the squash and 1.85 mm after it. The cords were modelled, merged,
+        // exported and invisible in every render.
+        //
+        // The cord sits in the groove it pulls: its outer face comes back out
+        // to just under where the bale's surface would be without the cinch,
+        // which is what a tie does.
+        const outer = 0.5 * (cinch(x) + 0.09)
+        const ring = bandGeometry(outer, 0, cord * 1.8, 0.5 * 0.06, 9,
           tint('cloth', -0.07), { inner: true })
         ring.rotateZ(Math.PI / 2)
         ring.scale(1, config.height, config.depth)
