@@ -16,8 +16,8 @@
 import type { BufferGeometry } from 'three'
 
 import {
+  arcBarGeometry,
   bandGeometry,
-  bendGeometry,
   boxGeometry,
   createKitModel,
   createTinter,
@@ -45,8 +45,8 @@ export interface OakTankardConfig {
 }
 
 export const oakTankardDefaults: OakTankardConfig = {
-  height: 0.175,
-  radius: 0.047,
+  height: 0.162,
+  radius: 0.056,
   taper: 0.05,
   staveCount: 10,
   hoopCount: 2,
@@ -109,33 +109,39 @@ export function createModel(overrides: Partial<OakTankardConfig> = {}) {
       // --- Handle --------------------------------------------------------------
       let handle: BufferGeometry | undefined
       if (config.handle >= 0.5) {
+        // Built as a real arc, not as a bent box.
+        //
+        // The previous version made a flat `boxGeometry` strap and put it
+        // through `bendGeometry`, then pushed it clear of the body by a
+        // hand-derived offset: `(1 - cos(span/2 * k)) / k`. Measured, the
+        // result was a handle whose outermost point stood 7 mm proud of a
+        // body 47 mm in radius, with the rest of it buried in the stave wall.
+        // There was no finger gap at all -- it read as a plank glued to the
+        // side, which is exactly what it was. The offset formula did not
+        // describe what `bendGeometry` actually does to the geometry.
+        //
+        // So this does not compute a correction for a curve it cannot see.
+        // `arcBarGeometry` produces the arc directly, and the arc is specified
+        // by the two things that actually matter: where its ends land, and how
+        // far its belly stands off the body.
         const span = config.height * 0.72
-        const strap = boxGeometry(
-          [config.radius * 0.3, span, thickness * 1.1],
+        // Ends land INSIDE the stave wall, so the joint is an overlap.
+        const endDepth = config.radius - thickness * 1.1
+        const arcRadius = Math.hypot(span / 2, endDepth)
+        const halfAngle = Math.atan2(span / 2, endDepth)
+        const strap = arcBarGeometry(
+          arcRadius,
+          thickness * 1.5,
+          -halfAngle,
+          halfAngle,
+          7,
           [0, 0, 0],
           tint('oak', -0.05),
         )
-        // The flat strap curves outwards away from the body. Because the centre
-        // of the curve is at the origin, both ends come back towards the body —
-        // that is exactly where the impression of a handle gripping the body
-        // comes from.
-        bendGeometry(strap, -2.05 / span)
-        // The offset is found by calculation, not by eye: the bend leaves the
-        // midpoint of the arc in place and pulls its ENDS back, so if the
-        // middle of the handle is not pushed far enough away from the body it
-        // is not the ends but the MIDDLE that ends up inside the stave. On the
-        // first attempt the handle was completely invisible.
-        //
-        // Half-angle a = (span/2)·k, the ends pull back by (1−cos a)/k.
-        const drop = (1 - Math.cos(span * 0.5 * (2.05 / span))) / (2.05 / span)
-        strap.translate(0, 0, config.radius + drop + thickness * 0.6)
-        // Small pegs so that both ends go INSIDE the body.
-        const pegs = [1, -1].map((sign) => boxGeometry(
-          [config.radius * 0.3, thickness * 1.6, config.radius * 0.55],
-          [0, sign * span * 0.42, config.radius * 0.88],
-          tint('oak', -0.1),
-        ))
-        handle = mergeColoured([strap, ...pegs])
+        // The arc is built in the XY plane; -90 degrees about Y carries its
+        // +X into +Z, standing it up beside the body with its span along Y.
+        strap.rotateY(-Math.PI / 2)
+        handle = mergeColoured([strap])
       }
 
       return {

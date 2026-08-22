@@ -19,6 +19,7 @@
 import type { BufferGeometry } from 'three'
 
 import {
+  arcBarGeometry,
   bandGeometry,
   boxGeometry,
   createKitModel,
@@ -165,20 +166,41 @@ export function createModel(overrides: Partial<IronLanternConfig> = {}) {
           { colourTop: tint('emberTip', 0.02, 0.35) }),
       ])
 
-      // --- Carrying hoop ----------------------------------------------------------
-      const handle: BufferGeometry[] = [bandGeometry(
-        config.radius * 0.3, half + config.height * 0.1, bar * 0.9, bar * 0.55, 8,
-        tint('iron', 0.06, 0.7), { inner: true },
+      // --- Carrying bail ----------------------------------------------------------
+      // A vertical arch, not a horizontal ring.
+      //
+      // What was here was a `bandGeometry` -- a flat hoop lying in the XZ
+      // plane on top of the flue. That is a suspension eye, and against a
+      // photograph of a real lantern it reads as a collar rather than as
+      // anything you could pick the lantern up by. A lantern's defining
+      // feature is that it is CARRIED: the bail is the first thing the eye
+      // looks for and the reason the object exists in a scene at all.
+      //
+      // `arcBarGeometry` builds in the XY plane, which for a half-circle from
+      // 0 to PI is already the shape wanted -- ends level, apex overhead --
+      // so no rotation is involved.
+      // The sweep runs PAST half a circle at both ends, by about 20 degrees.
+      // A clean half-circle put the two ends level with the roof's surface and
+      // merely tangent to it, which the support check rightly called floating.
+      // Carrying the arc further round turns each end downwards and outwards,
+      // so it crosses the roof cone from inside to outside and is genuinely
+      // embedded -- the same "real carpentry rather than a nudge" rule the
+      // rest of the kit follows for joints.
+      const bailRadius = config.radius * 0.78
+      const handle: BufferGeometry[] = [arcBarGeometry(
+        bailRadius,
+        bar * 1.05,
+        -0.35,
+        Math.PI + 0.35,
+        11,
+        [0, half - config.height * 0.145, 0],
+        tint('iron', 0.06, 0.7),
       )]
-      // The tongue joining the hoop to the flue.
-      handle.push(boxGeometry(
-        // Wide enough to reach the ring it carries. A tongue the width of the
-        // bar passed straight through the middle of the ring without touching
-        // it, so the handle hung above the lantern unattached.
-        [config.radius * 0.82, config.height * 0.1, bar],
-        [0, half + config.height * 0.045, 0],
-        tint('iron', 0.02, 0.7),
-      ))
+      // The tongue that used to join the old horizontal ring down to the flue
+      // is gone with the ring. Left in place it z-fought the new bail: its
+      // sides sat at z = +-0.00488 against the bail's +-0.00512, a quarter of
+      // a millimetre apart over the whole apex. A bail that reaches into the
+      // roof needs no strap to hold it on.
 
       return {
         frame: {
