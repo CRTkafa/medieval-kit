@@ -46,7 +46,8 @@ export const linenSackDefaults: LinenSackConfig = {
   height: 0.52,
   radius: 0.16,
   fill: 0.85,
-  collar: 0.14,
+  // A hand's width of gathered cloth above the cord, not a fifth of the sack.
+  collar: 0.1,
   ears: 4,
   seed: 53,
 }
@@ -72,15 +73,24 @@ export function createModel(overrides: Partial<LinenSackConfig> = {}) {
       // silhouette means one model can produce both a full and a half-empty
       // sack.
       const wide = config.radius * (0.72 + fill * 0.36)
+      // A sack, not an amphora.
+      //
+      // The old profile put its widest point a quarter of the way up and then
+      // narrowed all the way to the neck, which is the silhouette of a vase.
+      // A filled sack does the opposite: it SPREADS where it meets the ground,
+      // because the grain settles and the cloth has no stiffness, then runs
+      // close to parallel up most of its height, and only gathers in sharply
+      // where the cord is tied. Nearly the whole difference between the two
+      // shapes is in the bottom level and in where the taper begins.
       const profile: Level[] = [
-        { y: -half, radius: wide * 0.72 },
-        { y: -half + config.height * 0.05, radius: wide * 0.95 },
-        { y: -half + config.height * 0.26 * fill, radius: wide },
-        { y: -half + config.height * 0.52 * fill, radius: wide * 0.93 },
-        { y: bodyTop - config.height * 0.16, radius: wide * 0.7 },
-        { y: bodyTop, radius: config.radius * 0.34 },
+        { y: -half, radius: wide * 0.93 },
+        { y: -half + config.height * 0.07, radius: wide },
+        { y: -half + config.height * 0.44 * fill, radius: wide },
+        { y: -half + config.height * 0.72 * fill, radius: wide * 0.9 },
+        { y: bodyTop - config.height * 0.09, radius: wide * 0.52 },
+        { y: bodyTop, radius: config.radius * 0.25 },
       ]
-      const body = latheGeometry(profile, 9, [0, 0, 0], tint('cloth', -0.06, 1.3), {
+      const body = latheGeometry(profile, 11, [0, 0, 0], tint('cloth', -0.06, 1.3), {
         colourTop: tint('cloth', 0.05, 1.3),
       })
       // Cloth is not rigid: here the surface break-up is the texture itself.
@@ -123,8 +133,11 @@ export function createModel(overrides: Partial<LinenSackConfig> = {}) {
         { y: bodyTop - config.height * 0.03, radius: config.radius * 0.36 },
         { y: neckY - config.height * 0.02, radius: config.radius * 0.3 },
         { y: neckY + config.height * 0.03, radius: config.radius * 0.27 },
-        { y: half - config.height * 0.02, radius: config.radius * 0.46 },
-        { y: half, radius: config.radius * 0.4 },
+        // The tuft above the tie opens only a little. Flaring to 0.46 of the
+        // radius turned the top of a sack into the mouth of a bottle, which is
+        // the last thing left reading as a vessel once the body was fixed.
+        { y: half - config.height * 0.02, radius: config.radius * 0.33 },
+        { y: half, radius: config.radius * 0.27 },
       ]
       const collar = latheGeometry(flare, 9, [0, 0, 0], tint('cloth', 0.02, 1.3), {
         colourTop: tint('cloth', 0.1, 1.3),
