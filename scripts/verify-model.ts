@@ -382,7 +382,7 @@ const CASES: readonly Case[] = [
     shellRatio: 0.8, variants: [{ coins: 0 }, { fill: 1 }, { coinRadius: 0.02 }],
     maxSize: [0.32, 0.14, 0.32] },
   { id: 'wicker-basket', make: as(createBasket), patch: { stakes: 14, rows: 9 },
-    parts: 3, ownSlot: 'produce', borrowSlot: 'straw', radial: true, radialPart: 'rim',
+    parts: 3, ownSlot: 'produce', borrowSlot: 'oak', radial: true, radialPart: 'rim',
     variants: [{ produce: 0 }, { taper: 0 }, { rows: 2 }],
     maxSize: [0.42, 0.32, 0.42] },
   { id: 'log-pile', make: as(createLogPile), patch: { rows: 4, perRow: 7, variation: 0.4 },

@@ -56,12 +56,15 @@ export interface WickerBasketConfig {
 }
 
 export const wickerBasketDefaults: WickerBasketConfig = {
-  height: 0.21,
+  // Shallower and fuller. The reference is a bowl wider than it is deep,
+  // heaped until the fruit mounds over the rim -- which is the only state a
+  // fruit basket is ever drawn in.
+  height: 0.16,
   radius: 0.17,
   taper: 0.26,
   stakes: 11,
   rows: 6,
-  produce: 9,
+  produce: 15,
   hue: 0.02,
   seed: 97,
 }
@@ -69,10 +72,10 @@ export const wickerBasketDefaults: WickerBasketConfig = {
 export type WickerBasketParts = 'weave' | 'rim' | 'contents'
 
 export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
-  return createKitModel<WickerBasketConfig, 'straw' | 'produce', WickerBasketParts>({
+  return createKitModel<WickerBasketConfig, 'oak' | 'produce', WickerBasketParts>({
     id: 'wicker-basket',
     defaults: wickerBasketDefaults,
-    slots: ['straw', 'produce'],
+    slots: ['oak', 'produce'],
     build: ({ config, random }) => {
       const tint = createTinter(random)
       const half = config.height / 2
@@ -114,7 +117,7 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
         const angle = (i / stakes) * Math.PI * 2
         const stake = prismGeometry(
           withy * 0.42, withy * 0.36, config.height * 1.02, 4,
-          [0, 0, 0], tint('straw', -0.09, 1.2),
+          [0, 0, 0], tint('oak', -0.09 + 0.04, 1.2),
         )
         // Bend first, move second: in a tapering basket the stakes lean too.
         stake.rotateX(Math.atan2(config.radius - bottomRadius, config.height))
@@ -123,6 +126,25 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
         stake.translate(Math.sin(angle) * mid, 0, Math.cos(angle) * mid)
         pieces.push(stake)
       }
+
+      // Willow, not straw.
+      //
+      // The basket drew its colour from the `straw` palette entry and rendered
+      // at hue 41 with saturation 0.59; a photograph of a wicker basket sits at
+      // hue 29, saturation 0.50. It read as bright yellow plastic. The tuned
+      // `oak` entry is hue 26 / saturation 0.53 -- almost exactly the
+      // measurement -- and willow IS a wood, so the material slot moves with
+      // the colour. The lift keeps it at the pale, peeled end of oak rather
+      // than the dark structural end.
+      //
+      // The lift is 0.04 and that is nearly arbitrary: sweeping it over 0.00,
+      // 0.04 and 0.08 moved the measured hue and saturation by at most 0.01.
+      // It was first set to 0.12 on the reasoning that willow is paler than
+      // structural oak, which is true and which made the basket salmon pink --
+      // raising HSL lightness holds saturation, so a saturated brown climbs
+      // towards peach rather than towards weathered willow. Against the
+      // reference the straw entry was off by 12 degrees of hue and 0.09
+      // saturation; oak is off by 7 and 0.03.
 
       // --- Horizontal weave ----------------------------------------------------
       // TWO segments per vertical stake: `cos(stakes·θ)` is sampled exactly once
@@ -135,12 +157,35 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
       // single-piece inner liner (below): six separate inner surfaces for six
       // hoops cost ~800 triangles, the liner costs 44, and from the inside the
       // difference is invisible.
+      // The weave stops BELOW the rim. Once the rows were made tall enough to
+      // meet each other they grew into the rim's band, and the outermost point
+      // of the undulation met the rim's inner facets in the same plane. The
+      // rim is a separate, thicker rod laid over the finished weave, so the
+      // weave ending under it is how the object is actually made.
+      const weaveSpan = config.height * 0.9
       for (let r = 0; r < rows; r += 1) {
         const t = (r + 0.5) / rows
-        const y = -half + config.height * t
+        const y = -half + weaveSpan * t
+        // The band height is derived from the row count so that rows always
+        // MEET. It used to be a flat 0.11 of the height while the spacing
+        // between rows is 1/rows -- 0.167 at the default six -- which left a
+        // 12 mm gap you could see straight through to the contents. That is a
+        // slatted crate, not a weave. Rows now overlap slightly; they do not
+        // z-fight because consecutive rows are undulated half a wave apart, so
+        // where one bulges out its neighbour is tucked in.
+        // Alternate rows sit slightly proud of and slightly behind each other.
+        // This is how a weave really goes together -- the weaver's rod passes
+        // outside one stake and inside the next, so no two rows lie on the
+        // same cylinder -- and it is also what makes the overlap above safe.
+        // Undulating consecutive rows in antiphase is not enough on its own:
+        // a sine crosses zero, and at those nodes both rows returned to
+        // exactly `radiusAt(t)`. With a cylindrical basket (taper 0) every row
+        // shares that radius, so the overlapping bands met in coplanar faces
+        // at every node.
+        const lean = r % 2 === 0 ? withy * 0.2 : -withy * 0.2
         const ring = bandGeometry(
-          radiusAt(t), y, config.height * 0.11, withy * 0.8, stakes * 2,
-          tint('straw', jitter(random, 0.07), 1.2),
+          radiusAt(t) + lean, y, (weaveSpan / rows) * 1.06, withy * 0.8, stakes * 2,
+          tint('oak', 0.04 + jitter(random, 0.07), 1.2),
         )
         // The phase shifts by half a wave on every row: the next row going in
         // where the previous one came out is what makes a weave a weave.
@@ -152,7 +197,7 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
       pieces.push(flipGeometry(latheGeometry([
         { y: -half + config.height * 0.03, radius: bottomRadius * (1 - amplitude) },
         { y: half - config.height * 0.02, radius: config.radius * (1 - amplitude) },
-      ], stakes * 2, [0, 0, 0], tint('straw', -0.2, 1.1), {
+      ], stakes * 2, [0, 0, 0], tint('oak', 0.06, 1.1), {
         capTop: false,
         capBottom: false,
       })))
@@ -161,15 +206,24 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
       pieces.push(latheGeometry([
         { y: -half - config.height * 0.01, radius: bottomRadius * 0.94 },
         { y: -half + config.height * 0.05, radius: bottomRadius * 0.99 },
-      ], stakes * 2, [0, 0, 0], tint('straw', -0.14, 1.2), { capTop: true }))
+      ], stakes * 2, [0, 0, 0], tint('oak', -0.14 + 0.04, 1.2), { capTop: true }))
 
       // --- Rim -----------------------------------------------------------------
       // The thick bend that finishes the weave. It is the most visible detail on
       // the basket, and without it the edge looks "cut off".
       const rim = mergeColoured([
+        // Thickness withy*2.1, not 1.5, and the reason is arithmetic rather
+        // than taste. At 1.5 the rim's inner surface landed at
+        // radius*1.015 - withy*1.5 = 0.16055, and the inner liner sits at
+        // radius*(1 - amplitude) = 0.16065 -- a tenth of a millimetre apart,
+        // by coincidence. On a cylindrical basket (taper 0) those are the same
+        // 22-sided prism and every facet of it z-fought. The thicker rod
+        // carries the inner face clearly past the liner, and it is the truer
+        // shape anyway: the rim is the heaviest rod in a basket, bent over the
+        // finished weave, and it stands proud on both sides.
         bandGeometry(config.radius * 1.015, half - config.height * 0.03,
-          config.height * 0.1, withy * 1.5, stakes * 2,
-          tint('straw', 0.07, 1.2), { inner: true }),
+          config.height * 0.1, withy * 2.1, stakes * 2,
+          tint('oak', 0.07 + 0.04, 1.2), { inner: true }),
       ])
 
       // --- Contents ------------------------------------------------------------
@@ -203,13 +257,23 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
         const ring = Math.sqrt((i + 0.4) / count)
         const inner = Math.max(size, bottomRadius * 0.92 - size * 0.6)
         const spread = inner * ring
-        const layer = Math.floor(i / Math.max(3, Math.round(count * 0.55)))
+        // Fewer fruit per layer means MORE layers, and it is the layer count
+        // that decides whether the heap ever reaches the mouth. At 0.55 the
+        // default nine apples formed two layers topping out 12 cm below a rim
+        // 10 cm up: correctly resting on the base, and completely invisible.
+        // Resting on the base was the fix for an earlier bug where the produce
+        // hung level with the rim over a gap; the fix was right and the
+        // consequence -- that a deep basket then needs enough fruit to fill it
+        // -- was not followed through.
+        const layer = Math.floor(i / Math.max(3, Math.round(count * 0.38)))
         fruit.rotateX(jitter(random, 0.6))
         fruit.rotateZ(jitter(random, 0.6))
         fruit.translate(
           Math.sin(angle) * spread,
           // Base top + one radius = resting on the floor of the basket.
-          -half + config.height * 0.05 + size * (0.92 + layer * 1.5)
+          // Layers nest at 0.95 of a diameter, not 1.5: stacked fruit settles
+          // into the gaps of the layer below rather than sitting on top of it.
+          -half + config.height * 0.05 + size * (0.92 + layer * 0.95)
             - ring * size * 0.28 + jitter(random, size * 0.08),
           Math.cos(angle) * spread,
         )
@@ -217,8 +281,8 @@ export function createModel(overrides: Partial<WickerBasketConfig> = {}) {
       }
 
       return {
-        weave: { slot: 'straw' as const, geometry: mergeColoured(pieces) },
-        rim: { slot: 'straw' as const, geometry: rim },
+        weave: { slot: 'oak' as const, geometry: mergeColoured(pieces) },
+        rim: { slot: 'oak' as const, geometry: rim },
         contents: contents.length > 0
           ? { slot: 'produce' as const, geometry: mergeColoured(contents) }
           : undefined,

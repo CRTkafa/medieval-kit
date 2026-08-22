@@ -431,7 +431,7 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       hue: { type: 'number', label: 'Produce hue', min: 0, max: 1, step: 0.01 },
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
-    materialSlots: ['straw', 'produce'],
+    materialSlots: ['oak', 'produce'],
     parts: ['weave', 'rim', 'contents'],
   },
   'wooden-ladder': {
