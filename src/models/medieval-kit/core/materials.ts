@@ -84,9 +84,33 @@ export interface MedievalPalette {
  * linear values, `color.r/g/b` can be written straight through — no extra
  * conversion needed.
  */
+/**
+ * Base colours, measured against reference photographs rather than chosen.
+ *
+ * The hue was already right -- our oak sits at 26 degrees and real oak in a
+ * photograph sits at 27 -- but the saturation was consistently too high, by a
+ * median of 0.08 across ten wooden models, and worst on the ones made almost
+ * entirely of bare timber: the ladder and the fence were each 0.16 over. That
+ * is the difference between weathered oak and new pine, and it was making the
+ * whole kit read as plastic.
+ *
+ * Straw and linen are deliberately NOT adjusted, although the same measurement
+ * said they were too yellow and too washed out. Following it made them visibly
+ * worse. A photograph of a bale reads as desaturated because it is thousands of
+ * individual straws each casting a shadow on its neighbour; pushing a flat
+ * lowpoly surface up to that number does not reproduce the texture, it just
+ * makes the surface garish. The statistic was real and the inference from it
+ * was wrong -- which is worth leaving written down, because the same trap is
+ * there for any material whose reference gets its character from fine detail.
+ *
+ * Two follow-up measurements ruled out the other colour explanations: our
+ * saturation spread is 93% of the references', so it is not a lack of
+ * variation, and the hue was never off. What remains between these models and
+ * their references is geometry, not colour.
+ */
 export const MEDIEVAL_PALETTE: MedievalPalette = {
-  oak: new Color(0x8a5a34),
-  oakEnd: new Color(0x9a7350),
+  oak: new Color(0x8a6141),
+  oakEnd: new Color(0x9a7a5e),
   iron: new Color(0x40464d),
   steel: new Color(0x8d979f),
   brass: new Color(0xa9843f),
