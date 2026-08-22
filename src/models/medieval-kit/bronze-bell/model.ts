@@ -109,8 +109,8 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
       ]
       // The bell is a SHELL: an outside, an inside, and a lip joining the two
       // at the mouth. Closed on top (the crown is solid), open at the mouth.
-      const skirt = latheGeometry(bellProfile, 12, [0, 0, 0], tint('brass', -0.06, 0.7), {
-        colourTop: tint('brass', 0.05, 0.7),
+      const skirt = latheGeometry(bellProfile, 12, [0, 0, 0], tint('bronze', -0.06, 0.7), {
+        colourTop: tint('bronze', 0.05, 0.7),
         capBottom: false,   // mouth OPEN: the inside of the bell must show
         capTop: true,
       })
@@ -123,7 +123,7 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
         radius: level.radius * 0.88,
       }))
       const inner = flipGeometry(latheGeometry(
-        innerProfile, 12, [0, 0, 0], tint('brass', -0.24, 0.5),
+        innerProfile, 12, [0, 0, 0], tint('bronze', -0.24, 0.5),
         { capBottom: false, capTop: false },
       ))
       // Mouth lip: the hoop joining the inner and outer shell. Without it a gap
@@ -131,7 +131,7 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
       const lipY = -half + config.height * 0.02
       const lip = bandGeometry(
         radius * 0.995, lipY, config.height * 0.035,
-        radius * 0.115, 12, tint('brass', -0.12, 0.6),
+        radius * 0.115, 12, tint('bronze', -0.12, 0.6),
       )
 
       // Crown: the ears that fasten the bell to the yoke.
@@ -144,7 +144,7 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
           config.height * 0.16,
           radius * 0.03,
           [0, 0, 0],
-          tint('brass', 0.08, 0.6),
+          tint('bronze', 0.08, 0.6),
         )
         ear.translate(Math.sin(a) * radius * 0.17, half + config.height * 0.05, Math.cos(a) * radius * 0.17)
         crown.push(ear)
@@ -172,14 +172,21 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
       // of its own, so it just stands in model space.
       const beamLength = config.diameter * config.yoke
       const beamY = pivotY + radius * 0.2
+      // Where the uprights stand. Computed here, before the beam, because the
+      // beam has to REACH them: decoupling the two (so the frame could not
+      // close onto the bell at a short yoke) left the rail shorter than the
+      // gap it spans at the bottom of the slider, and the two A-frames came
+      // apart into separate objects with nothing joining them.
+      const standX = Math.max(beamLength * 0.4, radius * 1.3)
+      const beamSpan = Math.max(beamLength, standX * 2.2)
       // The rail is ALREADY built horizontal: the first two arguments of
       // `chamferedBoxGeometry` are the X–Z footprint, the third the Y height.
       // I had put a `rotateZ` here and it stood the rail upright, sticking out
       // of the top of the bell like a post — the price of misremembering which
       // axis the helper counts as "height".
       const beam = chamferedBoxGeometry(
-        [beamLength, radius * 0.24],
-        [beamLength * 0.98, radius * 0.21],
+        [beamSpan, radius * 0.24],
+        [beamSpan * 0.98, radius * 0.21],
         radius * 0.3,
         radius * 0.04,
         [0, beamY, 0],
@@ -196,10 +203,28 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
       //
       // Consumers who want the bare bell for their own tower hide
       // `parts.frame` — that is what semantic parts are for.
-      const standFoot = -half - config.height * 0.16
+      // The frame stands CLEAR of the bell, in both axes.
+      //
+      // The uprights were at beamLength * 0.34, which at the default yoke is
+      // 0.165 against a bell radius of 0.18: half-width included, they spanned
+      // 0.147 to 0.183 and ran straight through the bell's mouth. Nothing in
+      // the check suite objects -- the support test sees one connected mass,
+      // which is exactly what a post driven through a bell looks like -- but a
+      // bell cannot swing through its own frame. The width is now the larger of
+      // the yoke's reach and the bell's radius plus a margin, so shortening the
+      // yoke slider cannot close the frame onto the bell.
+      //
+      // And the foot sat at height * 0.16 below the mouth, leaving 24 mm
+      // between the sill and the lip. A bell hangs clear of its sill; at that
+      // gap it read as resting on it.
+      const standFoot = -half - config.height * 0.36
       const legY = (beamY + standFoot) / 2
       const legHeight = beamY - standFoot
       const framePieces: BufferGeometry[] = []
+      const braceRise = legHeight * 0.44
+      const braceRun = radius * 0.62
+      const braceLength = Math.hypot(braceRun, braceRise)
+
       for (const side of [-1, 1]) {
         // The upright reaches PAST the rail it carries, so the joint is a real
         // overlap rather than two faces meeting.
@@ -211,7 +236,7 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
           // flickered against each other.
           legHeight + radius * 0.22,
           radius * 0.03,
-          [side * beamLength * 0.34, legY + radius * 0.19, 0],
+          [side * standX, legY + radius * 0.19, 0],
           tint('oak', -0.04),
           tint('oak', 0.03),
         ))
@@ -223,30 +248,39 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
           [radius * 0.22, radius * 1.34],
           radius * 0.22,
           radius * 0.03,
-          [side * beamLength * 0.34, standFoot + radius * 0.11, 0],
+          [side * standX, standFoot + radius * 0.11, 0],
           tint('oak', -0.1),
         ))
-        // Brace from sill to upright: the diagonal that stops the frame
-        // folding over, and the only non-vertical line in the silhouette.
-        const braceLength = Math.hypot(beamLength * 0.2, legHeight * 0.42)
-        const brace = chamferedBoxGeometry(
-          [radius * 0.13, radius * 0.2],
-          [radius * 0.1, radius * 0.16],
-          braceLength,
-          radius * 0.025,
-          [0, 0, 0],
-          tint('oak', -0.07),
-        )
-        brace.rotateZ(-side * Math.atan2(beamLength * 0.2, legHeight * 0.42))
-        // Outboard of the uprights, not in front of them. Sitting at +Z put
-        // the diagonal straight across the bell's silhouette, which is the one
-        // thing in the model that has to read cleanly.
-        brace.translate(
-          side * (beamLength * 0.34 + beamLength * 0.09),
-          standFoot + legHeight * 0.21 + radius * 0.1,
-          0,
-        )
-        framePieces.push(brace)
+
+        // Braces: a pair per upright, in the plane of that upright's own
+        // A-frame, running fore and aft to the ends of its sill.
+        //
+        // They used to be single diagonals tilted about Z -- across the model,
+        // in the same plane as the bell -- which meant they had to be shoved
+        // either in front of the bell (a diagonal drawn straight over the one
+        // silhouette that has to read cleanly) or outboard of the uprights,
+        // where they connect to nothing and stick out like broken sticks.
+        // Neither is what a bell frame does. Real frames are two A-frames, one
+        // at each end of the beam, braced fore-and-aft in their own planes,
+        // with the bell swinging in the gap between them. Tilting about X
+        // instead of Z puts them there, and the bell is never in the way.
+        for (const dir of [-1, 1]) {
+          const brace = chamferedBoxGeometry(
+            [radius * 0.13, radius * 0.2],
+            [radius * 0.1, radius * 0.16],
+            braceLength,
+            radius * 0.025,
+            [0, 0, 0],
+            tint('oak', -0.07),
+          )
+          brace.rotateX(-dir * Math.atan2(braceRun, braceRise))
+          brace.translate(
+            side * standX,
+            standFoot + radius * 0.11 + braceRise / 2,
+            dir * braceRun / 2,
+          )
+          framePieces.push(brace)
+        }
       }
 
       // Bearings: the two iron ears carrying the rail. They carry it from ABOVE

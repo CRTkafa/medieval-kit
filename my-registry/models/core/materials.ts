@@ -56,6 +56,22 @@ export interface MedievalPalette {
   readonly steel: Color
   /** Bronze — bells, mortars, coins. */
   readonly brass: Color
+  /**
+   * Bell bronze that has stood outside.
+   *
+   * Separate from `brass` because they are not the same colour and the models
+   * that use each are not the same models. Fresh bronze on a coin or a book's
+   * corner boss is the yellow `brass` is; a bell that has hung in weather for a
+   * century is dark and grey. Measured against a reference photograph the bell
+   * sits at hue 33, saturation 0.34, value 0.33, against 39 / 0.56 / 0.56 for
+   * the brass we were painting it with.
+   *
+   * This is a PALETTE entry, not a slot: the mesh still resolves through the
+   * `brass` material. The palette carries colour, the slot carries material,
+   * and keeping them separate is what lets one model recolour without dragging
+   * the coin pouch and the book's fittings along with it.
+   */
+  readonly bronze: Color
   /** Dry straw. */
   readonly straw: Color
   /** Straw tips bleached by the sun. */
@@ -114,6 +130,7 @@ export const MEDIEVAL_PALETTE: MedievalPalette = {
   iron: new Color(0x40464d),
   steel: new Color(0x8d979f),
   brass: new Color(0xa9843f),
+  bronze: new Color(0x63523e),
   straw: new Color(0xc2a049),
   strawPale: new Color(0xdcc182),
   cloth: new Color(0xb9a888),
