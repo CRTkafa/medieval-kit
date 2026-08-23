@@ -155,53 +155,89 @@ export function createModel(overrides: Partial<ForgeHearthConfig> = {}) {
           tint('stone', 0.03 + jitter(random, 0.08)),
         ))
       }
+      // String courses: thin bands standing proud of each wall.
+      //
+      // The walls are slabs, which is what pays for the kerb, and a slab of one
+      // colour is a slab however much it is mottled -- the body of the forge
+      // came out as a smooth grey box under a course of real stones. Three
+      // ribs to a face, twelve boxes in all, is enough to say COURSED without
+      // laying two hundred blocks. They stand proud rather than sitting flush,
+      // because a dry wall's stones never line up on one plane and a rib that
+      // is level with its wall is invisible.
+      for (const at of [0.22, 0.5, 0.78]) {
+        for (const [dx, dz, sx, sz] of [
+          [0, -(D + wall * 0.12) / 2, L * 0.99, wall * 0.12],
+          [0, (D + wall * 0.12) / 2, L * 0.99, wall * 0.12],
+          [-(L + wall * 0.12) / 2, 0, wall * 0.12, D * 0.99],
+          [(L + wall * 0.12) / 2, 0, wall * 0.12, D * 0.99],
+        ] as const) {
+          masonry.push(taperedBoxGeometry(
+            [sx, sz],
+            [sx * 0.99, sz * 0.9],
+            bodyTop * 0.055,
+            [dx, floor + bodyTop * at, dz],
+            tint('stone', -0.07 + jitter(random, 0.05)),
+          ))
+        }
+      }
+
       const hearth = mergeColoured(masonry)
       roughenGeometry(hearth, wall * 0.05, { salt: 23 })
 
       // --- Fire ------------------------------------------------------------
-      const bedR = Math.min(L, D) * 0.5 - wall * 0.9
+      // The bed is LUMPS, not a plate.
+      //
+      // A smooth disc of charcoal colour is the darkest value in the palette
+      // spread flat, and it reads as a hole cut in the hearth with a few sparks
+      // in it. A fire bed is broken: irregular lumps of charcoal with the glow
+      // coming up BETWEEN them, and the only way to get that from vertex colour
+      // is to build the lumps. They are cheap -- five-sided prisms, eight
+      // triangles each -- and they are the whole difference between a forge and
+      // a stone box with a black lid.
+      const bedX = L * 0.5 - wall * 1.1
+      const bedZ = D * 0.5 - wall * 1.1
       const bedY = floor + bodyTop
-      const coal = latheGeometry(
-        [
-          { y: bedY, radius: bedR * 1.02 },
-          { y: bedY + kerbH * 0.5, radius: bedR * 0.86 },
-        ] as Level[],
-        // Darker than the stone by a wide margin. At +0.03 the charcoal came
-        // out the same value as the masonry around it and the fire bed read as
-        // another slab of rock.
-        9, [0, 0, 0], tint('char', -0.02),
-      )
-      coal.scale(L / (Math.min(L, D)), 1, D / (Math.min(L, D)))
-
+      const coals: BufferGeometry[] = []
       const embers: BufferGeometry[] = []
-      for (let i = 0; i < 16; i += 1) {
+      const lumps = 26
+
+      for (let i = 0; i < lumps; i += 1) {
+        // Golden-angle spiral over an ellipse, so the bed fills evenly rather
+        // than ringing.
         const a = i * 2.399963
-        const r = bedR * 0.7 * Math.sqrt((i + 0.4) / 16)
-        const size = bedR * (0.12 + random() * 0.09)
-        // Bedded INTO the charcoal, with no bottom face and no two of them
-        // lying flat.
-        //
-        // Sitting on the bed at one height, every ember presented a horizontal
-        // cap in the same plane as the charcoal's own top face, and the z-fight
-        // check found them at once. Burying the base removes the face that was
-        // colliding -- it is inside the fire and nobody can see it -- and the
-        // tilt means what is left is not horizontal to begin with. Coals in a
-        // fire are half-sunk and lying every way anyhow.
+        const ring = Math.sqrt((i + 0.35) / lumps)
+        const size = Math.min(bedX, bedZ) * (0.16 + random() * 0.13)
+        // The middle of a working fire is where the air arrives, so that is
+        // where it glows; the edges are burnt out.
+        const hot = ring < 0.52 && i % 2 === 0
         const lump = prismGeometry(
-          size, size * 0.55, size * 0.7, 5, [0, 0, 0],
-          tint(i % 3 === 0 ? 'emberTip' : 'ember', jitter(random, 0.05), 0.4),
+          size, size * 0.5, size * 0.8, 5, [0, 0, 0],
+          hot
+            ? tint(i % 3 === 0 ? 'emberTip' : 'ember', jitter(random, 0.05), 0.4)
+            : tint('char', 0.05 + jitter(random, 0.08)),
           { capBottom: false },
         )
-        lump.rotateX(jitter(random, 0.45))
-        lump.rotateZ(jitter(random, 0.45))
+        lump.rotateX(jitter(random, 0.5))
+        lump.rotateZ(jitter(random, 0.5))
         lump.rotateY(random() * Math.PI * 2)
         lump.translate(
-          Math.sin(a) * r * (L / Math.min(L, D)),
-          bedY + kerbH * 0.3,
-          Math.cos(a) * r * (D / Math.min(L, D)),
+          Math.sin(a) * bedX * 0.78 * ring,
+          bedY + kerbH * (hot ? 0.34 : 0.26),
+          Math.cos(a) * bedZ * 0.78 * ring,
         )
-        embers.push(lump)
+        ;(hot ? embers : coals).push(lump)
       }
+
+      // A dark floor under the lumps so the bed is not see-through where they
+      // do not quite meet.
+      coals.push(taperedBoxGeometry(
+        [bedX * 1.9, bedZ * 1.9],
+        [bedX * 1.8, bedZ * 1.8],
+        kerbH * 0.4,
+        [0, bedY + kerbH * 0.16, 0],
+        tint('char', 0.02),
+      ))
+      const coal = mergeColoured(coals)
 
       // --- Chimney ----------------------------------------------------------
       // Rises from the BACK of the hearth and tapers. Its foot reaches down
@@ -284,12 +320,16 @@ export function createModel(overrides: Partial<ForgeHearthConfig> = {}) {
 
       // One gusset of leather spanning board to board, and two ribs on it at
       // different sizes so no two of their faces can line up.
+      // The leather BULGES past the boards. Cut narrower than them it sat
+      // hidden in the gap and the bellows read as a stack of loose planks with
+      // daylight between; a bellows is a bag under pressure and its widest
+      // point is the leather, not the wood.
       hide.push(lay(dishedSheetGeometry(
-        teardrop(0.94, D * 0.2), 5, tint('leather', -0.06, 0.9),
+        teardrop(1.18, D * 0.235), 5, tint('leather', -0.06, 0.9),
       )).translate(bx + D * 0.032, bellowsY, 0))
       for (const [i, at] of [-0.34, 0.34].entries()) {
         hide.push(lay(dishedSheetGeometry(
-          teardrop(1.04 + i * 0.07, D * 0.035), 5,
+          teardrop(1.26 + i * 0.07, D * 0.03), 5,
           tint('leather', -0.01 + i * 0.04, 0.9),
         )).translate(bx + D * (0.022 + i * 0.019), bellowsY + at * D * 0.11, 0))
       }

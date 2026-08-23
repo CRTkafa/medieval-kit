@@ -62,7 +62,9 @@ export const roundShieldDefaults: RoundShieldConfig = {
   radius: 0.36,
   planks: 9,
   thickness: 0.016,
-  lean: 0.22,
+  // Barely off vertical. A shield propped against something stands almost
+  // upright; at 0.22 it read as lying back against nothing.
+  lean: 0.12,
   hue: 0.02,
   rivets: 10,
   seed: 83,
@@ -83,11 +85,15 @@ export function createModel(overrides: Partial<RoundShieldConfig> = {}) {
       const planks = Math.max(3, Math.round(config.planks))
       const hue = ((config.hue % 1) + 1) % 1
 
+      // Saturated and dark. At 0.42 saturation and 0.34 lightness the face
+      // came out pastel against a reference whose red and blue are deep enough
+      // to read as pigment ground in oil -- which is what they were. Shield
+      // paint is not a wash.
       const paint = (h: number, dark: number): Color =>
         new Color().setHSL(
           (h + jitter(random, 0.01) + 1) % 1,
-          0.42 + jitter(random, 0.06),
-          dark + jitter(random, 0.04),
+          0.66 + jitter(random, 0.05),
+          dark + jitter(random, 0.03),
         )
 
       // --- Boards ---------------------------------------------------------
@@ -96,8 +102,8 @@ export function createModel(overrides: Partial<RoundShieldConfig> = {}) {
       // already have to make anyway.
       const boards: BufferGeometry[] = []
       const step = (R * 2) / planks
-      const upper = paint(hue, 0.34)
-      const lower = paint((hue + 0.55) % 1, 0.3)
+      const upper = paint(hue, 0.26)
+      const lower = paint((hue + 0.55) % 1, 0.23)
 
       for (let i = 0; i < planks; i += 1) {
         const x = -R + step * (i + 0.5)
@@ -127,11 +133,39 @@ export function createModel(overrides: Partial<RoundShieldConfig> = {}) {
       // A rawhide binding folded over the edge. It is a band whose thickness
       // reaches INSIDE the boards' own radius, so it grips them rather than
       // sitting against their ends.
+      // Thick enough to SWALLOW the plank ends.
+      //
+      // The boards are rectangles cut to the chord of the circle, so their ends
+      // step in and out around the edge -- unavoidable, since a plank is
+      // straight and the outline is not. A real rim hides exactly that: it is a
+      // wide band of hide folded over the ends and stitched, and it is what
+      // turns a stack of boards into a disc. At 0.055 of the radius it was too
+      // narrow to cover the steps and the silhouette came out serrated.
       const rim = bandGeometry(
-        R * 1.02, 0, T * 2.6, R * 0.055, planks * 3,
+        R * 1.02, 0, T * 3.2, R * 0.105, planks * 3,
         tint('leather', -0.04, 0.9), { inner: true },
       )
       rim.rotateX(Math.PI / 2)
+
+      // The cross between the quarters, laid ON the face.
+      //
+      // Two bands of pale paint dividing the four quarters. It is the detail
+      // that makes a quartered shield read at a distance -- without it the
+      // quarters meet edge to edge and the eye sees two colours rather than a
+      // device. Proud of the boards rather than inlaid, because paint is.
+      const trim: BufferGeometry[] = []
+      const band = R * 0.1
+      const cream = new Color().setHSL(0.11, 0.24, 0.74)
+      for (const vertical of [false, true]) {
+        const arm = taperedBoxGeometry(
+          vertical ? [band, T * 0.5] : [R * 1.94, T * 0.5],
+          vertical ? [band * 0.97, T * 0.4] : [R * 1.9, T * 0.4],
+          vertical ? R * 1.94 : band,
+          [0, 0, T * 0.62],
+          new Color(cream),
+        )
+        trim.push(arm)
+      }
 
       // --- Boss -----------------------------------------------------------
       const bossR = R * 0.26
@@ -193,7 +227,7 @@ export function createModel(overrides: Partial<RoundShieldConfig> = {}) {
         ))
       }
 
-      const face = mergeColoured([...boards, ...back])
+      const face = mergeColoured([...boards, ...trim, ...back])
       const boss = mergeColoured(iron)
 
       // Leaned back from UPRIGHT, not tipped up from flat.
