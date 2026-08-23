@@ -799,7 +799,19 @@ bindToggle('sky', (on) => {
 
 // ResizeObserver is more reliable than the `resize` event: on pages opened with
 // the tab hidden, or whose layout settles later, the canvas does not stay 0x0.
+/**
+ * Set while recording, holding what to put back afterwards.
+ *
+ * A recording is locked to 1920x1080 rather than taking whatever size the
+ * browser window happens to be. Measured, an unlocked capture came out at
+ * 1220x900 -- a 1.36:1 clip, which is not a video shape anyone expects and
+ * which every platform will letterbox differently.
+ */
+let recordingSize: { ratio: number } | undefined
+
 function resize(): void {
+  // The observer keeps firing while recording; it must not undo the lock.
+  if (recordingSize) return
   const width = canvas.clientWidth
   const height = canvas.clientHeight
   if (width === 0 || height === 0) return
@@ -835,6 +847,14 @@ if (import.meta.env.DEV) {
   Object.assign(globalThis, {
     __probe: {
       renderOnce: () => renderer.render(scene, camera),
+      /** One full frame, including showcase advance. */
+      step: (delta: number) => frameStep(delta),
+      /** What the tour is showing right now. */
+      showcase: () => ({
+        running: showcase.isRunning(),
+        progress: +showcase.progress().toFixed(4),
+        caption: app.querySelector('[data-caption-address]')?.textContent ?? '',
+      }),
       state: () => {
         const info = survey(current!.root)
         return {
@@ -971,6 +991,15 @@ const showcase = createShowcase({
  * pretending the file is ready to post.
  */
 function startRecording(seconds: number): void {
+  // Lock to 1080p at pixel ratio 1: `captureStream` takes the drawing buffer,
+  // so a ratio of 2 would record 3840x2160 and cost four times the pixels for
+  // a clip nobody will view above 1080.
+  recordingSize = { ratio: renderer.getPixelRatio() }
+  renderer.setPixelRatio(1)
+  renderer.setSize(1920, 1080, false)
+  camera.aspect = 1920 / 1080
+  camera.updateProjectionMatrix()
+
   const stream = canvas.captureStream(60)
   const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
   const mimeType = types.find((type) => MediaRecorder.isTypeSupported(type))
@@ -989,9 +1018,39 @@ function startRecording(seconds: number): void {
     link.click()
     setTimeout(() => URL.revokeObjectURL(url), 5000)
     recorder = undefined
+    if (recordingSize) {
+      renderer.setPixelRatio(recordingSize.ratio)
+      recordingSize = undefined
+      resize()
+    }
   }
   recorder.start()
 }
+
+/**
+ * A backgrounded tab draws nothing, so it must not keep recording.
+ *
+ * `setAnimationLoop` runs on requestAnimationFrame, which browsers stop
+ * entirely while the tab is hidden -- measured here at zero frames per second.
+ * The showcase therefore stops advancing AND the canvas stops producing frames
+ * for `captureStream`, so what carries on being written is a frozen image with
+ * a running clock. A 60 s tour is long enough that reaching for another window
+ * is the natural thing to do, and the failure is silent: the file looks the
+ * right length and is not.
+ *
+ * Ending the take is the honest answer. A short clip you know about beats a
+ * full-length one that is fifty seconds of a still frame.
+ */
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden || !recorder) return
+  console.warn(
+    'medieval-kit: the tab lost focus, so the canvas stopped producing frames. '
+    + 'The recording has been ended here rather than filling with a frozen image. '
+    + 'Keep the window visible for the whole tour.',
+  )
+  showcase.stop()
+  recorder.stop()
+})
 
 function runShowcase(seconds: number): void {
   if (showcase.isRunning()) return
@@ -1027,10 +1086,17 @@ if (requested === 30 || requested === 60 || requested === 90) {
   setTimeout(() => runShowcase(requested), 400)
 }
 
-renderer.setAnimationLoop(() => {
-  const now = performance.now()
-  const delta = Math.min((now - previous) / 1000, 0.05)
-  previous = now
+/**
+ * One frame, factored out so it can be stepped by hand.
+ *
+ * `setAnimationLoop` runs on requestAnimationFrame, which a browser stops
+ * entirely while the tab is in the background -- measured at zero frames per
+ * second. That makes the tour impossible to exercise from an automated test,
+ * which is the same gap `renderOnce` was added for; `renderOnce` draws a frame
+ * but does not advance anything, so it cannot tell you whether the showcase
+ * gets through its beats.
+ */
+function frameStep(delta: number): void {
   current?.update?.(delta)
   if (showcase.isRunning()) {
     if (!showcase.update(delta)) recorder?.stop()
@@ -1038,4 +1104,11 @@ renderer.setAnimationLoop(() => {
     controls.update()
   }
   void renderer.render(scene, camera)
+}
+
+renderer.setAnimationLoop(() => {
+  const now = performance.now()
+  const delta = Math.min((now - previous) / 1000, 0.05)
+  previous = now
+  frameStep(delta)
 })
