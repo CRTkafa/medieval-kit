@@ -43,6 +43,7 @@ import { createModel as createBook } from '@/models/medieval-kit/leather-book/mo
 import { createModel as createPhial } from '@/models/medieval-kit/glass-phial/model.ts'
 import { createModel as createPouch } from '@/models/medieval-kit/coin-pouch/model.ts'
 import { createModel as createBasket } from '@/models/medieval-kit/wicker-basket/model.ts'
+import { createModel as createMill } from '@/models/medieval-kit/post-mill/model.ts'
 
 export interface ParamSpec {
   readonly key: string
@@ -147,6 +148,7 @@ const FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'glass-phial': as(createPhial),
   'coin-pouch': as(createPouch),
   'wicker-basket': as(createBasket),
+  'post-mill': as(createMill),
   'wooden-ladder': as(createLadder),
   'wooden-fence': as(createFence),
   'wooden-hoe': as(createHoe),
@@ -299,6 +301,9 @@ const MEDIEVAL_ORDER = [
   'wicker-basket', 'leather-book', 'glass-phial', 'coin-pouch',
   'wooden-ladder', 'wooden-fence',
   'wooden-hoe', 'wooden-shovel', 'wooden-pitchfork',
+  // Last, because it is the landmark: a 6 m mill after a row of hand tools is
+  // the order that makes the scale of it land.
+  'post-mill',
 ] as const
 
 // Keep the order list and the factory list from drifting apart: if one gets an

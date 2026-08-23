@@ -450,6 +450,24 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak'],
     parts: ['rails', 'rungs'],
   },
+  'post-mill': {
+    title: 'Post Mill',
+    description:
+      'Medieval post mill: the whole timber body turns on one massive post, with four lattice sails and the tail ladder it is turned by.',
+    category: 'Structure',
+    tags: ['medieval', 'lowpoly', 'structure', 'procedural', 'landmark'],
+    controls: {
+      height: { type: 'number', label: 'Height to ridge', min: 3.5, max: 9, step: 0.1, unit: 'm' },
+      sailSpan: { type: 'number', label: 'Sail span', min: 4, max: 11, step: 0.1, unit: 'm' },
+      sailBars: { type: 'number', label: 'Bars per sail', min: 3, max: 14, step: 1 },
+      sailWidth: { type: 'number', label: 'Sail width', min: 0.08, max: 0.28, step: 0.005 },
+      ladderRungs: { type: 'number', label: 'Ladder rungs', min: 5, max: 20, step: 1 },
+      spin: { type: 'number', label: 'Sail angle', min: 0, max: 6.28, step: 0.02, unit: 'rad' },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['oak', 'iron'],
+    parts: ['trestle', 'body', 'sails', 'ladder'],
+  },
   'wooden-fence': {
     title: 'Wooden Fence',
     description:

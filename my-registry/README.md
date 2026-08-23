@@ -26,7 +26,7 @@ Configure `models.json` first so the namespace resolves:
 
 ## Models
 
-27 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
+28 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
 generated from the models themselves with `bun scripts/catalog-table.ts` — a
 hand-written list goes stale on the first model you add, and this one already
 did once.
@@ -60,8 +60,9 @@ did once.
 | `wooden-hoe` | Tools | 394 | 3 | 0.23×1.23×0.33 | oak, iron, steel |  |
 | `wooden-shovel` | Tools | 496 | 3 | 0.27×1.20×0.08 | oak, iron |  |
 | `wooden-pitchfork` | Tools | 392 | 3 | 0.27×1.58×0.15 | oak, iron |  |
+| `post-mill` | Structure | 1516 | 4 | 6.60×7.22×6.98 | oak, iron |  |
 
-**19 007 triangles** in total. The whole kit in one scene costs less than a
+**20 523 triangles** in total. The whole kit in one scene costs less than a
 single mid-complexity character model.
 
 Every model depends on `@medieval-kit/core`, a shared support item holding the
