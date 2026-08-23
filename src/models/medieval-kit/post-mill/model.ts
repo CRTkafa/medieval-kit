@@ -234,6 +234,42 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         tint('oak', -0.16),
       ))
 
+      // The door, in the tail wall above the gallery.
+      //
+      // The ladder has to arrive somewhere. A mill is entered from its tail,
+      // through the one wall the sails never sweep past, and the miller comes
+      // up the same ladder he turns the mill with -- so a flight of steps
+      // ending at blank boarding is the one thing about this model that could
+      // not be true.
+      //
+      // Boarded proud of the wall rather than cut into it: there are no
+      // booleans here, and a door of applied planks with a frame round it is
+      // how a plank building is actually closed.
+      const doorWidth = bodyWidth * 0.42
+      const doorHeight = bodyHeight * 0.66
+      const doorY = bodyBottom + H * 0.035 + doorHeight / 2
+      const doorZ = -bodyDepth / 2
+      shell.push(chamferedBoxGeometry(
+        [doorWidth, H * 0.018],
+        [doorWidth * 0.99, H * 0.016],
+        doorHeight,
+        H * 0.004,
+        [0, doorY, doorZ - H * 0.004],
+        tint('oak', -0.14),
+      ))
+      // Two iron-dark ledges across it, and the frame: what stops a plank door
+      // being a rectangle drawn on a wall.
+      for (const at of [-0.28, 0.3]) {
+        shell.push(chamferedBoxGeometry(
+          [doorWidth * 1.04, H * 0.012],
+          [doorWidth * 1.02, H * 0.01],
+          H * 0.022,
+          H * 0.003,
+          [0, doorY + doorHeight * at, doorZ - H * 0.012],
+          tint('oak', -0.22),
+        ))
+      }
+
       // The tail gallery: the little platform the ladder arrives at.
       shell.push(chamferedBoxGeometry(
         [bodyWidth * 0.92, H * 0.05],
@@ -247,8 +283,22 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
       // --- Sails ---------------------------------------------------------------
       // The windshaft leaves the front gable pointing +Z and tilted up a little,
       // which is what stops the sails striking the body as they come round.
-      const shaftTilt = 0.14
-      const hubZ = bodyDepth * 0.54
+      // The sail disc has to clear the front of the buck.
+      //
+      // A tilted shaft spreads its sails through Z: at 0.14 rad a 3.5 m sail
+      // swings +-0.49 m fore and aft, and with the hub only 0.08 m in front of
+      // the gable the whole lower half of the disc passed through the building.
+      // Two changes, and both are what a real mill does. The shaft tilts only a
+      // few degrees -- just enough to keep the sails off the body and to take
+      // some of their weight onto the thrust bearing -- and it projects a good
+      // way out, so the sweep happens clear of the wall.
+      const shaftTilt = 0.075
+      // Far enough forward and no further. The clearance the disc needs is
+      // sailLength * sin(tilt), about 0.26 m here; pushing the hub out to 0.86
+      // of the body's depth left the sails hanging most of a metre off the
+      // gable with nothing but the shaft between them, where the reference has
+      // them sweeping close past the boarding.
+      const hubZ = bodyDepth * 0.72
       const hubY = bodyBottom + bodyHeight * 0.72
       const sailLength = config.sailSpan / 2
       const hubRadius = H * 0.035
@@ -266,22 +316,24 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
       // the body it went unseen through every render; it only surfaced when the
       // iron bands were added and turned out to be coaxial with it, which the
       // z-fight check reported at once.
+      // Long enough to reach back into the gable it comes out of.
+      const shaftLength = H * 0.20
       const shaft = taperedBoxGeometry(
         [hubRadius * 2.1, hubRadius * 2.1],
         [hubRadius * 1.5, hubRadius * 1.5],
-        H * 0.10,
+        shaftLength,
         [0, 0, 0],
         tint('oak', -0.04),
       )
       shaft.rotateX(Math.PI / 2)
-      shaft.translate(0, 0, H * 0.03)
+      shaft.translate(0, 0, -shaftLength * 0.32)
       rig.push(shaft)
       // The bands themselves, and they are not decoration. Four sails pull on
       // one shaft from four directions; what holds the whips to it is iron
       // strapping, and this model declared an `iron` slot while using it
       // nowhere -- the shaft was described in the comment above as iron-banded
       // and then painted oak like everything else.
-      for (const at of [0.012, 0.055]) {
+      for (const at of [-0.02, 0.03]) {
         const band = taperedBoxGeometry(
           [hubRadius * 2.4, hubRadius * 2.4],
           [hubRadius * 2.3, hubRadius * 2.3],
