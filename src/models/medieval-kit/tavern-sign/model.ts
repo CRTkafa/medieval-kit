@@ -88,7 +88,9 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       // board and the chains are written RELATIVE to this point.
       const pivotY = config.height * 0.5 + config.drop
       const armY = pivotY
-      const hangX = config.width * 0.4
+      // Where the two chains meet the arm, measured ALONG it.
+      const hangA = config.reach * 0.34
+      const hangB = config.reach * 0.92
 
       // --- Bracket -----------------------------------------------------------
       // Sits against the wall at Z zero and reaches out along +Z.
@@ -174,19 +176,18 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       curl.translate(0, armY + bar * 0.5 - curlRadius, config.reach - bar)
       iron.push(curl)
 
-      // Cross-bar at the end of the arm.
+      // No cross-bar. The chains hang from the ARM.
       //
-      // Without it the board could not be attached at all: the arm is a single
-      // bar on the model's centre line, roughly 4 cm wide, while the board
-      // hangs from two chains set `width * 0.8` apart. The chains passed the
-      // arm on either side and touched nothing, so the entire board — planks,
-      // battens, chains and all — was a separate object hanging in the air.
-      // A real bracket has this piece for exactly the same reason.
-      iron.push(boxGeometry(
-        [hangX * 2 + bar * 2.4, bar * 1.2, bar * 1.5],
-        [0, armY + bar * 0.5, config.reach * 0.86],
-        tint('iron', 0.03, 0.7),
-      ))
+      // The board used to hang across the arm rather than along it -- its width
+      // ran in X while the arm projected in Z -- so the sign stuck out sideways
+      // from the end of the bracket. That is not how an inn sign hangs: the arm
+      // comes out from the post and the board hangs UNDER it, in line with it,
+      // so it faces the road on both sides and can be read walking past.
+      //
+      // Once the board is turned the right way its two chains hang from two
+      // points along the arm, and the arm is the cross-bar. The extra piece
+      // that used to be needed to reach chains set either side of a
+      // centre-line bar is not needed at all.
 
       // --- Chains ----------------------------------------------------------------
       // They have to swing TOGETHER with the board, hence the board's `extras`
@@ -237,7 +238,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
           // chain is.
           ring.rotateX(i % 2 === 0 ? Math.PI / 2 : 0)
           ring.rotateZ(i % 2 === 0 ? 0 : Math.PI / 2)
-          ring.translate(side * hangX, y, 0)
+          ring.translate(0, y, side < 0 ? hangA - config.reach * 0.62 : hangB - config.reach * 0.62)
           links.push(ring)
         }
       }
@@ -249,8 +250,8 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       for (let i = 0; i < planks; i += 1) {
         const y = -config.drop - config.height + plankHeight * (i + 0.5)
         board.push(chamferedBoxGeometry(
-          [config.width, config.height * 0.055],
-          [config.width * 0.997, config.height * 0.05],
+          [config.height * 0.055, config.width],
+          [config.height * 0.05, config.width * 0.997],
           plankHeight * 0.94,
           config.height * 0.012,
           [0, y, 0],
@@ -261,16 +262,16 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       // INTO the planks so that no two faces end up coplanar.
       for (const side of [-1, 1]) {
         board.push(boxGeometry(
-          [config.width * 0.07, config.height * 0.94, config.height * 0.045],
-          [side * config.width * 0.36, -config.drop - config.height / 2, -config.height * 0.045],
+          [config.height * 0.045, config.height * 0.94, config.width * 0.07],
+          [-config.height * 0.045, -config.drop - config.height / 2, side * config.width * 0.36],
           tint('oak', -0.09),
         ))
       }
       // The two iron lugs joining the board to the chain.
       for (const side of [-1, 1]) {
         links.push(boxGeometry(
-          [bar * 1.2, config.drop * 0.4, bar * 1.4],
-          [side * hangX, -config.drop - config.drop * 0.06, 0],
+          [bar * 1.4, config.drop * 0.4, bar * 1.2],
+          [0, -config.drop - config.drop * 0.06, side < 0 ? hangA - config.reach * 0.62 : hangB - config.reach * 0.62],
           tint('iron', 0.04, 0.7),
         ))
       }
@@ -295,21 +296,21 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
           // Moving the origin means the geometry above is written relative to
           // the bar, which is why every `config.reach * 0.86` in this part is
           // now zero. Same place in the world, correct axis to turn about.
-          origin: [0, pivotY, config.reach * 0.86] as const,
+          origin: [0, pivotY, config.reach * 0.62] as const,
           extras: [{ slot: 'iron' as const, geometry: mergeColoured(links) }],
         },
       }
     },
 
     actions: ({ parts }) => {
-      parts.board.anchor.rotation.x = angle
+      parts.board.anchor.rotation.z = angle
       return {
         push: (strength = 1) => {
           // Reinforces the existing motion instead of resetting it: successive
           // pushes should accumulate the way a real wind does.
           velocity += (velocity >= 0 ? 1 : -1) * 1.6 * strength
         },
-        still: () => { angle = 0; velocity = 0; parts.board.anchor.rotation.x = 0 },
+        still: () => { angle = 0; velocity = 0; parts.board.anchor.rotation.z = 0 },
         lean: () => angle,
       }
     },
@@ -328,7 +329,7 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
         angle = Math.sign(angle) * limit
         velocity *= -0.4
       }
-      parts.board.anchor.rotation.x = angle
+      parts.board.anchor.rotation.z = angle
     },
   }, overrides)
 }
