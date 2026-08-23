@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T09:56:44.478Z",
+      "installedAt": "2026-08-23T10:14:43.273Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -602,11 +602,11 @@
       "address": "@medieval-kit/forge-hearth",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T09:56:44.485Z",
+      "installedAt": "2026-08-23T10:14:43.277Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\forge-hearth\\model.ts",
-          "sourceHash": "8b200a9e702cae87dbae6aac609a0645863163f775bbff983ede45b72ed97fe4"
+          "sourceHash": "f504416897d439bd6069fbb796dcfff64df40b01465481880230027d03dabaf7"
         }
       ],
       "dependencies": [

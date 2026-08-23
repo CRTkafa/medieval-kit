@@ -64,11 +64,11 @@ did once.
 | `hand-cart` | Structure | 2044 | 4 | 0.88×1.03×2.60 | oak, iron |  |
 | `vegetables` | Props | 1718 | 2 | 0.60×0.12×0.59 | produce |  |
 | `round-shield` | Arms | 729 | 3 | 0.73×0.73×0.17 | oak, leather, iron |  |
-| `forge-hearth` | Smithy | 1354 | 4 | 2.14×1.78×0.87 | stone, char, ember, oak, leather, iron |  |
+| `forge-hearth` | Smithy | 1426 | 4 | 2.06×1.78×0.87 | stone, char, ember, oak, leather, iron |  |
 | `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth |  |
 | `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
 
-**29 022 triangles** in total. The whole kit in one scene costs less than a
+**29 094 triangles** in total. The whole kit in one scene costs less than a
 single mid-complexity character model.
 
 Every model depends on `@medieval-kit/core`, a shared support item holding the
