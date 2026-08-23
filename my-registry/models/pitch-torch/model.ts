@@ -51,7 +51,9 @@ export const pitchTorchDefaults: PitchTorchConfig = {
   length: 0.58,
   radius: 0.019,
   wrapLength: 0.3,
-  flameHeight: 1.15,
+  // The flame was taller than the head that feeds it. A pitch torch burns
+  // with a low, fat, smoky flame, not a candle's spire.
+  flameHeight: 0.78,
   flicker: 1,
   seed: 37,
 }
@@ -103,13 +105,16 @@ export function createModel(overrides: Partial<PitchTorchConfig> = {}) {
       // soot — an oak colour would be a lie here.
       const wrapProfile: Level[] = [
         { y: wrapBase - wrapLength * 0.12, radius: config.radius * 1.15 },
-        { y: wrapBase + wrapLength * 0.22, radius: config.radius * 2.35 },
-        { y: wrapBase + wrapLength * 0.62, radius: config.radius * 2.5 },
-        { y: half, radius: config.radius * 2.05 },
+        // Fatter. A torch head is a fist of tow and rags soaked in pitch,
+        // bound on; at 2.5 shaft radii it was a spindle, and the head is the
+        // whole reason the object is not a stick.
+        { y: wrapBase + wrapLength * 0.22, radius: config.radius * 3.3 },
+        { y: wrapBase + wrapLength * 0.62, radius: config.radius * 3.5 },
+        { y: half, radius: config.radius * 2.9 },
       ]
       const wrap = mergeColoured([latheGeometry(
         wrapProfile, 7, [0, 0, 0], tint('char', 0.06),
-        { colourTop: tint('charHot', -0.12) },
+        { colourTop: tint('charHot', -0.32) },
       )])
 
       // --- Flame -----------------------------------------------------------

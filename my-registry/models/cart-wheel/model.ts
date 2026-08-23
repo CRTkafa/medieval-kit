@@ -44,7 +44,11 @@ export const cartWheelDefaults: CartWheelConfig = {
   spokeCount: 10,
   width: 0.09,
   hubLength: 2.1,
-  tyre: 0.045,
+  // An iron tyre is a HOOP: 8 to 12 mm of bar shrunk onto the felloe. At
+  // 0.045 of a 0.52 m radius it was 23 mm of iron, and with an axial width
+  // greater than the wheel's own it read as a pneumatic tyre rather than as
+  // the band that holds a wooden rim together.
+  tyre: 0.022,
   seed: 27,
 }
 
@@ -163,12 +167,20 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
       const tyre = bandGeometry(
         config.radius,
         0,
-        // Wider than the felloe, and wider than the widest felloe piece can
-        // jitter to (±7%). A tyre exactly the felloe's width put its side faces
-        // in the same plane as any piece whose jitter came out near zero, and
-        // those pairs flickered. A real iron tyre is proud of the wood anyway —
-        // it is what takes the wear.
-        config.width * 1.1,
+        // NARROWER than the narrowest felloe piece can jitter to.
+        //
+        // The felloe's axial thickness jitters by ±7%, so anything between
+        // 0.93 and 1.07 of the width lands inside that range and will sooner
+        // or later share a plane with some piece; a tyre at exactly the
+        // felloe's width flickered against whichever piece came out near
+        // zero jitter. The first answer was to go wider than the whole range,
+        // at 1.1 -- which stopped the flicker and made the wheel look shod in
+        // a pneumatic tyre, a black band standing proud of its own rim.
+        //
+        // Going under the range instead solves it the same way and is the
+        // truer shape: the hoop is set into the tread, and on a worn wheel a
+        // sliver of felloe shows at each edge where the iron has bedded in.
+        config.width * 0.9,
         tyreThickness * 1.06,
         segments * 2,
         iron(),
