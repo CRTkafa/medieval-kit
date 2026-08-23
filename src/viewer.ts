@@ -114,11 +114,21 @@ app.innerHTML = `
     <section class="block">
       <p class="block-label">Showcase<span class="block-note">press Esc to stop</span></p>
       <div class="actions">
-        <button class="action action-primary" type="button" data-showcase="30">
-          <span>Play 30 s tour</span><span class="state">&#9654;</span>
-        </button>
-        <button class="action" type="button" data-showcase="60">
+        <!--
+          60 s is the default, not 30.
+
+          The tour gives every model an equal share of the running time, so
+          with 27 of them 30 s is 1.1 s each. A beat spends that time sweeping
+          its parameters and stepping its counts, and none of it reads in a
+          second: the 30 s run is a flyby of the kit, while 60 s is the one
+          that actually shows what each model can do. The order and the
+          emphasis say so.
+        -->
+        <button class="action action-primary" type="button" data-showcase="60">
           <span>Play 60 s tour</span><span class="state">&#9654;</span>
+        </button>
+        <button class="action" type="button" data-showcase="30">
+          <span>Play 30 s flyby</span><span class="state">&#9654;</span>
         </button>
         <button class="action" type="button" data-showcase="90">
           <span>Play 90 s tour</span><span class="state">&#9654;</span>
