@@ -450,6 +450,43 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak'],
     parts: ['rails', 'rungs'],
   },
+  'iron-cauldron': {
+    title: 'Iron Cauldron',
+    description:
+      'Cauldron slung from an iron tripod over a ring of hearth stones, with embers that can be lit or put out.',
+    category: 'Lighting',
+    tags: ['medieval', 'lowpoly', 'hearth', 'procedural'],
+    controls: {
+      height: { type: 'number', label: 'Tripod height', min: 0.8, max: 2, step: 0.02, unit: 'm' },
+      hearthRadius: { type: 'number', label: 'Hearth radius', min: 0.28, max: 0.8, step: 0.01, unit: 'm' },
+      stones: { type: 'number', label: 'Hearth stones', min: 6, max: 20, step: 1 },
+      potRadius: { type: 'number', label: 'Cauldron radius', min: 0.12, max: 0.36, step: 0.01, unit: 'm' },
+      links: { type: 'number', label: 'Chain links', min: 2, max: 8, step: 1 },
+      lit: { type: 'number', label: 'Lit', min: 0, max: 1, step: 1 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['stone', 'iron', 'char', 'ember'],
+    parts: ['hearth', 'tripod', 'pot'],
+  },
+  'hand-cart': {
+    title: 'Hand Cart',
+    description:
+      'Two-wheeled handcart: planked body on an axle set aft of centre, with shafts that rest on the ground.',
+    category: 'Structure',
+    tags: ['medieval', 'lowpoly', 'structure', 'procedural'],
+    controls: {
+      bedLength: { type: 'number', label: 'Bed length', min: 0.8, max: 2.1, step: 0.02, unit: 'm' },
+      bedWidth: { type: 'number', label: 'Bed width', min: 0.4, max: 1.1, step: 0.02, unit: 'm' },
+      sideHeight: { type: 'number', label: 'Side height', min: 0.1, max: 0.5, step: 0.01, unit: 'm' },
+      wheelRadius: { type: 'number', label: 'Wheel radius', min: 0.18, max: 0.5, step: 0.01, unit: 'm' },
+      spokes: { type: 'number', label: 'Spokes', min: 6, max: 14, step: 1 },
+      shaftLength: { type: 'number', label: 'Shaft length', min: 0.6, max: 1.8, step: 0.02, unit: 'm' },
+      roll: { type: 'number', label: 'Wheel rotation', min: 0, max: 6.28, step: 0.02, unit: 'rad' },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['oak', 'iron'],
+    parts: ['wheels', 'bed', 'sides', 'shafts'],
+  },
   'stone-well': {
     title: 'Stone Well',
     description:

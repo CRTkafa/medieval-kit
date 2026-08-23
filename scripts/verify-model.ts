@@ -51,6 +51,8 @@ import { createModel as createPouch } from '@/models/medieval-kit/coin-pouch/mod
 import { createModel as createBasket } from '@/models/medieval-kit/wicker-basket/model.ts'
 import { createModel as createMill } from '@/models/medieval-kit/post-mill/model.ts'
 import { createModel as createWell } from '@/models/medieval-kit/stone-well/model.ts'
+import { createModel as createCauldron } from '@/models/medieval-kit/iron-cauldron/model.ts'
+import { createModel as createCart } from '@/models/medieval-kit/hand-cart/model.ts'
 
 const failures: string[] = []
 function expect(label: string, condition: boolean): void {
@@ -305,6 +307,14 @@ const CASES: readonly Case[] = [
   { id: 'wooden-ladder', make: as(createLadder), patch: { rungCount: 12 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ rungCount: 3 }, { taper: 0 }] , maxSize: [0.6, 2.4, 0.12] },
+  { id: 'iron-cauldron', make: as(createCauldron), patch: { stones: 16, links: 6 },
+    parts: 3, ownSlot: 'stone', borrowSlot: 'iron',
+    variants: [{ lit: 0 }, { stones: 6 }, { potRadius: 0.36 }],
+    maxSize: [1.6, 1.5, 1.6] },
+  { id: 'hand-cart', make: as(createCart), patch: { spokes: 13, sideHeight: 0.42 },
+    parts: 4, ownSlot: 'iron', borrowSlot: 'oak',
+    variants: [{ spokes: 6 }, { shaftLength: 1.8 }, { wheelRadius: 0.5 }],
+    maxSize: [1.5, 1.2, 3.0] },
   { id: 'stone-well', make: as(createWell), patch: { courses: 6, blocks: 15 },
     parts: 4, ownSlot: 'stone', borrowSlot: 'oak',
     variants: [{ courses: 2 }, { depth: 1 }, { blocks: 6 }],

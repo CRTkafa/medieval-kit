@@ -163,7 +163,18 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         )
         // Built upright, leaned outwards, then swung to its arm. Rotating about
         // X leans it in the YZ plane; rotating about Y carries that lean round.
-        bar.rotateX(Math.atan2(barFoot, barRise))
+        //
+        // The sign is NEGATIVE, and it was not. `rotateX(+t)` carries the bar's
+        // top towards +Z and the translate below moves it +Z as well, so the
+        // two add and the quarter-bars stood on their heads -- feet gathered at
+        // the post, heads splayed out over the cross-trees, which is precisely
+        // backwards for a brace whose whole job is to carry the post's load out
+        // to the ground. Nothing caught it: the bar joins post to cross-tree
+        // either way round, so the mass stays connected and the bounding box is
+        // identical. It surfaced in the cauldron, where the same expression
+        // built a tripod standing on its apex and the support check finally had
+        // something to say.
+        bar.rotateX(-Math.atan2(barFoot, barRise))
         bar.rotateY(a)
         bar.translate(
           Math.sin(a) * barFoot * 0.5,
