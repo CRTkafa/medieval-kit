@@ -80,7 +80,10 @@ export function createModel(overrides: Partial<CoinPouchConfig> = {}) {
         { y: neckY + config.height * 0.16, radius: config.radius * 0.26 },
         { y: neckY + config.height * 0.28, radius: config.radius * 0.34 },
       ]
-      const pouch = latheGeometry(profile, 9, [0, 0, 0], tint('leather', -0.05, 0.9), {
+      // Thirteen sides, not nine. Leather has no facets: at nine the pouch was
+      // a hard-edged lump where the reference is a soft bag, and the body is
+      // the whole silhouette of this model.
+      const pouch = latheGeometry(profile, 13, [0, 0, 0], tint('leather', -0.05, 0.9), {
         colourTop: tint('leather', 0.06, 0.9),
         capTop: true,
       })

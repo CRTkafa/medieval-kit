@@ -25,6 +25,8 @@ import {
   createTinter,
   jitter,
   mergeColoured,
+  flipGeometry,
+  prismGeometry,
   roughenGeometry,
 } from '../core/index.ts'
 
@@ -61,7 +63,11 @@ export function createModel(overrides: Partial<LeatherBookConfig> = {}) {
     build: ({ config, random }) => {
       const tint = createTinter(random)
       const half = config.thickness / 2
-      const boardThickness = config.thickness * 0.11
+      // 0.16, not 0.11. At a ninth of the book each way the two boards came
+      // to 14 mm against 48 mm of paper, and the thing read as a ream with
+      // leather stuck to it. A medieval binding is oak boards first, covered
+      // in leather second, and they are substantial.
+      const boardThickness = config.thickness * 0.16
       const halfWidth = config.width / 2
       const spineX = -halfWidth
 
@@ -111,13 +117,22 @@ export function createModel(overrides: Partial<LeatherBookConfig> = {}) {
       }
 
       // --- Page block ---------------------------------------------------------
-      // Spills past the cover on three sides (not the spine) with ragged edges.
+      // The BOARDS overhang the pages, not the other way round.
+      //
+      // This was written the wrong way round -- pages at 1.035 of the cover,
+      // spilling past it on three sides -- and it is why the model read as a
+      // ream of paper with a leather lid rather than as a book. The overhang
+      // is called the square and it is the whole point of a board binding:
+      // the boards take the knocks so the leaves do not, which is also what
+      // the corner bosses are protecting. Flush at the spine, inset on the
+      // three free edges.
+      const square = config.width * 0.055
       const pages = chamferedBoxGeometry(
-        [config.width * 1.035, config.length * 1.03],
-        [config.width * 1.03, config.length * 1.025],
+        [config.width - square, config.length - square * 1.1],
+        [config.width - square * 1.15, config.length - square * 1.25],
         config.thickness - boardThickness * 2.4,
         config.thickness * 0.02,
-        [config.width * 0.018, 0, 0],
+        [-square / 2, 0, 0],
         tint('cloth', 0.09, 0.7),
       )
       // Vellum is not flat: the waviness at the edge is what makes the block
@@ -147,6 +162,37 @@ export function createModel(overrides: Partial<LeatherBookConfig> = {}) {
           [halfWidth * 0.92, -half + boardThickness * 0.35, z],
           tint('brass', 0.07, 0.5),
         ))
+      }
+
+      // --- Corner bosses ------------------------------------------------------
+      // Brass studs at the four corners of both boards.
+      //
+      // These are the single most recognisable thing about a medieval book and
+      // the model had none. They are not ornament: a book of this weight was
+      // stored FLAT, often on its side, and the bosses hold the leather clear
+      // of the shelf so it does not abrade. Without them the silhouette is a
+      // modern hardback.
+      const bossRadius = config.width * 0.055
+      for (const side of [-1, 1]) {
+        for (const sx of [-1, 1]) {
+          for (const sz of [-1, 1]) {
+            const boss = prismGeometry(
+              bossRadius,
+              bossRadius * 0.55,
+              config.thickness * 0.2,
+              6,
+              [
+                sx * halfWidth * 0.78,
+                side * (half + config.thickness * 0.04),
+                sz * (config.length / 2) * 0.84,
+              ],
+              tint('brass', side > 0 ? 0.04 : -0.02, 0.6),
+            )
+            // Domes point away from the book on each face.
+            if (side < 0) flipGeometry(boss)
+            claspPieces.push(boss)
+          }
+        }
       }
 
       return {
