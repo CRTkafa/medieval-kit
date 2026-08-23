@@ -97,10 +97,28 @@ function beatRandom(seed: number): () => number {
   }
 }
 
-interface Beat {
-  readonly id: string
+interface Half {
   readonly from: Record<string, number>
   readonly to: Record<string, number>
+}
+
+interface Beat {
+  readonly id: string
+  /**
+   * Two halves, not one sweep.
+   *
+   * Integer controls cannot be morphed -- they change the triangle count, and
+   * a morph needs both ends to share a topology -- so they used to be drawn
+   * once and held for the whole beat. That quietly removed the most legible
+   * parameter each model has: `staveCount`, `plankCount`, `spokeCount`,
+   * `rows`, `tineCount`. What was left sweeping were widths and radii, which
+   * at a second or two per model barely read at all.
+   *
+   * Splitting the beat lets the integers change at the midpoint, where the
+   * same dip that hides a model swap hides the rebuild. The continuous
+   * parameters carry straight through the join.
+   */
+  readonly halves: readonly [Half, Half]
   /** Fraction of the beat at which the action fires. Negative = no action. */
   readonly actionAt: number
 }
@@ -142,56 +160,76 @@ export function createShowcase(host: ShowcaseHost, options: ShowcaseOptions = {}
   let actionFired = false
   let distance = 0
   let morphing = false
+  let half = -1
 
   /** Draws a start and end value for every numeric control except the seed. */
   function planBeat(id: string, order: number): Beat {
     const random = beatRandom(seed + order * 977)
-    const from: Record<string, number> = {}
-    const to: Record<string, number> = {}
+    const first: Half = { from: {}, to: {} }
+    const second: Half = { from: {}, to: {} }
+    const put = (key: string, a: number, mid: number, b: number): void => {
+      ;(first.from as Record<string, number>)[key] = a
+      ;(first.to as Record<string, number>)[key] = mid
+      ;(second.from as Record<string, number>)[key] = mid
+      ;(second.to as Record<string, number>)[key] = b
+    }
 
     for (const control of host.controls(id)) {
       if (control.key === 'seed') {
         // The seed jumps once per beat rather than sweeping: interpolating it
         // would rebuild a different model on every step and read as noise.
         const value = Math.round(control.min + random() * (control.max - control.min))
-        from[control.key] = value
-        to[control.key] = value
+        put(control.key, value, value, value)
         continue
       }
-      // Both ends are pulled away from the extremes. The far ends of a slider
-      // are there to prove the range, not to look good, and a showcase that
-      // opens on a degenerate configuration sells nothing.
+
+      // Both ends are pulled away from the extremes, but only a little. The
+      // far ends of a slider are there to prove the range rather than to look
+      // good; 0.18 in from each end left only 64% of the span usable, and
+      // combined with two random draws inside it a beat could travel almost
+      // nowhere.
       const span = control.max - control.min
-      const low = control.min + span * 0.18
-      const high = control.max - span * 0.18
+      const low = control.min + span * 0.12
+      const high = control.max - span * 0.12
 
       if (control.step >= 1) {
-        // Integer controls are held FIXED for the whole beat. They change the
-        // triangle count, and a sweep can only be morphed while both ends have
-        // the same topology. They still vary — between beats, where the cut
-        // hides the change.
-        const value = Math.round(low + random() * (high - low))
-        from[control.key] = value
-        to[control.key] = value
+        // Integer controls take one value for each half of the beat, and the
+        // two are pushed apart: a stave count that goes from 11 to 12 is not
+        // a variation anyone can see.
+        // Narrow integer ranges use the WHOLE range. Trimming 12% off each
+        // end of a slider that runs 3 to 5 leaves 3.24 to 4.76, and both
+        // draws round to 4 -- which is how the stool's leg count came out
+        // identical in both halves and the one visible thing about that model
+        // stayed still.
+        const wide = control.max - control.min > 3
+        const lowI = wide ? low : control.min
+        const highI = wide ? high : control.max
+        const a = Math.round(lowI + random() * (highI - lowI) * 0.4)
+        let b = Math.round(highI - random() * (highI - lowI) * 0.4)
+        // And the two must differ, or the half is wasted.
+        if (b === a) b = a >= control.max ? a - control.step : a + control.step
+        put(control.key, a, a, b)
+        // The second half is a rebuild, so its own `from` must already be the
+        // new value -- otherwise the morph would try to interpolate a count.
+        ;(second.from as Record<string, number>)[control.key] = b
         continue
       }
 
-      const a = low + random() * (high - low)
-      const b = low + random() * (high - low)
-      // Guarantee the parameter actually travels; two random draws land close
-      // together often enough to make a beat look static.
-      const spread = Math.abs(b - a) < span * 0.25
-        ? (a < (low + high) / 2 ? high : low)
-        : b
-      from[control.key] = a
-      to[control.key] = spread
+      // Continuous controls travel the WHOLE usable band every beat, starting
+      // from either end. Drawing both ends at random and nudging them apart
+      // only when they landed within a quarter of the span meant most beats
+      // moved between a third and two thirds of it, with no guarantee which.
+      // At roughly a second per model that is the difference between a
+      // parameter that reads and one that does not.
+      const forward = random() < 0.5
+      const a = forward ? low : high
+      const b = forward ? high : low
+      put(control.key, a, (a + b) / 2, b)
     }
+
     return {
       id,
-      from,
-      to,
-      // Fire a little after the parameter sweep starts, so the two do not
-      // compete for attention within the same beat.
+      halves: [first, second],
       actionAt: 0.35,
     }
   }
@@ -204,12 +242,12 @@ export function createShowcase(host: ShowcaseHost, options: ShowcaseOptions = {}
    * turned out to have different topology despite the integer parameters being
    * pinned.
    */
-  function applyAt(beat: Beat, t: number): void {
+  function applyAt(id: string, half: Half, t: number): void {
     const patch: Record<string, number> = {}
     const eased = ease(t)
-    for (const control of host.controls(beat.id)) {
-      const a = beat.from[control.key]
-      const b = beat.to[control.key]
+    for (const control of host.controls(id)) {
+      const a = half.from[control.key]
+      const b = half.to[control.key]
       if (a === undefined || b === undefined) continue
       const raw = a + (b - a) * eased
       patch[control.key] = control.step >= 1 ? Math.round(raw) : raw
@@ -219,14 +257,29 @@ export function createShowcase(host: ShowcaseHost, options: ShowcaseOptions = {}
 
   function enterBeat(next: number): void {
     index = next
-    const beat = beats[index]!
     actionFired = false
-    host.select(beat.id)
-    morphing = host.prepareMorph(beat.from, beat.to)
-    if (!morphing) applyAt(beat, 0)
+    host.select(beats[index]!.id)
+    half = -1
+    enterHalf(0)
     // Snap the distance on the very first beat so the run does not open with
     // the camera flying in from wherever the previous model left it.
     if (next === 0) distance = fitDistance()
+  }
+
+  /**
+   * Arms the morph for one half of a beat.
+   *
+   * The second half is a genuine rebuild -- its integer parameters differ from
+   * the first's -- so it has to re-prepare rather than continue the existing
+   * capture. The dip in `update` is timed to cover exactly this.
+   */
+  function enterHalf(next: number): void {
+    if (next === half) return
+    half = next
+    const beat = beats[index]!
+    const piece = beat.halves[half === 0 ? 0 : 1]
+    morphing = host.prepareMorph(piece.from, piece.to)
+    if (!morphing) applyAt(beat.id, piece, 0)
   }
 
   function fitDistance(): number {
@@ -277,16 +330,20 @@ export function createShowcase(host: ShowcaseHost, options: ShowcaseOptions = {}
 
       const beat = beats[index]!
       const t = (elapsed - index * beatLength) / beatLength
+      // Which half of the beat, and how far through it. The integer
+      // parameters change at the join, so crossing it re-arms the morph.
+      enterHalf(t < 0.5 ? 0 : 1)
+      const ht = Math.min(1, Math.max(0, half === 0 ? t * 2 : (t - 0.5) * 2))
 
       // --- Parameters -----------------------------------------------------
       // Morphing runs every frame; only the fallback needs a slower clock.
       if (morphing) {
-        host.applyMorph(ease(t))
+        host.applyMorph(ease(ht))
       } else {
         sinceConfig += dt
         if (sinceConfig >= configInterval) {
           sinceConfig = 0
-          applyAt(beat, t)
+          applyAt(beat.id, beat.halves[half === 0 ? 0 : 1], ht)
         }
       }
 
@@ -341,7 +398,13 @@ export function createShowcase(host: ShowcaseHost, options: ShowcaseOptions = {}
       const fade = Math.min(0.13, beatLength * 0.16)
       const into = Math.min(1, (elapsed - index * beatLength) / fade)
       const outOf = Math.min(1, ((index + 1) * beatLength - elapsed) / fade)
-      const visible = ease(Math.min(into, outOf))
+      // A third ramp at the midpoint, where the integer parameters change and
+      // the model is genuinely rebuilt. It is shallower than the ramps at the
+      // ends -- this is the same object with a different stave count, not a
+      // different object, and dipping it to black would read as a cut.
+      const midGap = Math.abs(elapsed - (index + 0.5) * beatLength)
+      const midFade = Math.min(1, midGap / (fade * 0.7))
+      const visible = ease(Math.min(into, outOf, 0.42 + midFade * 0.58))
       host.caption(`@medieval-kit/${beat.id}`, `${index + 1} / ${beats.length}`, visible)
       // The dip is what hides the model swap. It is deliberately short: long
       // enough to cover the pop, short enough not to feel like a slideshow.
