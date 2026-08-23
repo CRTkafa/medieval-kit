@@ -38,31 +38,31 @@ did once.
 | `wooden-crate` | Props | 1320 | 3 | 0.69×0.52×0.55 | oak, iron |  |
 | `wooden-bucket` | Props | 439 | 4 | 0.31×0.46×0.30 | oak, iron |  |
 | `trestle-table` | Furniture | 660 | 3 | 1.91×0.74×0.78 | oak |  |
-| `wooden-bench` | Furniture | 216 | 3 | 1.62×0.49×0.30 | oak |  |
+| `wooden-bench` | Furniture | 216 | 3 | 1.62×0.45×0.30 | oak |  |
 | `wooden-stool` | Furniture | 180 | 2 | 0.38×0.43×0.36 | oak |  |
 | `pitch-torch` | Lighting | 239 | 3 | 0.13×0.70×0.13 | oak, char, ember | ✔ |
 | `iron-lantern` | Lighting | 480 | 4 | 0.15×0.30×0.17 | iron, glass, char, ember | ✔ |
 | `iron-anvil` | Smithy | 256 | 6 | 0.54×0.75×0.41 | iron, steel, oak |  |
 | `cart-wheel` | Structure | 1136 | 4 | 1.04×1.06×0.19 | oak, iron |  |
-| `log-pile` | Props | 924 | 2 | 0.98×0.58×0.71 | oak |  |
+| `log-pile` | Props | 924 | 2 | 0.99×0.58×0.70 | oak |  |
 | `hay-bale` | Props | 910 | 3 | 1.04×0.42×0.43 | straw, cloth |  |
 | `linen-sack` | Props | 342 | 3 | 0.34×0.53×0.33 | cloth |  |
 | `oak-tankard` | Props | 390 | 4 | 0.11×0.16×0.14 | oak, iron |  |
 | `straw-broom` | Tools | 1048 | 3 | 0.30×1.22×0.30 | oak, straw, cloth |  |
 | `bronze-bell` | Props | 1048 | 4 | 0.51×0.68×0.36 | brass, iron, oak | ✔ |
-| `tavern-sign` | Props | 888 | 3 | 0.72×2.29×0.86 | oak, iron | ✔ |
+| `tavern-sign` | Props | 876 | 3 | 0.38×2.29×0.93 | oak, iron | ✔ |
 | `wicker-basket` | Props | 2326 | 3 | 0.34×0.16×0.35 | oak, produce |  |
 | `leather-book` | Props | 440 | 3 | 0.20×0.08×0.27 | leather, cloth, brass |  |
 | `glass-phial` | Props | 339 | 3 | 0.06×0.14×0.06 | glass, ember, oak, char |  |
-| `coin-pouch` | Props | 602 | 3 | 0.18×0.11×0.19 | leather, cloth, brass |  |
+| `coin-pouch` | Props | 602 | 3 | 0.18×0.11×0.16 | leather, cloth, brass |  |
 | `wooden-ladder` | Structure | 440 | 2 | 0.49×2.20×0.06 | oak |  |
 | `wooden-fence` | Structure | 860 | 2 | 5.18×1.31×0.31 | oak |  |
 | `wooden-hoe` | Tools | 394 | 3 | 0.23×1.23×0.33 | oak, iron, steel |  |
 | `wooden-shovel` | Tools | 496 | 3 | 0.27×1.20×0.08 | oak, iron |  |
 | `wooden-pitchfork` | Tools | 392 | 3 | 0.27×1.58×0.15 | oak, iron |  |
-| `post-mill` | Structure | 1516 | 4 | 6.60×7.22×6.98 | oak, iron |  |
+| `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
 
-**20 523 triangles** in total. The whole kit in one scene costs less than a
+**20 667 triangles** in total. The whole kit in one scene costs less than a
 single mid-complexity character model.
 
 Every model depends on `@medieval-kit/core`, a shared support item holding the
