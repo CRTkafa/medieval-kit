@@ -18,15 +18,16 @@
  * the tip. A foot tread at the back — on a real shovel the top edge of the
  * blade is folded over, to press down on with the foot.
  */
-import { type BufferGeometry } from 'three'
+import { Color, type BufferGeometry } from 'three'
 
 import {
   chamferedBoxGeometry,
   createKitModel,
+  createTinter,
   dishedSheetGeometry,
   ironTint,
-  steelTint,
   mergeColoured,
+  prismGeometry,
   toolShaft,
   toolSocket,
   type SheetLevel,
@@ -59,14 +60,37 @@ export const woodenShovelDefaults: WoodenShovelConfig = {
 export type WoodenShovelParts = 'shaft' | 'socket' | 'blade'
 
 export function createModel(overrides: Partial<WoodenShovelConfig> = {}) {
-  return createKitModel<WoodenShovelConfig, 'oak' | 'iron' | 'steel', WoodenShovelParts>({
+  return createKitModel<WoodenShovelConfig, 'oak' | 'iron', WoodenShovelParts>({
     id: 'wooden-shovel',
     defaults: woodenShovelDefaults,
-    slots: ['oak', 'iron', 'steel'],
+    slots: ['oak', 'iron'],
     build: ({ config, random }) => {
+      const tint = createTinter(random)
       const span = config.length * config.bladeLength
       const shaftLength = config.length - span * 0.82
       const shaft = toolShaft({ length: shaftLength, radius: config.shaftRadius, random })
+
+      // --- T-handle --------------------------------------------------------
+      // The reference has one and this did not: the shaft simply ended in a
+      // swelled knob. A digging spade is worked with both hands and the lower
+      // one goes round a crossbar; it is the detail that separates a spade
+      // from a stick with a plate on the end, and it is right at the end of
+      // the silhouette where the eye lands.
+      //
+      // The bar crosses the grip swell rather than butting onto it, so the
+      // joint is an overlap like every other in the kit.
+      const gripSpan = config.shaftRadius * 8.6
+      const grip = prismGeometry(
+        config.shaftRadius * 0.95,
+        config.shaftRadius * 0.82,
+        gripSpan,
+        7,
+        [0, 0, 0],
+        new Color(tint('oak', 0.05)),
+      )
+      // Built along Y; +90 degrees about Z lays it along X, across the blade.
+      grip.rotateZ(Math.PI / 2)
+      grip.translate(0, -shaft.top + config.shaftRadius * 0.9, 0)
 
       const socketLength = config.length * 0.05
       const socket = toolSocket({
@@ -98,7 +122,12 @@ export function createModel(overrides: Partial<WoodenShovelConfig> = {}) {
         { y: span, halfWidth: half * 0.44, thickness: t * 0.14, curve: curve * 0.48 },
       ]
 
-      const sheet = dishedSheetGeometry(profile, 8, steelTint(random, -0.04), steelTint(random, 0.04))
+      // Both colours copied out first: `createTinter` returns one Color and
+      // mutates it, so two tints inside one call would resolve to the same
+      // value.
+      const boardLow = new Color(tint('oak', -0.05))
+      const boardHigh = new Color(tint('oakEnd', 0.03))
+      const sheet = dishedSheetGeometry(profile, 8, boardLow, boardHigh)
 
       // Foot tread: the fold at the top edge of the blade, BEHIND the dish. It
       // must sit at shoulder height and be WIDE — this is where you step, and a
@@ -109,7 +138,7 @@ export function createModel(overrides: Partial<WoodenShovelConfig> = {}) {
         t * 1.8,
         t * 0.34,
         [0, 0, 0],
-        steelTint(random, -0.07),
+        new Color(tint('oak', -0.1)),
       )
       tread.rotateX(0.42)
       tread.translate(0, span * 0.12, -t * 1.7)
@@ -137,10 +166,14 @@ export function createModel(overrides: Partial<WoodenShovelConfig> = {}) {
       }
 
       return {
-        shaft: { slot: 'oak', geometry: shaft.geometry },
+        shaft: { slot: 'oak', geometry: mergeColoured([shaft.geometry, grip]) },
         socket: { slot: 'iron', geometry: socket },
         blade: {
-          slot: 'steel',
+          // Oak, not steel. A medieval digging shovel is a shaped board with
+          // an iron shoe along its lip -- the strap below is that shoe, and it
+          // has been there all along while the board it protects was rendered
+          // as a sheet of polished steel.
+          slot: 'oak',
           geometry: blade,
           extras: [{ slot: 'iron', geometry: strap }],
         },

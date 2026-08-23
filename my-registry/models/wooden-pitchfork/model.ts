@@ -9,13 +9,13 @@
  * point, and none of them sits at exactly the same angle as its neighbour. All
  * three were fixed here.
  */
-import { type BufferGeometry } from 'three'
+import { Color, type BufferGeometry } from 'three'
 
 import {
   chamferedBoxGeometry,
   createKitModel,
+  createTinter,
   ironTint,
-  steelTint,
   jitter,
   bendGeometry,
   latheGeometry,
@@ -40,20 +40,28 @@ export interface WoodenPitchforkConfig {
 export const woodenPitchforkDefaults: WoodenPitchforkConfig = {
   length: 1.5,
   shaftRadius: 0.021,
-  tineCount: 3,
-  spread: 0.2,
-  tineLength: 0.24,
+  // Four tines and longer ones. Three is a garden fork; a hay fork has four
+  // or five, and the tines are the working length of the tool -- at 0.24 on a
+  // 1.5 m shaft they were 16% of it against roughly 22% in the reference, and
+  // read as stubs rather than as something you could lift a forkful with.
+  // Tines run close to parallel, splaying only a little. Fanned out like a
+  // claw they read as a garden cultivator; a hay fork's tines stay together
+  // so a forkful stays on them.
+  tineCount: 4,
+  spread: 0.15,
+  tineLength: 0.34,
   seed: 37,
 }
 
 export type WoodenPitchforkParts = 'shaft' | 'socket' | 'tines'
 
 export function createModel(overrides: Partial<WoodenPitchforkConfig> = {}) {
-  return createKitModel<WoodenPitchforkConfig, 'oak' | 'iron' | 'steel', WoodenPitchforkParts>({
+  return createKitModel<WoodenPitchforkConfig, 'oak' | 'iron', WoodenPitchforkParts>({
     id: 'wooden-pitchfork',
     defaults: woodenPitchforkDefaults,
-    slots: ['oak', 'iron', 'steel'],
+    slots: ['oak', 'iron'],
     build: ({ config, random }) => {
+      const tint = createTinter(random)
       const tineSpan = config.length * config.tineLength
       const shaftLength = config.length - tineSpan * 0.86
       const shaft = toolShaft({ length: shaftLength, radius: config.shaftRadius, random })
@@ -95,9 +103,13 @@ export function createModel(overrides: Partial<WoodenPitchforkConfig> = {}) {
           { y: tineSpan * 0.9, radius: radius * 0.42 },
           { y: tineSpan, radius: radius * 0.12 },  // pointed but not zero
         ]
-        const tine = latheGeometry(profile, 6, [0, 0, 0], steelTint(random, -0.05), {
+        // Oak, not steel. The model is called wooden-pitchfork and the
+        // reference is exactly that: a hay fork was cut and steamed from wood,
+        // because iron tines are heavy at the end of a long shaft and hay does
+        // not need an edge. The socket stays iron -- that is the ferrule.
+        const tine = latheGeometry(profile, 6, [0, 0, 0], new Color(tint('oak', -0.03)), {
           capTop: false,
-          colourTop: steelTint(random, 0.05),
+          colourTop: new Color(tint('oakEnd', 0.06)),
         })
         // Curve: a straight tine looks like a technical drawing. A real pitchfork
         // tine is bent forward — so it does not drop the straw it has lifted.
@@ -114,7 +126,7 @@ export function createModel(overrides: Partial<WoodenPitchforkConfig> = {}) {
       return {
         shaft: { slot: 'oak', geometry: shaft.geometry },
         socket: { slot: 'iron', geometry: socket },
-        tines: { slot: 'steel', geometry: mergeColoured(pieces) },
+        tines: { slot: 'oak', geometry: mergeColoured(pieces) },
       }
     },
   }, overrides)

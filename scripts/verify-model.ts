@@ -317,7 +317,7 @@ const CASES: readonly Case[] = [
     variants: [{ bladeLength: 0.18 }, { bladeLength: 0.4 }, { dish: 0 }, { bladeAngle: 25 }] , maxSize: [0.3, 1.4, 0.15] },
   { id: 'wooden-pitchfork', make: as(createPitchfork), patch: { tineCount: 5, spread: 0.3 },
     parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
-    variants: [{ tineCount: 2 }, { spread: 0 }, { tineCount: 6 }] , maxSize: [0.3, 1.9, 0.15] },
+    variants: [{ tineCount: 2 }, { spread: 0 }, { tineCount: 6 }] , maxSize: [0.4, 1.9, 0.2] },
   { id: 'trestle-table', make: as(createTable), patch: { plankCount: 6, splay: 0.35 },
     parts: 3, ownSlot: 'oak', borrowSlot: 'oak', closed: true, maxSize: [2.2, 0.9, 1.3],
     variants: [{ plankCount: 2 }, { splay: 0 }] },

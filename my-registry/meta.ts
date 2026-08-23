@@ -512,7 +512,7 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       bladeAngle: { type: 'number', label: 'Blade angle', min: 0, max: 25, step: 1, unit: 'degrees' },
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
-    materialSlots: ['oak', 'iron', 'steel'],
+    materialSlots: ['oak', 'iron'],
     parts: ['shaft', 'socket', 'blade'],
   },
   'wooden-pitchfork': {
@@ -529,10 +529,10 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       },
       tineCount: { type: 'number', label: 'Tine count', min: 2, max: 6, step: 1 },
       spread: { type: 'number', label: 'Tine spread', min: 0, max: 0.4, step: 0.01 },
-      tineLength: { type: 'number', label: 'Tine length', min: 0.1, max: 0.32, step: 0.01 },
+      tineLength: { type: 'number', label: 'Tine length', min: 0.1, max: 0.42, step: 0.01 },
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
-    materialSlots: ['oak', 'iron', 'steel'],
+    materialSlots: ['oak', 'iron'],
     parts: ['shaft', 'socket', 'tines'],
   },
 }
