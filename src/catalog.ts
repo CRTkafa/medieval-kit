@@ -47,6 +47,7 @@ import { createModel as createMill } from '@/models/medieval-kit/post-mill/model
 import { createModel as createWell } from '@/models/medieval-kit/stone-well/model.ts'
 import { createModel as createCauldron } from '@/models/medieval-kit/iron-cauldron/model.ts'
 import { createModel as createCart } from '@/models/medieval-kit/hand-cart/model.ts'
+import { createModel as createVeg } from '@/models/medieval-kit/vegetables/model.ts'
 
 export interface ParamSpec {
   readonly key: string
@@ -155,6 +156,7 @@ const FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'stone-well': as(createWell),
   'iron-cauldron': as(createCauldron),
   'hand-cart': as(createCart),
+  'vegetables': as(createVeg),
   'wooden-ladder': as(createLadder),
   'wooden-fence': as(createFence),
   'wooden-hoe': as(createHoe),
@@ -309,7 +311,7 @@ const MEDIEVAL_ORDER = [
   'wooden-hoe', 'wooden-shovel', 'wooden-pitchfork',
   // Last, because it is the landmark: a 6 m mill after a row of hand tools is
   // the order that makes the scale of it land.
-  'iron-cauldron', 'hand-cart',
+  'iron-cauldron', 'hand-cart', 'vegetables',
   'stone-well',
   'post-mill',
 ] as const

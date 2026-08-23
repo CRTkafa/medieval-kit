@@ -450,6 +450,23 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak'],
     parts: ['rails', 'rungs'],
   },
+  'vegetables': {
+    title: 'Vegetables',
+    description:
+      'Loose heap mixed from eight kinds: turnip, cabbage, onion, leek, parsnip, carrot, tomato and potato. The first six are the period-correct set.',
+    category: 'Props',
+    tags: ['medieval', 'lowpoly', 'props', 'procedural', 'food'],
+    controls: {
+      count: { type: 'number', label: 'How many', min: 1, max: 30, step: 1 },
+      kinds: { type: 'number', label: 'Kinds in the mix', min: 1, max: 8, step: 1 },
+      lead: { type: 'number', label: 'Leading kind', min: 0, max: 7, step: 1 },
+      size: { type: 'number', label: 'Vegetable size', min: 0.05, max: 0.2, step: 0.005, unit: 'm' },
+      spread: { type: 'number', label: 'Heap spread', min: 1, max: 5, step: 0.1 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['produce'],
+    parts: ['bulbs', 'roots'],
+  },
   'iron-cauldron': {
     title: 'Iron Cauldron',
     description:

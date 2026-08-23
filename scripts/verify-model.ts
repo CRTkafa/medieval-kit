@@ -53,6 +53,7 @@ import { createModel as createMill } from '@/models/medieval-kit/post-mill/model
 import { createModel as createWell } from '@/models/medieval-kit/stone-well/model.ts'
 import { createModel as createCauldron } from '@/models/medieval-kit/iron-cauldron/model.ts'
 import { createModel as createCart } from '@/models/medieval-kit/hand-cart/model.ts'
+import { createModel as createVeg } from '@/models/medieval-kit/vegetables/model.ts'
 
 const failures: string[] = []
 function expect(label: string, condition: boolean): void {
@@ -307,6 +308,10 @@ const CASES: readonly Case[] = [
   { id: 'wooden-ladder', make: as(createLadder), patch: { rungCount: 12 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ rungCount: 3 }, { taper: 0 }] , maxSize: [0.6, 2.4, 0.12] },
+  { id: 'vegetables', make: as(createVeg), patch: { count: 22, kinds: 3, lead: 4 },
+    parts: 2, ownSlot: 'produce', borrowSlot: 'produce',
+    variants: [{ kinds: 1 }, { count: 1 }, { lead: 3 }, { spread: 5 }],
+    maxSize: [1.4, 0.6, 1.4] },
   { id: 'iron-cauldron', make: as(createCauldron), patch: { stones: 16, links: 6 },
     parts: 3, ownSlot: 'stone', borrowSlot: 'iron',
     variants: [{ lit: 0 }, { stones: 6 }, { potRadius: 0.36 }],
