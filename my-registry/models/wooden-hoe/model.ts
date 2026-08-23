@@ -27,6 +27,7 @@ import {
   bendGeometry,
   chamferedBoxGeometry,
   createKitModel,
+  dishedSheetGeometry,
   ironTint,
   steelTint,
   jitter,
@@ -35,6 +36,7 @@ import {
   toolShaft,
   toolSocket,
   type Level,
+  type SheetLevel,
 } from '../core/index.ts'
 
 export interface WoodenHoeConfig {
@@ -53,7 +55,18 @@ export interface WoodenHoeConfig {
 export const woodenHoeDefaults: WoodenHoeConfig = {
   length: 1.14,
   shaftRadius: 0.021,
-  bladeWidth: 0.2,
+  bladeWidth: 0.23,
+  // 112 stands. I lowered it to 95 after reading a render in which the blade
+  // happened to sit edge-on to the camera, and mistook foreshortening for the
+  // wrong angle.
+  //
+  // It is also worth recording that the reference generated for this model is
+  // a plain strap hoe, where this one is deliberately a GOOSENECK -- a curved
+  // forged neck carrying the blade ahead of the shaft axis, as the
+  // description says. Both are period-correct, and bending the model towards
+  // the photograph on that point would be changing the design rather than
+  // fixing a fault. The blade's depth and wedge are another matter: a hoe
+  // blade is the heavy end of the tool whichever neck it hangs from.
   neckSweep: 112,
   dish: 1,
   seed: 23,
@@ -110,22 +123,43 @@ export function createModel(overrides: Partial<WoodenHoeConfig> = {}) {
       // --- Blade ---------------------------------------------------------------
       // Continues from the tip of the neck. Built base-at-origin so that the
       // dish is actually visible.
-      const bladeLength = config.length * 0.115
+      // 0.17 of the tool, not 0.115. A field hoe's blade is the heavy end of
+      // it -- in the reference it is close to a fifth of the whole length --
+      // and at 131 mm ours read as a tab riveted to a stick.
+      const bladeLength = config.length * 0.15
       const thick = config.length * 0.028
       const thin = config.length * 0.006
-      const blade = chamferedBoxGeometry(
-        [config.bladeWidth * 0.72, thick],
-        [config.bladeWidth, thin],
-        bladeLength,
-        thin * 0.6,
-        [0, bladeLength / 2, 0],
-        steelTint(random, -0.04),
-        steelTint(random, 0.05),
+      // A dished sheet, not a bent box.
+      //
+      // The blade was a `chamferedBoxGeometry` put through `bendGeometry`.
+      // That has exactly four levels in Y, and once the blade was made deep
+      // enough to look right the bend had to work a 50-degree arc across those
+      // four -- the cutting edge came out visibly faceted, a row of steps
+      // instead of a curve. `dishedSheetGeometry` exists for this: it produces
+      // one seamless concave surface whose cross-section is curved at every
+      // level, which is what the shovel's blade is built from.
+      //
+      // The hoe is a wedge: narrow where the neck carries it, wide where it
+      // meets the ground. That taper is most of what identifies the
+      // silhouette, and it was nearly parallel-sided before.
+      const halfEdge = config.bladeWidth / 2
+      // `curve` is an absolute rise in metres, not a ratio, so it has to be
+      // scaled to the blade. Written as `-0.34 * dish` it asked for a 340 mm
+      // rise across a 230 mm blade -- seven times its own half-width -- and
+      // the sheet came out as a pair of wings. The shovel gets this right:
+      // `bladeWidth * dish`, with its own dish slider running 0 to 0.22. This
+      // one's runs 0 to 2, so the coefficient differs; the quantity does not.
+      const curve = config.bladeWidth * 0.13 * config.dish
+      const profile: SheetLevel[] = [
+        { y: 0, halfWidth: halfEdge * 0.34, thickness: thick, curve: curve * 0.15 },
+        { y: bladeLength * 0.18, halfWidth: halfEdge * 0.6, thickness: thick * 0.9, curve: curve * 0.5 },
+        { y: bladeLength * 0.52, halfWidth: halfEdge * 0.86, thickness: thick * 0.6, curve: curve * 0.9 },
+        { y: bladeLength * 0.86, halfWidth: halfEdge, thickness: thin * 1.6, curve },
+        { y: bladeLength, halfWidth: halfEdge * 0.99, thickness: thin, curve: curve * 0.95 },
+      ]
+      const blade = dishedSheetGeometry(
+        profile, 7, steelTint(random, -0.04), steelTint(random, 0.05),
       )
-      // Dish: the cutting edge curves back towards the user, so that it can hold
-      // the soil in front of it. NEGATIVE curvature, otherwise the hoe turns
-      // into a scoop that pushes the soil away from itself.
-      if (config.dish > 0) bendGeometry(blade, (-0.9 * config.dish) / bladeLength)
       // A forged blade is not perfectly symmetric.
       blade.rotateY(jitter(random, 0.04))
       // Align to the tangent at the neck tip, then move it there — order is critical.

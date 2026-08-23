@@ -311,7 +311,7 @@ const CASES: readonly Case[] = [
     variants: [{ legCount: 5 }, { splay: 0 }] , maxSize: [0.5, 0.55, 0.5] },
   { id: 'wooden-hoe', make: as(createHoe), patch: { bladeWidth: 0.26, neckSweep: 130 },
     parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
-    variants: [{ neckSweep: 45 }, { bladeWidth: 0.3 }, { dish: 0 }] , maxSize: [0.32, 1.6, 0.42] },
+    variants: [{ neckSweep: 45 }, { bladeWidth: 0.3 }, { dish: 0 }] , maxSize: [0.34, 1.6, 0.48] },
   { id: 'wooden-shovel', make: as(createShovel), patch: { bladeWidth: 0.3, bladeLength: 0.36, dish: 0.22 },
     parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
     variants: [{ bladeLength: 0.18 }, { bladeLength: 0.4 }, { dish: 0 }, { bladeAngle: 25 }] , maxSize: [0.3, 1.4, 0.15] },
