@@ -12,6 +12,8 @@ on an opaque package. This repository holds one such registry.
 - **`src/`** — a demo app that installs from both `@medieval-kit` and the
   first-party `@scifi-kit`, so the two can be inspected side by side.
 
+![The whole kit](media/kit.png)
+
 ## Run the viewer
 
 Requires [Bun](https://bun.sh) and a browser with WebGPU (the `@scifi-kit` model
@@ -58,13 +60,13 @@ bun run verify:glb    # export every model, read it back, compare
 bun run render        # renders/_sheet.png — actually look at the models
 ```
 
-`verify` runs ~500 browser-free checks against the installed sources: geometry
+`verify` runs ~800 browser-free checks against the installed sources: geometry
 validity, winding, coplanar-face (z-fighting) detection, bounding-box limits,
 stable root and anchor identity across `configure()`, deterministic seeding,
 material ownership, idempotent disposal, action semantics, and agreement
 between each model and its published metadata.
 
-Four of those deserve a note, because each was written after a real bug:
+Five of those deserve a note, because each was written after a real bug:
 
 - **Winding** is checked three ways, because no single measure is sufficient.
   Bodies of revolution use radial alignment — every radial face on the outer
@@ -85,6 +87,16 @@ Four of those deserve a note, because each was written after a real bug:
 - **Frame-rate independence** for animated models: the same elapsed time is
   stepped at two different frame rates and the results must agree. A naive lerp
   fails this.
+- **Nothing floats.** Every check above asks about surfaces, and none of them
+  can see a piece of a model hanging in the air with nothing under it — a chest
+  lid separated from its chest passed all of them. `scripts/support.ts`
+  voxelises the model, finds the connected components of occupied space, and
+  requires each one to reach the floor. `scripts/audit.ts` runs that across the
+  default, both slider extremes, both ends of a sweep, every action and the
+  midpoint of a morph, because a variation must not break what the default gets
+  right. It began at 22 failing cases: the bell and the sign had no supporting
+  structure at all, the lantern was in four pieces, and the ladder's rungs were
+  sized by a formula that disagreed with where its rails actually were.
 
 Every check was mutation-tested: sabotage the code, confirm the check fails,
 restore, confirm it passes. A passing test is not evidence that it works.
@@ -95,6 +107,30 @@ real bugs, and none of them could say "this shovel does not look like a shovel."
 The renderer is a small software rasteriser: no browser, no GPU. The shovel was
 rewritten a fourth time, the hoe a third and the hay bale a second because of
 what those PNGs showed.
+
+## Showcase
+
+The viewer can play itself. A tour orbits the whole catalogue on one continuous
+camera move, morphing each model's parameters as it goes, with the interface
+hidden so the frame is clean enough to record.
+
+```text
+viewer.html?showcase=60
+```
+
+**60 s is the default.** The tour splits its running time equally between the
+models, so with 27 of them a 30 s run gives each 1.1 seconds — which is a flyby,
+not a demonstration. At 60 s each model gets 2.2 s, which is enough for the
+sweep to read.
+
+Two things make the variation visible rather than merely present. Continuous
+controls travel the whole usable band every beat instead of two random draws
+inside it. And every beat is split in half so that the *integer* controls —
+stave count, plank count, spokes, rows, tines — can change at the midpoint,
+where the same dip that hides a model swap hides the rebuild. Those are the
+parameters a viewer actually notices, and morphing cannot interpolate them,
+so before the split they were pinned for the whole beat and the tour looked
+static.
 
 ## Layout
 
@@ -115,8 +151,12 @@ scripts/
   verify-model.ts       browser-free conformance checks
   verify-glb.ts         export/re-import round trip
   zfight.ts             coplanar overlap detection
+  support.ts            voxel connectivity — nothing may float
+  audit.ts              runs the support check across every configuration
   render.ts             offline software rasteriser → PNG contact sheet
+  reference-shots.ts    one photographic reference per model, for comparison
   export-glb.ts         batch GLB export
+media/                  images used by this README
 models.json             which registries this project resolves
 models.lock.json        install receipt; `vibe3d diff` compares against it
 ```
