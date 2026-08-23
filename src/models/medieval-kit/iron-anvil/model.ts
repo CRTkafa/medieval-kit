@@ -12,6 +12,9 @@ import { Color } from 'three'
 import {
   chamferedBoxGeometry,
   createKitModel,
+  createTinter,
+  prismGeometry,
+  roughenGeometry,
   jitter,
   MEDIEVAL_PALETTE,
   mergeColoured,
@@ -38,13 +41,13 @@ export const ironAnvilDefaults: IronAnvilConfig = {
   seed: 9,
 }
 
-export type IronAnvilParts = 'base' | 'waist' | 'body' | 'face' | 'horn'
+export type IronAnvilParts = 'base' | 'waist' | 'body' | 'face' | 'horn' | 'stump'
 
 export function createModel(overrides: Partial<IronAnvilConfig> = {}) {
-  return createKitModel<IronAnvilConfig, 'iron' | 'steel', IronAnvilParts>({
+  return createKitModel<IronAnvilConfig, 'iron' | 'steel' | 'oak', IronAnvilParts>({
     id: 'iron-anvil',
     defaults: ironAnvilDefaults,
-    slots: ['iron', 'steel'],
+    slots: ['iron', 'steel', 'oak'],
     build: ({ config, random }) => {
       const tint = new Color()
       const shade = (amount = 0.05): Color => {
@@ -134,7 +137,47 @@ export function createModel(overrides: Partial<IronAnvilConfig> = {}) {
       // surface ends up coplanar with the body (the z-fighting rule).
       horn.translate(config.faceLength * 0.31 + reach / 2 - config.faceWidth * 0.35, bodyY + bodyHeight * 0.12, 0)
 
+      // --- Stump ---------------------------------------------------------
+      // An anvil is used ON something. It is bedded into the end grain of a
+      // log so the block takes the ring out of it and puts the face at the
+      // smith's knuckle height; the file header has said the model "comes to
+      // ~0.75 m with a real anvil stump" for as long as it has existed, while
+      // shipping the 0.34 m anvil on its own, lying on the floor.
+      //
+      // It is its own part, so anyone who wants the bare anvil for their own
+      // bench hides `parts.stump` -- the same arrangement as the bell's frame.
+      const stumpTop = -half + config.height * 0.06
+      const stumpHeight = config.height * 1.2
+      // Nearly as wide as the anvil is long. A block the anvil overhangs looks
+      // like it would tip the first time anyone swung at it; a chopping block
+      // is a section of trunk, chosen fat.
+      const stumpRadius = config.faceLength * 0.42
+      const woodTint = createTinter(random)
+      // BOTH colours copied out before either is read.
+      //
+      // `createTinter` returns the same Color object on every call -- its own
+      // docstring says so -- so passing two tints as arguments to one call
+      // hands the callee the same object twice, holding whichever value was
+      // computed last. The block came out painted in end-grain on every face,
+      // which is why it rendered pale.
+      const side = new Color(woodTint('oak', -0.26))
+      const endGrain = new Color(woodTint('oakEnd', -0.16))
+      const stump = prismGeometry(
+        stumpRadius * 1.1,
+        stumpRadius,
+        stumpHeight,
+        9,
+        [0, stumpTop - stumpHeight / 2, 0],
+        side,
+        { colourTop: endGrain },
+      )
+      // Split and weathered, the way a chopping block always is. Kept small:
+      // the block reads by its mass, and the anvil sitting square on it is the
+      // detail that matters.
+      roughenGeometry(stump, stumpRadius * 0.035, { salt: 5, scaleY: 0.3 })
+
       return {
+        stump: { slot: 'oak', geometry: stump },
         base: { slot: 'iron', geometry: base },
         waist: { slot: 'iron', geometry: waist },
         body: { slot: 'iron', geometry: body },

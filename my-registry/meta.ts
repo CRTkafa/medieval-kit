@@ -196,8 +196,8 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       hornReach: { type: 'number', label: 'Horn reach', min: 0.2, max: 0.8, step: 0.02 },
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
-    materialSlots: ['iron', 'steel'],
-    parts: ['base', 'waist', 'body', 'face', 'horn'],
+    materialSlots: ['iron', 'steel', 'oak'],
+    parts: ['base', 'waist', 'body', 'face', 'horn', 'stump'],
   },
   'cart-wheel': {
     title: 'Cart Wheel',

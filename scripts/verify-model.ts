@@ -299,7 +299,7 @@ const CASES: readonly Case[] = [
     parts: 4, ownSlot: 'iron', borrowSlot: 'oak', radial: true, radialPart: 'staves',
     variants: [{ handle: 0 }, { hoopCount: 0 }] , maxSize: [0.45, 0.6, 0.45] },
   { id: 'iron-anvil', make: as(createAnvil), patch: { hornReach: 0.7 },
-    parts: 5, ownSlot: 'steel', borrowSlot: 'iron', closed: true , maxSize: [0.6, 0.5, 0.3] },
+    parts: 6, ownSlot: 'steel', borrowSlot: 'iron', closed: true , maxSize: [0.6, 0.85, 0.42] },
   { id: 'wooden-ladder', make: as(createLadder), patch: { rungCount: 12 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ rungCount: 3 }, { taper: 0 }] , maxSize: [0.6, 2.4, 0.12] },
