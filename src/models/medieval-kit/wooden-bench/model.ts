@@ -55,7 +55,15 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
     build: ({ config, random }) => {
       const tint = createTinter(random)
       const half = config.height / 2
-      const seatThickness = config.height * 0.09
+      // 0.135 of the height, not 0.09.
+      //
+      // At 0.09 the seat came out 40 mm on a bench 1.62 m long -- one
+      // fortieth of its own span, where the reference reads about one
+      // twentieth. Medieval furniture is riven, not machined: the board is
+      // whatever the log gave, and that is thick. A thin slab over a long
+      // span also looks like it would flex, which is the specific way these
+      // pieces were reading as flimsy.
+      const seatThickness = config.height * 0.135
       const seatTop = half
       const seatBottom = seatTop - seatThickness
       const timber = config.width * 0.09
@@ -80,17 +88,53 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
 
       const legPieces = []
       for (const side of [-1, 1]) {
-        // Leg board: it widens on the way down. The splay is in the measure,
-        // not in the angle — widening the bottom face instead of rotating is
-        // both cheaper and lets the foot sit FLAT on the ground, whereas a
-        // rotated leg stands on its edge.
+        // Leg board with an arch cut out of its foot.
+        //
+        // The board widens on the way down. The splay is in the measure, not
+        // in the angle — widening the bottom face instead of rotating is both
+        // cheaper and lets the foot sit FLAT on the ground, whereas a rotated
+        // leg stands on its edge.
+        //
+        // The arch is not decoration. A plank leg standing on its whole edge
+        // rocks on any floor that is not flat, and no medieval floor was; the
+        // cut leaves two feet, and two feet on each board give the bench four
+        // points to find the ground with. It is also the single most
+        // recognisable thing about the silhouette, and the reference has it.
+        //
+        // It is cut by building the board in three pieces rather than
+        // subtracting: the geometry here is all non-indexed triangle soup with
+        // no boolean operations, so a notch is made by not filling it.
+        const archHeight = legHeight * 0.3
+        const archFrac = archHeight / legHeight
+        const footWidth = legWidth + spread * 2
+        const widthAtArch = legWidth + spread * 2 * (1 - archFrac)
+
+        // Upper board: from the top of the arch to the underside of the seat.
         legPieces.push(taperedBoxGeometry(
-          [legWidth + spread * 2, timber * 1.35],
+          [widthAtArch, timber * 1.35],
           [legWidth, timber * 1.35],
-          legHeight,
-          [side * legX, -half + legHeight / 2, 0],
+          legHeight - archHeight,
+          [side * legX, -half + archHeight + (legHeight - archHeight) / 2, 0],
           tint('oak', -0.02),
         ))
+
+        // The two feet. They run PAST the top of the arch into the board above,
+        // so the joint is an overlap rather than two faces meeting.
+        const footThickness = footWidth * 0.3
+        const footRise = archHeight + legHeight * 0.07
+        for (const foot of [-1, 1]) {
+          legPieces.push(taperedBoxGeometry(
+            [footThickness, timber * 1.35],
+            [footThickness * 0.92, timber * 1.35],
+            footRise,
+            [
+              side * legX + foot * (footWidth - footThickness) / 2,
+              -half + footRise / 2,
+              0,
+            ],
+            tint('oak', -0.04),
+          ))
+        }
 
         // Tenon: the end of the leg that runs THROUGH the seat and shows on
         // top of it. It overshoots the seat's top face — the most recognisable

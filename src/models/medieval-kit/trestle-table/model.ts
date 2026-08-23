@@ -56,7 +56,11 @@ export function createModel(overrides: Partial<TrestleTableConfig> = {}) {
         return tint
       }
       const half = config.height / 2
-      const board = config.height * 0.045
+      // 0.07 of the height, not 0.045: a 52 mm plank rather than a 33 mm one
+      // across 1.9 m. Same reasoning as the bench -- a trestle top is a slab
+      // laid on frames and taken off again, and it has to be stiff enough to
+      // carry itself between two supports.
+      const board = config.height * 0.07
       const timber = config.height * 0.075
 
       // --- top: separate boards with a thin gap between them ---
