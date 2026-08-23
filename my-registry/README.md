@@ -26,7 +26,7 @@ Configure `models.json` first so the namespace resolves:
 
 ## Models
 
-28 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
+29 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
 generated from the models themselves with `bun scripts/catalog-table.ts` — a
 hand-written list goes stale on the first model you add, and this one already
 did once.
@@ -60,9 +60,10 @@ did once.
 | `wooden-hoe` | Tools | 394 | 3 | 0.23×1.23×0.33 | oak, iron, steel |  |
 | `wooden-shovel` | Tools | 496 | 3 | 0.27×1.20×0.08 | oak, iron |  |
 | `wooden-pitchfork` | Tools | 392 | 3 | 0.27×1.58×0.15 | oak, iron |  |
+| `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth |  |
 | `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
 
-**20 667 triangles** in total. The whole kit in one scene costs less than a
+**22 043 triangles** in total. The whole kit in one scene costs less than a
 single mid-complexity character model.
 
 Every model depends on `@medieval-kit/core`, a shared support item holding the
@@ -125,7 +126,7 @@ rebuilds topology and is not cheap. Anything that changes per frame belongs in
 
 ## Material slots
 
-Eleven slots, and each one exists because a single material could not carry the
+Twelve slots, and each one exists because a single material could not carry the
 difference.
 
 | Slot | What it covers | Why it is separate |
@@ -141,6 +142,7 @@ difference.
 | `produce` | fruit and vegetable skin | given straw's roughness, an apple would look like dry grass |
 | `ember` | flame | `MeshBasicMaterial` — it does not receive light, it emits |
 | `char` | charcoal and pitch | — |
+| `stone` | dressed and rubble masonry | its colour is close to weathered oak; what separates them at a glance is that stone scatters light completely flat, and roughness is not something vertex colour can carry |
 
 `ember` also acts as a rule in two places: bodies in that slot are skipped
 entirely while ambient occlusion and mottle are baked. The reason is simple —

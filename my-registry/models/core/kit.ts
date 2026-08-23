@@ -142,6 +142,10 @@ const MOTTLE_BY_SLOT: Readonly<Record<MedievalSlot, number>> = {
   brass: 0.35,
   steel: 0.22,
   glass: 0.15,
+  // Between timber and iron. Rubble masonry varies block to block, but each
+  // block is fairly even in itself, so the mottle wants to read at the scale
+  // of a stone rather than of a grain.
+  stone: 0.75,
   ember: 0,   // a flame is not mottled: its colour is already the final colour
 }
 

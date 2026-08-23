@@ -450,6 +450,24 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak'],
     parts: ['rails', 'rungs'],
   },
+  'stone-well': {
+    title: 'Stone Well',
+    description:
+      'Village well: a drystone kerb, a timber frame over it, and a windlass with rope and bucket.',
+    category: 'Structure',
+    tags: ['medieval', 'lowpoly', 'structure', 'procedural'],
+    controls: {
+      radius: { type: 'number', label: 'Kerb radius', min: 0.35, max: 1.1, step: 0.01, unit: 'm' },
+      wallHeight: { type: 'number', label: 'Kerb height', min: 0.3, max: 1.1, step: 0.02, unit: 'm' },
+      courses: { type: 'number', label: 'Stone courses', min: 2, max: 7, step: 1 },
+      blocks: { type: 'number', label: 'Blocks per course', min: 6, max: 18, step: 1 },
+      frameHeight: { type: 'number', label: 'Frame height', min: 1.2, max: 2.8, step: 0.05, unit: 'm' },
+      depth: { type: 'number', label: 'Bucket drop', min: 0, max: 1, step: 0.02 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['stone', 'oak', 'iron', 'cloth'],
+    parts: ['kerb', 'frame', 'windlass', 'bucket'],
+  },
   'post-mill': {
     title: 'Post Mill',
     description:

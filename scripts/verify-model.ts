@@ -50,6 +50,7 @@ import { createModel as createPhial } from '@/models/medieval-kit/glass-phial/mo
 import { createModel as createPouch } from '@/models/medieval-kit/coin-pouch/model.ts'
 import { createModel as createBasket } from '@/models/medieval-kit/wicker-basket/model.ts'
 import { createModel as createMill } from '@/models/medieval-kit/post-mill/model.ts'
+import { createModel as createWell } from '@/models/medieval-kit/stone-well/model.ts'
 
 const failures: string[] = []
 function expect(label: string, condition: boolean): void {
@@ -304,6 +305,10 @@ const CASES: readonly Case[] = [
   { id: 'wooden-ladder', make: as(createLadder), patch: { rungCount: 12 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ rungCount: 3 }, { taper: 0 }] , maxSize: [0.6, 2.4, 0.12] },
+  { id: 'stone-well', make: as(createWell), patch: { courses: 6, blocks: 15 },
+    parts: 4, ownSlot: 'stone', borrowSlot: 'oak',
+    variants: [{ courses: 2 }, { depth: 1 }, { blocks: 6 }],
+    maxSize: [2.2, 2.2, 1.7] },
   { id: 'post-mill', make: as(createMill), patch: { sailBars: 12, ladderRungs: 17 },
     parts: 4, ownSlot: 'oak', borrowSlot: 'iron',
     variants: [{ sailBars: 3 }, { sailWidth: 0.28 }, { height: 3.5 }],

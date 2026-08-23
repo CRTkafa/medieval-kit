@@ -25,6 +25,7 @@ export type MedievalSlot =
   | 'produce'  // fruit and vegetable skin
   | 'ember'    // flame — does not take light, it emits it
   | 'char'     // charcoal, pitch
+  | 'stone'    // dressed and rubble masonry
 
 /**
  * The material TYPE can differ per slot. `ember` is an unlit MeshBasicMaterial;
@@ -43,6 +44,7 @@ export interface SlotMaterial {
   readonly produce: MeshStandardMaterial
   readonly ember: MeshBasicMaterial
   readonly char: MeshStandardMaterial
+  readonly stone: MeshStandardMaterial
 }
 
 export interface MedievalPalette {
@@ -92,6 +94,17 @@ export interface MedievalPalette {
   readonly char: Color
   /** Charcoal that is still glowing. */
   readonly charHot: Color
+  /**
+   * Masonry.
+   *
+   * The kit had no stone at all, which for a medieval catalogue is a hole
+   * rather than an omission: a well, a trough, a millstone, a boundary wall
+   * and a hearth are all stone before they are anything else. Its colour is
+   * close to weathered oak on purpose -- what separates the two at a glance is
+   * not hue but that stone scatters light completely flat, which is carried by
+   * the material's roughness rather than by the palette.
+   */
+  readonly stone: Color
 }
 
 /**
@@ -140,6 +153,7 @@ export const MEDIEVAL_PALETTE: MedievalPalette = {
   ember: new Color(0xffd27a),
   emberTip: new Color(0xd8571b),
   char: new Color(0x241f1c),
+  stone: new Color(0x6e6b63),
   charHot: new Color(0xc4441a),
 }
 
@@ -266,6 +280,15 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       color: 0xffffff,
       vertexColors: true,
       toneMapped: false,
+    }),
+    stone: () => new MeshStandardMaterial({
+      name: 'medieval-kit / stone',
+      color: 0xffffff,
+      vertexColors: true,
+      // Rougher than anything else here. Dressed stone is not polished and
+      // rubble certainly is not; any sheen at all reads as ceramic.
+      roughness: 0.97,
+      metalness: 0,
     }),
     char: () => new MeshStandardMaterial({
       name: 'medieval-kit / charcoal',
