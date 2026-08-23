@@ -136,15 +136,27 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
           ))
         }
 
-        // Tenon: the end of the leg that runs THROUGH the seat and shows on
-        // top of it. It overshoots the seat's top face — the most recognisable
-        // detail of a medieval bench.
+        // Tenon: the end of the leg running THROUGH the seat and showing on
+        // top of it as a panel of end grain. It is the most recognisable
+        // detail of a medieval bench -- and it is nearly FLUSH.
+        //
+        // At 1.9 seat thicknesses it stood 42 mm proud of the seat: a block of
+        // oak the size of a thumb sticking straight up out of the surface you
+        // are meant to sit on. A real through-tenon is wedged and then planed
+        // back, so what shows is the grain and a hairline of shoulder, not a
+        // peg. Three millimetres proud, ten millimetres housed below.
+        const proud = seatThickness * 0.05
+        const housed = seatThickness * 0.16
         legPieces.push(chamferedBoxGeometry(
           [legWidth * 0.34, timber * 0.85],
           [legWidth * 0.32, timber * 0.8],
-          seatThickness * 1.9,
+          seatThickness + proud + housed,
           timber * 0.16,
-          [side * legX, seatBottom + seatThickness * 0.75, jitter(random, timber * 0.1)],
+          [
+            side * legX,
+            seatBottom + (seatThickness + proud - housed) / 2,
+            jitter(random, timber * 0.1),
+          ],
           tint('oak', 0.09),
         ))
       }

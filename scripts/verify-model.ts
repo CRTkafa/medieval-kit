@@ -449,7 +449,14 @@ for (const testCase of CASES) {
   // rung length assumed, and the basket's fruit hung level with the rim of a
   // basket deep enough to swallow it.
   {
-    const report = findFloating(model.root as never, { resolution: 64 })
+    // 112, not 64.
+    //
+    // The voxel is the model's own extent divided by this, so on a 0.19 m coin
+    // pouch 64 gives a 3 mm voxel -- and a coin hovering 3 mm off the ground
+    // was bridged by it and passed. Someone looking at the model saw the gap
+    // immediately. A check that is coarser than the defect it exists to find
+    // is worth very little, and the cost of halving the voxel is seconds.
+    const report = findFloating(model.root as never, { resolution: 112 })
     const detail = report.floating
       .map((piece) => `${piece.parts.join('+')} @${piece.clearance}m`)
       .join(', ')

@@ -162,8 +162,24 @@ export function createModel(overrides: Partial<LogPileConfig> = {}) {
             capBottom: false,
           })
           const grain = endTint()
-          const capA = headGeometry(profile.at(-1)!.radius, length / 2, 7, 'up', grain, 3, 0.07)
-          const capB = headGeometry(profile[0]!.radius, -length / 2, 7, 'down', grain, 3, 0.07)
+          // The sawn end stands a shade PROUD of the bark, and it has to.
+          //
+          // Cut to exactly the body's end radius, the disc and the lathe's open
+          // rim meet along a seam of no width at all: they touch and never
+          // overlap. Raising the support check's resolution showed that up at
+          // once -- the ends came away from the logs they belong to, because
+          // there was never anything joining them, only two edges in the same
+          // place. Three percent of the radius is two millimetres here, which
+          // nobody will see, and it is true of a real log anyway: bark wears
+          // back from a cut face.
+          // Set a little INSIDE the end as well as wider than it, so the rim
+          // passes through the wall rather than sitting level with its edge.
+          // Widening alone left one cap in five still meeting the body edge to
+          // edge, which is a joint only in the sense that two things are in the
+          // same place.
+          const seat = length * 0.02
+          const capA = headGeometry(profile.at(-1)!.radius * 1.03, length / 2 - seat, 7, 'up', grain, 3, 0.07)
+          const capB = headGeometry(profile[0]!.radius * 1.03, -length / 2 + seat, 7, 'down', grain, 3, 0.07)
 
           // Each log is rolled randomly about its own axis: with every facet at
           // the same angle the pile looks mechanical, and on top of that

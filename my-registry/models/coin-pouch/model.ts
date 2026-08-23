@@ -111,6 +111,7 @@ export function createModel(overrides: Partial<CoinPouchConfig> = {}) {
       const coinPieces: BufferGeometry[] = []
       // Scatter DIRECTION: all one way, because spilled money flows to one side.
       const spillAngle = random() * Math.PI * 2
+      let previous: { x: number; z: number; top: number } | undefined
       for (let i = 0; i < count; i += 1) {
         const t = (i + 0.6) / count
         // Distance grows with a square root: piled at the pouch, thin further out.
@@ -118,11 +119,19 @@ export function createModel(overrides: Partial<CoinPouchConfig> = {}) {
         const spread = jitter(random, 0.75) * (0.35 + t * 0.65)
         const angle = spillAngle + spread
         const thickness = config.coinRadius * (0.13 + random() * 0.06)
-        // The overlapping ones: every third coin lands on top of the previous.
-        const stack = i % 3 === 2 ? thickness * 1.6 : 0
+        // Every third coin lands ON the one before it -- which means taking
+        // that coin's PLACE, not just its height.
+        //
+        // The lift was applied while the position stayed independent, so the
+        // stacking coin was almost never above anything and simply hovered
+        // about 3 mm off the ground. The support check missed it at its default
+        // resolution: the voxel is the model's extent over 64, which on a 0.19 m
+        // pouch is 3 mm -- exactly the size of the gap it had to see.
+        const stacking = i % 3 === 2 && previous !== undefined
 
+        const lower = config.coinRadius * (0.92 + random() * 0.16)
         const coin = prismGeometry(
-          config.coinRadius * (0.92 + random() * 0.16),
+          lower,
           config.coinRadius * (0.9 + random() * 0.16),
           thickness, 9, [0, 0, 0], tint('brass', jitter(random, 0.06), 0.5),
         )
@@ -130,11 +139,26 @@ export function createModel(overrides: Partial<CoinPouchConfig> = {}) {
         const tilt = random() < 0.22 ? 0.5 + random() * 0.7 : jitter(random, 0.12)
         coin.rotateX(tilt)
         coin.rotateY(random() * Math.PI * 2)
-        coin.translate(
-          Math.sin(angle) * distance,
-          floor + thickness / 2 + stack + Math.sin(tilt) * config.coinRadius * 0.5,
-          Math.cos(angle) * distance,
-        )
+        // A tilted disc has to rise by half of (its diameter's projection plus
+        // its own thickness) for its lowest edge to reach the ground, not by
+        // half its thickness alone.
+        // The APOTHEM, not the circumradius, and this coin's own radius rather
+        // than the nominal one. A coin is a nine-sided prism; rolled onto its
+        // edge it can come to rest on a face rather than a corner, so lifting
+        // it by the circumradius leaves it standing on nothing. Erring towards
+        // the smaller radius beds it into the ground instead, which is the
+        // right way to be wrong.
+        const rest = (Math.sin(tilt) * lower * 2 * Math.cos(Math.PI / 9)
+          + thickness * Math.cos(tilt)) / 2
+        const x = stacking
+          ? previous!.x + jitter(random, config.coinRadius * 0.45)
+          : Math.sin(angle) * distance
+        const z = stacking
+          ? previous!.z + jitter(random, config.coinRadius * 0.45)
+          : Math.cos(angle) * distance
+        const y = stacking ? previous!.top + rest : floor + rest
+        coin.translate(x, y, z)
+        previous = { x, z, top: y + rest * 0.55 }
         coinPieces.push(coin)
       }
 
