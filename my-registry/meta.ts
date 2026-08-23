@@ -450,6 +450,42 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak'],
     parts: ['rails', 'rungs'],
   },
+  'round-shield': {
+    title: 'Round Shield',
+    description:
+      'Planked round shield with a rawhide rim and an iron boss, quartered in paint and leaning on its edge.',
+    category: 'Arms',
+    tags: ['medieval', 'lowpoly', 'arms', 'procedural'],
+    controls: {
+      radius: { type: 'number', label: 'Radius', min: 0.2, max: 0.6, step: 0.01, unit: 'm' },
+      planks: { type: 'number', label: 'Planks', min: 3, max: 15, step: 1 },
+      thickness: { type: 'number', label: 'Board thickness', min: 0.008, max: 0.04, step: 0.002, unit: 'm' },
+      lean: { type: 'number', label: 'Lean back', min: 0, max: 0.6, step: 0.02, unit: 'rad' },
+      hue: { type: 'number', label: 'Paint hue', min: 0, max: 1, step: 0.01 },
+      rivets: { type: 'number', label: 'Boss rivets', min: 0, max: 16, step: 1 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['oak', 'leather', 'iron'],
+    parts: ['boards', 'rim', 'boss'],
+  },
+  'forge-hearth': {
+    title: 'Forge Hearth',
+    description:
+      "Smith's forge: a raised stone hearth with a chimney back, a bed of embers that can be put out, and a leather bellows.",
+    category: 'Smithy',
+    tags: ['medieval', 'lowpoly', 'smithy', 'procedural'],
+    controls: {
+      length: { type: 'number', label: 'Hearth length', min: 0.7, max: 1.8, step: 0.02, unit: 'm' },
+      depth: { type: 'number', label: 'Hearth depth', min: 0.5, max: 1.3, step: 0.02, unit: 'm' },
+      height: { type: 'number', label: 'Working height', min: 0.5, max: 1.1, step: 0.02, unit: 'm' },
+      chimney: { type: 'number', label: 'Chimney height', min: 0.3, max: 2, step: 0.05, unit: 'm' },
+      kerbBlocks: { type: 'number', label: 'Kerb blocks', min: 8, max: 28, step: 1 },
+      lit: { type: 'number', label: 'Lit', min: 0, max: 1, step: 1 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['stone', 'char', 'ember', 'oak', 'leather', 'iron'],
+    parts: ['hearth', 'fire', 'chimney', 'bellows'],
+  },
   'vegetables': {
     title: 'Vegetables',
     description:

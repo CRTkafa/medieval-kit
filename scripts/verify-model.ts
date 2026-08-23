@@ -54,6 +54,8 @@ import { createModel as createWell } from '@/models/medieval-kit/stone-well/mode
 import { createModel as createCauldron } from '@/models/medieval-kit/iron-cauldron/model.ts'
 import { createModel as createCart } from '@/models/medieval-kit/hand-cart/model.ts'
 import { createModel as createVeg } from '@/models/medieval-kit/vegetables/model.ts'
+import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
+import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/model.ts'
 
 const failures: string[] = []
 function expect(label: string, condition: boolean): void {
@@ -308,6 +310,14 @@ const CASES: readonly Case[] = [
   { id: 'wooden-ladder', make: as(createLadder), patch: { rungCount: 12 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ rungCount: 3 }, { taper: 0 }] , maxSize: [0.6, 2.4, 0.12] },
+  { id: 'round-shield', make: as(createShield), patch: { planks: 13, rivets: 14 },
+    parts: 3, ownSlot: 'leather', borrowSlot: 'oak',
+    variants: [{ planks: 3 }, { lean: 0 }, { rivets: 0 }],
+    maxSize: [1.3, 1.3, 0.9] },
+  { id: 'forge-hearth', make: as(createForge), patch: { kerbBlocks: 24, chimney: 1.6 },
+    parts: 4, ownSlot: 'stone', borrowSlot: 'oak',
+    variants: [{ lit: 0 }, { kerbBlocks: 8 }, { chimney: 0.3 }],
+    maxSize: [2.6, 2.6, 1.6] },
   { id: 'vegetables', make: as(createVeg), patch: { count: 22, kinds: 3, lead: 4 },
     parts: 2, ownSlot: 'produce', borrowSlot: 'produce',
     variants: [{ kinds: 1 }, { count: 1 }, { lead: 3 }, { spread: 5 }],

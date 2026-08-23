@@ -67,7 +67,7 @@
       "address": "@medieval-kit/wooden-barrel",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.979Z",
+      "installedAt": "2026-08-23T08:46:30.620Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-barrel\\model.ts",
@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.954Z",
+      "installedAt": "2026-08-23T08:46:30.590Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -129,7 +129,7 @@
       "address": "@medieval-kit/wooden-crate",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.984Z",
+      "installedAt": "2026-08-23T08:46:30.624Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-crate\\model.ts",
@@ -144,7 +144,7 @@
       "address": "@medieval-kit/kit",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.990Z",
+      "installedAt": "2026-08-23T08:46:30.630Z",
       "files": [],
       "dependencies": []
     },
@@ -152,7 +152,7 @@
       "address": "@medieval-kit/iron-anvil",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.963Z",
+      "installedAt": "2026-08-23T08:46:30.600Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\iron-anvil\\model.ts",
@@ -167,7 +167,7 @@
       "address": "@medieval-kit/wooden-bucket",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.982Z",
+      "installedAt": "2026-08-23T08:46:30.622Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-bucket\\model.ts",
@@ -182,7 +182,7 @@
       "address": "@medieval-kit/wooden-fence",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.985Z",
+      "installedAt": "2026-08-23T08:46:30.625Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-fence\\model.ts",
@@ -197,7 +197,7 @@
       "address": "@medieval-kit/wooden-hoe",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.986Z",
+      "installedAt": "2026-08-23T08:46:30.626Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-hoe\\model.ts",
@@ -212,7 +212,7 @@
       "address": "@medieval-kit/wooden-ladder",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.987Z",
+      "installedAt": "2026-08-23T08:46:30.627Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-ladder\\model.ts",
@@ -227,7 +227,7 @@
       "address": "@medieval-kit/wooden-pitchfork",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.988Z",
+      "installedAt": "2026-08-23T08:46:30.628Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-pitchfork\\model.ts",
@@ -242,7 +242,7 @@
       "address": "@medieval-kit/wooden-shovel",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.989Z",
+      "installedAt": "2026-08-23T08:46:30.629Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-shovel\\model.ts",
@@ -257,7 +257,7 @@
       "address": "@medieval-kit/wooden-stool",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.990Z",
+      "installedAt": "2026-08-23T08:46:30.630Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-stool\\model.ts",
@@ -272,7 +272,7 @@
       "address": "@medieval-kit/cart-wheel",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.957Z",
+      "installedAt": "2026-08-23T08:46:30.593Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\cart-wheel\\model.ts",
@@ -287,7 +287,7 @@
       "address": "@medieval-kit/log-pile",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.968Z",
+      "installedAt": "2026-08-23T08:46:30.606Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\log-pile\\model.ts",
@@ -302,7 +302,7 @@
       "address": "@medieval-kit/trestle-table",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.975Z",
+      "installedAt": "2026-08-23T08:46:30.616Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\trestle-table\\model.ts",
@@ -317,7 +317,7 @@
       "address": "@medieval-kit/wooden-chest",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.983Z",
+      "installedAt": "2026-08-23T08:46:30.623Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-chest\\model.ts",
@@ -332,7 +332,7 @@
       "address": "@medieval-kit/hay-bale",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.962Z",
+      "installedAt": "2026-08-23T08:46:30.599Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\hay-bale\\model.ts",
@@ -347,7 +347,7 @@
       "address": "@medieval-kit/pitch-torch",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.970Z",
+      "installedAt": "2026-08-23T08:46:30.608Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\pitch-torch\\model.ts",
@@ -362,7 +362,7 @@
       "address": "@medieval-kit/wooden-bench",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.980Z",
+      "installedAt": "2026-08-23T08:46:30.621Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-bench\\model.ts",
@@ -377,7 +377,7 @@
       "address": "@medieval-kit/linen-sack",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.967Z",
+      "installedAt": "2026-08-23T08:46:30.604Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\linen-sack\\model.ts",
@@ -392,7 +392,7 @@
       "address": "@medieval-kit/oak-tankard",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.969Z",
+      "installedAt": "2026-08-23T08:46:30.607Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\oak-tankard\\model.ts",
@@ -407,7 +407,7 @@
       "address": "@medieval-kit/straw-broom",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.973Z",
+      "installedAt": "2026-08-23T08:46:30.613Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\straw-broom\\model.ts",
@@ -422,7 +422,7 @@
       "address": "@medieval-kit/bronze-bell",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.956Z",
+      "installedAt": "2026-08-23T08:46:30.592Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\bronze-bell\\model.ts",
@@ -437,7 +437,7 @@
       "address": "@medieval-kit/iron-lantern",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.965Z",
+      "installedAt": "2026-08-23T08:46:30.602Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\iron-lantern\\model.ts",
@@ -452,7 +452,7 @@
       "address": "@medieval-kit/tavern-sign",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.974Z",
+      "installedAt": "2026-08-23T08:46:30.615Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\tavern-sign\\model.ts",
@@ -467,7 +467,7 @@
       "address": "@medieval-kit/coin-pouch",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.958Z",
+      "installedAt": "2026-08-23T08:46:30.594Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\coin-pouch\\model.ts",
@@ -482,7 +482,7 @@
       "address": "@medieval-kit/glass-phial",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.960Z",
+      "installedAt": "2026-08-23T08:46:30.597Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\glass-phial\\model.ts",
@@ -497,7 +497,7 @@
       "address": "@medieval-kit/leather-book",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.966Z",
+      "installedAt": "2026-08-23T08:46:30.603Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\leather-book\\model.ts",
@@ -512,7 +512,7 @@
       "address": "@medieval-kit/wicker-basket",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.978Z",
+      "installedAt": "2026-08-23T08:46:30.618Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wicker-basket\\model.ts",
@@ -527,7 +527,7 @@
       "address": "@medieval-kit/post-mill",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.971Z",
+      "installedAt": "2026-08-23T08:46:30.609Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\post-mill\\model.ts",
@@ -542,7 +542,7 @@
       "address": "@medieval-kit/stone-well",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.972Z",
+      "installedAt": "2026-08-23T08:46:30.612Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\stone-well\\model.ts",
@@ -557,7 +557,7 @@
       "address": "@medieval-kit/hand-cart",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.961Z",
+      "installedAt": "2026-08-23T08:46:30.598Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\hand-cart\\model.ts",
@@ -572,7 +572,7 @@
       "address": "@medieval-kit/iron-cauldron",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.964Z",
+      "installedAt": "2026-08-23T08:46:30.601Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\iron-cauldron\\model.ts",
@@ -587,11 +587,41 @@
       "address": "@medieval-kit/vegetables",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T08:18:39.977Z",
+      "installedAt": "2026-08-23T08:46:30.617Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\vegetables\\model.ts",
           "sourceHash": "a94f797493cabe85818d16bf5a9ae15b5c907dfd4c8fe04e3e57a54b706655a5"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/forge-hearth": {
+      "address": "@medieval-kit/forge-hearth",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-23T08:46:30.595Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\forge-hearth\\model.ts",
+          "sourceHash": "7166bb0f728b7b1945b64f18565d48dd60ecf47be4e9d4048874e358e96abcbe"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/round-shield": {
+      "address": "@medieval-kit/round-shield",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-23T08:46:30.611Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\round-shield\\model.ts",
+          "sourceHash": "a2d1166c9f54298e8d0f7e556082cfbcd6cbb591b0c5f4782fa3a8284aa1e438"
         }
       ],
       "dependencies": [
