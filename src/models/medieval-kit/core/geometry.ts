@@ -702,6 +702,36 @@ export function mergeColoured(geometries: readonly BufferGeometry[]): BufferGeom
 export function bendGeometry(geometry: BufferGeometry, curvature: number): BufferGeometry {
   if (Math.abs(curvature) < 1e-9) return geometry
   const position = geometry.getAttribute('position')
+
+  // A bend needs something to bend.
+  //
+  // Every vertex is mapped by its own Y, so the curve only exists where there
+  // are Y levels to sample it at. Hand this a `boxGeometry` -- two levels, top
+  // and bottom -- and there is no midpoint to displace: the top face swings to
+  // one angle, the bottom to another, and the result is a sheared wedge that
+  // looks nothing like an arc. It fails silently, which is the expensive part.
+  //
+  // This session found the same mistake in three separate models: the
+  // tankard's handle, and both the brace and the curl of the tavern sign. In
+  // each the author had written a curve, the geometry had never curved, and
+  // the renders had been shipping the wedge. Three is a pattern, so the
+  // helper refuses rather than waiting for a fourth.
+  //
+  // The fix is never to nudge the curvature -- it is to give the piece levels
+  // (a lathe or a stack of them), or to use `arcBarGeometry`, which sweeps a
+  // real arc and takes the two things that actually matter: where the ends go.
+  const seen = new Set<number>()
+  for (let i = 0; i < position.count && seen.size < 3; i += 1) {
+    seen.add(Math.round(position.getY(i) * 1e5))
+  }
+  if (seen.size < 3) {
+    throw new Error(
+      `bendGeometry: geometry has ${seen.size} distinct Y level(s); a bend needs at least 3. ` +
+      'Two levels shear into a wedge instead of curving. Build the piece with ' +
+      'levels (latheGeometry / staveGeometry) or use arcBarGeometry.',
+    )
+  }
+
   const radius = 1 / curvature
   for (let i = 0; i < position.count; i += 1) {
     const y = position.getY(i)
