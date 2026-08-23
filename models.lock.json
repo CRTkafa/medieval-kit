@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T10:14:43.273Z",
+      "installedAt": "2026-08-23T12:45:30.043Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -94,7 +94,7 @@
         },
         {
           "path": "src\\models\\medieval-kit\\core\\materials.ts",
-          "sourceHash": "b8732fb49a51716c21aa89357f8f37b7290bc6eb73007cd13ab0b8eb0da089a1"
+          "sourceHash": "e39ce86ff1a3bd6e23ae9067b3dd241d449299b3ab24a0164eb8cb997c1e96cc"
         },
         {
           "path": "src\\models\\medieval-kit\\core\\random.ts",
@@ -106,7 +106,7 @@
         },
         {
           "path": "src\\models\\medieval-kit\\core\\kit.ts",
-          "sourceHash": "ef4905d2ab9a4fd587cc1e10e5fa1ed878656f7cf93e4479e8d3cd43cc56c8f6"
+          "sourceHash": "d2332388b6d4b2baec730dbe56572fa82ff9e8a0e155295b1b0910a2dc91d22d"
         },
         {
           "path": "src\\models\\medieval-kit\\core\\tool.ts",
@@ -622,6 +622,21 @@
         {
           "path": "src\\models\\medieval-kit\\round-shield\\model.ts",
           "sourceHash": "2c4d955d61db499fd5bdb5a4247a98809dc2aefe0b0802650da1aac050fd8fff"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/oak-tree": {
+      "address": "@medieval-kit/oak-tree",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-23T12:45:30.045Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\oak-tree\\model.ts",
+          "sourceHash": "16b83e44f96f3ac0e0c1a8c2107309476ccf9f17967d566e1325dcba86beecba"
         }
       ],
       "dependencies": [

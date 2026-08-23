@@ -56,6 +56,7 @@ import { createModel as createCart } from '@/models/medieval-kit/hand-cart/model
 import { createModel as createVeg } from '@/models/medieval-kit/vegetables/model.ts'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
 import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/model.ts'
+import { createModel as createOak } from '@/models/medieval-kit/oak-tree/model.ts'
 
 const failures: string[] = []
 function expect(label: string, condition: boolean): void {
@@ -314,6 +315,10 @@ const CASES: readonly Case[] = [
     parts: 3, ownSlot: 'leather', borrowSlot: 'oak',
     variants: [{ planks: 3 }, { lean: 0 }, { rivets: 0 }],
     maxSize: [1.3, 1.3, 0.9] },
+  { id: 'oak-tree', make: as(createOak), patch: { limbs: 11, spread: 1.5 },
+    parts: 3, ownSlot: 'leaf', borrowSlot: 'oak',
+    variants: [{ leafiness: 0 }, { limbs: 3 }, { autumn: 1 }, { spread: 0.6 }, { height: 3 }],
+    maxSize: [22, 14, 22] },
   { id: 'forge-hearth', make: as(createForge), patch: { kerbBlocks: 24, chimney: 1.6 },
     parts: 4, ownSlot: 'stone', borrowSlot: 'oak',
     variants: [{ lit: 0 }, { kerbBlocks: 8 }, { chimney: 0.3 }],

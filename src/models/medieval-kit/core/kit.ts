@@ -147,6 +147,20 @@ const MOTTLE_BY_SLOT: Readonly<Record<MedievalSlot, number>> = {
   // of a stone rather than of a grain.
   stone: 0.75,
   ember: 0,   // a flame is not mottled: its colour is already the final colour
+  // Just under oak, and it started at 1.5 for a reason that turned out to be
+  // the straw trap wearing a different hat.
+  //
+  // The measurement was real: across one oak in full leaf the darkest tenth of
+  // the crown reads lightness 0.16 and the lightest 0.61, a spread of 0.45 and
+  // the widest of anything in this kit. What it does not say is that the
+  // spread has to come from HERE. Clump-to-clump tint, this mottle and the
+  // baked occlusion are three separate mechanisms all reproducing the same
+  // shadow, and stacked at full strength they went through the floor: 10.8%
+  // of the rendered crown clipped to pure black, against 0.01% of the
+  // photograph. A statistic taken off fine detail cannot be added on top of
+  // the machinery that already reproduces that detail -- which is the third
+  // time this kit has learned that, after straw's saturation and bark's value.
+  leaf: 0.95,
 }
 
 export function createKitModel<

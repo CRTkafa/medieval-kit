@@ -468,6 +468,24 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak', 'leather', 'iron'],
     parts: ['boards', 'rim', 'boss'],
   },
+  'oak-tree': {
+    title: 'Oak Tree',
+    description:
+      'Free-standing oak with a flared bole, sweeping limbs and a broad low crown; turns from green to russet and can be stripped bare.',
+    category: 'Nature',
+    tags: ['medieval', 'lowpoly', 'nature', 'procedural'],
+    controls: {
+      height: { type: 'number', label: 'Height', min: 3, max: 12, step: 0.25, unit: 'm' },
+      spread: { type: 'number', label: 'Crown spread', min: 0.6, max: 1.7, step: 0.05 },
+      bole: { type: 'number', label: 'Bole thickness', min: 0.02, max: 0.06, step: 0.002 },
+      limbs: { type: 'number', label: 'Primary limbs', min: 3, max: 14, step: 1 },
+      leafiness: { type: 'number', label: 'Leafiness', min: 0, max: 1, step: 0.05 },
+      autumn: { type: 'number', label: 'Autumn', min: 0, max: 1, step: 0.05 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['oak', 'leaf'],
+    parts: ['trunk', 'boughs', 'crown'],
+  },
   'forge-hearth': {
     title: 'Forge Hearth',
     description:

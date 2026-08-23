@@ -26,6 +26,7 @@ export type MedievalSlot =
   | 'ember'    // flame — does not take light, it emits it
   | 'char'     // charcoal, pitch
   | 'stone'    // dressed and rubble masonry
+  | 'leaf'     // living foliage
 
 /**
  * The material TYPE can differ per slot. `ember` is an unlit MeshBasicMaterial;
@@ -45,6 +46,7 @@ export interface SlotMaterial {
   readonly ember: MeshBasicMaterial
   readonly char: MeshStandardMaterial
   readonly stone: MeshStandardMaterial
+  readonly leaf: MeshStandardMaterial
 }
 
 export interface MedievalPalette {
@@ -105,6 +107,55 @@ export interface MedievalPalette {
    * the material's roughness rather than by the palette.
    */
   readonly stone: Color
+
+  /**
+   * Living bark, which is NOT the timber colour and is not close to it.
+   *
+   * Measured off a photograph of a standing oak: hue 70 degrees, saturation
+   * 0.17. Sawn oak in this palette sits at hue 26 and saturation 0.36 -- the
+   * bark is 44 degrees cooler and half as saturated, because it is grey-green
+   * with lichen and algae on it rather than brown. Reaching for the `oak` key
+   * on a trunk gives a plank standing on end.
+   *
+   * Measured off the WINTER photograph, after the first attempt took it off
+   * the summer one and came out 28 degrees too green. A trunk under a crown in
+   * full leaf is lit through the leaves, and the green it bounces down is in
+   * every pixel of it; the same tree bare reads hue 42 and saturation 0.27
+   * against 70 and 0.17. Two photographs of the same species disagreeing by
+   * that much is not noise, it is one of them measuring the light instead of
+   * the bark.
+   *
+   * The low saturation of the first attempt made it worse than the hue alone:
+   * a nearly neutral colour takes its hue from whatever is lighting it, and in
+   * this kit's renderer that is a blue-grey sky, which dragged the rendered
+   * bole all the way to hue 119 -- properly green, on a tree whose bark is
+   * brown. Saturation here is what holds the hue still.
+   *
+   * Lightness is the one number not taken straight: the photograph averages
+   * 0.21, but a good part of that is shadow inside bark fissures millimetres
+   * deep which nine flat facets cannot reproduce. The straw note below is the
+   * same trap.
+   */
+  readonly bark: Color
+
+  /**
+   * Foliage in flat overcast light, measured across 125 000 pixels of an oak
+   * in full leaf: hue 78, saturation 0.39, lightness 0.34.
+   *
+   * The measurement contradicted the thing I was about to build. I expected a
+   * strong top-to-bottom gradient across a crown -- lit above, dark below --
+   * and was going to bake one in. Sampled in three bands the crown reads 0.362,
+   * 0.336 and 0.324: a spread of 0.04, which is nothing. Under an overcast sky
+   * there is no gradient to bake.
+   *
+   * What IS there is local: the darkest tenth of the crown sits at lightness
+   * 0.16 and the lightest tenth at 0.61, a spread of 0.45 within the same
+   * band. Foliage varies leaf to leaf, not top to bottom. So the variation
+   * belongs in the mottle and in per-clump jitter, and it is a value spread,
+   * not a hue one -- hue held between 77 and 81 degrees across every sample,
+   * lit and shadowed alike.
+   */
+  readonly leaf: Color
 }
 
 /**
@@ -155,6 +206,8 @@ export const MEDIEVAL_PALETTE: MedievalPalette = {
   char: new Color(0x241f1c),
   stone: new Color(0x6e6b63),
   charHot: new Color(0xc4441a),
+  bark: new Color(0x585032),
+  leaf: new Color(0x6d8632),
 }
 
 /**
@@ -288,6 +341,19 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       // Rougher than anything else here. Dressed stone is not polished and
       // rubble certainly is not; any sheen at all reads as ceramic.
       roughness: 0.97,
+      metalness: 0,
+    }),
+    // Foliage is the most matte thing in the kit after stone. Any sheen at
+    // all and a crown reads as plastic shrubbery -- which is the failure mode
+    // of most lowpoly trees, and it is a material setting rather than a
+    // modelling one. It is a separate slot from `straw` despite similar
+    // numbers because `materialSlots` is a contract: a tree declaring straw
+    // would be telling the consumer it is made of dead grass.
+    leaf: () => new MeshStandardMaterial({
+      name: 'medieval-kit / foliage',
+      color: 0xffffff,
+      vertexColors: true,
+      roughness: 0.93,
       metalness: 0,
     }),
     char: () => new MeshStandardMaterial({
