@@ -257,14 +257,42 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
       const bars = Math.max(2, Math.round(config.sailBars))
 
       const rig: BufferGeometry[] = []
-      // Windshaft: iron-banded oak, poking out of the gable.
-      rig.push(taperedBoxGeometry(
+      const ironWork: BufferGeometry[] = []
+      // Windshaft: iron-banded oak, poking out of the gable ALONG Z.
+      //
+      // `taperedBoxGeometry` takes its third argument as a Y height, so written
+      // without a rotation this was a short vertical post standing inside the
+      // buck rather than a shaft projecting from the front of it. Hidden inside
+      // the body it went unseen through every render; it only surfaced when the
+      // iron bands were added and turned out to be coaxial with it, which the
+      // z-fight check reported at once.
+      const shaft = taperedBoxGeometry(
         [hubRadius * 2.1, hubRadius * 2.1],
         [hubRadius * 1.5, hubRadius * 1.5],
         H * 0.10,
-        [0, 0, H * 0.03],
+        [0, 0, 0],
         tint('oak', -0.04),
-      ))
+      )
+      shaft.rotateX(Math.PI / 2)
+      shaft.translate(0, 0, H * 0.03)
+      rig.push(shaft)
+      // The bands themselves, and they are not decoration. Four sails pull on
+      // one shaft from four directions; what holds the whips to it is iron
+      // strapping, and this model declared an `iron` slot while using it
+      // nowhere -- the shaft was described in the comment above as iron-banded
+      // and then painted oak like everything else.
+      for (const at of [0.012, 0.055]) {
+        const band = taperedBoxGeometry(
+          [hubRadius * 2.4, hubRadius * 2.4],
+          [hubRadius * 2.3, hubRadius * 2.3],
+          H * 0.014,
+          [0, 0, 0],
+          tint('iron', 0.02, 0.7),
+        )
+        band.rotateX(Math.PI / 2)
+        band.translate(0, 0, H * at)
+        ironWork.push(band)
+      }
 
       for (let i = 0; i < 4; i += 1) {
         const a = (i / 4) * Math.PI * 2
@@ -299,10 +327,21 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         // presents a face to the wind. Without it the four read as a flat cross.
         merged.rotateY(0.18)
         merged.rotateZ(a)
+        // Opposite pairs sit at different depths along the shaft.
+        //
+        // This is how the sails are actually carried: TWO stocks pass through
+        // the windshaft at right angles to each other, one behind the other,
+        // and each stock carries a sail at both of its ends. Built all in one
+        // plane the four converge on the hub in perfect symmetry, and the
+        // z-fight check found their faces meeting there -- correctly, because
+        // four timbers cannot occupy one crossing.
+        merged.translate(0, 0, (i % 2 === 0 ? -1 : 1) * barT * 2.1)
         rig.push(merged)
       }
 
       const sails = mergeColoured(rig)
+      const shaftBands = mergeColoured(ironWork)
+      shaftBands.rotateX(-shaftTilt)
       // The rig is authored around the hub and the part's origin goes there, so
       // `setTurning` spins it about the shaft instead of about the model.
       sails.rotateX(-shaftTilt)
@@ -399,6 +438,12 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         sails: {
           slot: 'oak' as const,
           geometry: sails,
+          // The bands belong here, not with the trestle. They are authored
+          // around the hub, so in any other part's frame they land at the
+          // model's origin and hang in the air -- which is where the support
+          // check found them. They also turn with the shaft, because in a real
+          // mill the shaft is what the sails are keyed to.
+          extras: [{ slot: 'iron' as const, geometry: shaftBands }],
           origin: [0, hubY, hubZ] as const,
         },
         ladder: { slot: 'oak' as const, geometry: mergeColoured(steps) },
