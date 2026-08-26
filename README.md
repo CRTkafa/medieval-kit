@@ -106,6 +106,11 @@ Five of those deserve a note, because each was written after a real bug:
 Every check was mutation-tested: sabotage the code, confirm the check fails,
 restore, confirm it passes. A passing test is not evidence that it works.
 
+All of it runs in CI on every push — headless, no browser and no GPU, about a
+minute — and the contact sheet is uploaded with the run, because the geometry
+checks cannot say "this does not look like a shovel" and the picture is what
+makes that reviewable.
+
 `render` closed the one gap all of the above left open. Every check was
 *geometric* — triangle counts, winding, coplanarity, bounds. All of them caught
 real bugs, and none of them could say "this shovel does not look like a shovel."

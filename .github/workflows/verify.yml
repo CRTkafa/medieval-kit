@@ -1,0 +1,76 @@
+# The gate that has to pass before anything ships.
+#
+# Every one of these runs locally too, and every one of them has caught a real
+# defect. They are here so that "it passed on my machine" stops being the
+# evidence: the registry is source other people install, and a broken model
+# reaches them as broken source rather than as a bad download they can retry.
+#
+# There is no browser and no GPU in any of it. That is deliberate — the
+# conformance checks, the GLB round trip and the renderer are all written to
+# run headless, so CI needs no display and takes about a minute.
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - run: bun install --frozen-lockfile
+
+      # The registry has to be built first: everything downstream reads either
+      # dist/registry.json or the source installed from it.
+      - name: Build the registry
+        run: bun run registry:build
+
+      - name: Types
+        run: bun run typecheck
+
+      # ~1,000 checks: geometry validity, three separate winding measures,
+      # coplanar-face detection, bounding limits, stable part identity across
+      # configure(), deterministic seeding, material ownership, idempotent
+      # disposal, action semantics, and agreement with the published metadata.
+      - name: Conformance
+        run: bun run verify
+
+      # Nothing may hang in the air with nothing under it — checked across the
+      # default, both slider extremes, both ends of a sweep, every action and
+      # the midpoint of a morph.
+      - name: Support
+        run: bun scripts/audit.ts
+
+      # Export every model to GLB, read it back, compare.
+      - name: GLB round trip
+        run: bun run verify:glb
+
+      # The three READMEs against the kit they claim to describe.
+      - name: Documentation
+        run: bun run check:docs
+
+      - name: Registry protocol
+        run: bunx vibe3d registry validate my-registry/dist/registry.json
+
+      - name: Build
+        run: bun run build
+
+      # A software rasteriser, no GPU. The contact sheet is uploaded because
+      # geometry checks cannot say "this does not look like a shovel", and
+      # having the picture attached to the run is what makes that reviewable.
+      - name: Render the contact sheet
+        run: bun run render -- --size 300 --out renders
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: contact-sheet
+          path: renders/_sheet.png
+          if-no-files-found: error
