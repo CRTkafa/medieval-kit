@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "verify": "bun scripts/verify-model.ts",
+    "check:docs": "bun scripts/check-docs.ts",
     "registry:build": "bun my-registry/build.ts",
     "registry:validate": "vibe3d registry validate my-registry/dist/registry.json",
     "viewer:build": "vite build --config vite.viewer.config.ts && bun scripts/build-artifact.ts",

@@ -14,6 +14,10 @@ on an opaque package. This repository holds one such registry.
 
 ![The whole kit](media/kit.png)
 
+35 models and one shared library, **31,404 triangles** for the whole kit — less
+than a single medium-detail character. Every one is procedural source you own
+and edit, not an asset you load.
+
 ## Run the viewer
 
 Requires [Bun](https://bun.sh) and a browser with WebGPU (the `@scifi-kit` model
@@ -57,6 +61,7 @@ textures at all.
 bun run typecheck
 bun run verify        # geometry, protocol, metadata, actions
 bun run verify:glb    # export every model, read it back, compare
+bun run check:docs    # the three READMEs against the kit they describe
 bun run render        # renders/_sheet.png — actually look at the models
 ```
 
@@ -159,6 +164,7 @@ scripts/
   support.ts            voxel connectivity — nothing may float
   audit.ts              runs the support check across every configuration
   render.ts             offline software rasteriser → PNG contact sheet
+  check-docs.ts         documented counts against the models themselves
   reference-shots.ts    one photographic reference per model, for comparison
   probe-tree.ts         measures the oak against its reference photographs
   catalog-table.ts      regenerates the model table in the registry README

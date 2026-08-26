@@ -79,7 +79,7 @@ src/viewer.ts · src/viewer.css   the model viewer (WebGPU, sky, shadow)
 src/catalog.ts                   the viewer's catalog — DERIVED from meta.ts
 src/glb.ts                       GLB export (shared by viewer and CLI)
 src/models/scifi-kit/pressure-gauge/  the installed sci-fi model
-src/models/medieval-kit/…             your OWN installed models (27 models)
+src/models/medieval-kit/…             your OWN installed models (35 models)
 my-registry/
   meta.ts                          the SINGLE source of catalog metadata
   build.ts                         the registry.json generator
@@ -338,41 +338,49 @@ the same, the physical package changes.
 ## 5. Lowpoly medieval — yes, no problem
 
 This is not an assumption: `@medieval-kit` works, is validated and currently
-contains **27 models + 1 lib**. The table is generated from the models
+contains **35 models + 1 lib**. The table is generated from the models
 themselves with `bun scripts/catalog-table.ts` — a hand-written list goes stale
 on the first model you add, and in fact it had gone stale once.
 
 | Model | Category | Triangles | Parts | Size (m) | Material slots | Animated |
 | --- | --- | ---: | ---: | --- | --- | :-: |
 | `wooden-chest` | Furniture | 552 | 4 | 0.86×0.51×0.48 | oak, iron | ✔ |
-| `wooden-barrel` | Props | 806 | 3 | 0.82×1.05×0.81 | oak, iron |  |
+| `wooden-barrel` | Props | 1690 | 3 | 0.83×1.05×0.83 | oak, iron |  |
 | `wooden-crate` | Props | 1320 | 3 | 0.69×0.52×0.55 | oak, iron |  |
 | `wooden-bucket` | Props | 439 | 4 | 0.31×0.46×0.30 | oak, iron |  |
-| `trestle-table` | Furniture | 660 | 3 | 1.91×0.74×0.79 | oak |  |
-| `wooden-bench` | Furniture | 168 | 3 | 1.62×0.48×0.30 | oak |  |
+| `trestle-table` | Furniture | 660 | 3 | 1.91×0.74×0.78 | oak |  |
+| `wooden-bench` | Furniture | 216 | 3 | 1.62×0.45×0.30 | oak |  |
 | `wooden-stool` | Furniture | 180 | 2 | 0.38×0.43×0.36 | oak |  |
-| `pitch-torch` | Lighting | 239 | 3 | 0.10×0.77×0.11 | oak, char, ember | ✔ |
-| `iron-lantern` | Lighting | 440 | 4 | 0.15×0.29×0.17 | iron, glass, char, ember | ✔ |
-| `iron-anvil` | Smithy | 220 | 5 | 0.48×0.36×0.21 | iron, steel |  |
-| `cart-wheel` | Structure | 1056 | 4 | 0.99×1.04×0.19 | oak, iron |  |
-| `log-pile` | Props | 504 | 2 | 1.25×0.43×0.18 | oak |  |
-| `hay-bale` | Props | 674 | 3 | 1.09×0.46×0.46 | straw, cloth |  |
-| `linen-sack` | Props | 300 | 3 | 0.32×0.53×0.32 | cloth |  |
-| `oak-tankard` | Props | 366 | 4 | 0.09×0.17×0.10 | oak, iron |  |
-| `straw-broom` | Tools | 880 | 3 | 0.20×1.22×0.19 | oak, straw, cloth |  |
-| `bronze-bell` | Props | 696 | 3 | 0.48×0.53×0.36 | brass, iron, oak | ✔ |
-| `tavern-sign` | Props | 516 | 2 | 0.54×0.75×0.63 | oak, iron | ✔ |
-| `wicker-basket` | Props | 1906 | 3 | 0.35×0.24×0.35 | straw, produce |  |
-| `leather-book` | Props | 248 | 3 | 0.20×0.07×0.28 | leather, cloth, brass |  |
-| `glass-phial` | Props | 321 | 3 | 0.06×0.14×0.06 | glass, ember, oak, char |  |
-| `coin-pouch` | Props | 546 | 3 | 0.18×0.11×0.19 | leather, cloth, brass |  |
+| `pitch-torch` | Lighting | 239 | 3 | 0.13×0.70×0.13 | oak, char, ember | ✔ |
+| `iron-lantern` | Lighting | 480 | 4 | 0.15×0.30×0.17 | iron, glass, char, ember | ✔ |
+| `iron-anvil` | Smithy | 256 | 6 | 0.54×0.75×0.41 | iron, steel, oak |  |
+| `cart-wheel` | Structure | 1136 | 4 | 1.04×1.06×0.19 | oak, iron |  |
+| `log-pile` | Props | 924 | 2 | 0.99×0.58×0.70 | oak |  |
+| `hay-bale` | Props | 910 | 3 | 1.04×0.42×0.43 | straw, cloth |  |
+| `linen-sack` | Props | 342 | 3 | 0.34×0.53×0.33 | cloth |  |
+| `oak-tankard` | Props | 390 | 4 | 0.11×0.16×0.14 | oak, iron |  |
+| `straw-broom` | Tools | 1048 | 3 | 0.30×1.22×0.30 | oak, straw, cloth |  |
+| `bronze-bell` | Props | 1048 | 4 | 0.51×0.68×0.36 | brass, iron, oak | ✔ |
+| `tavern-sign` | Props | 876 | 3 | 0.38×2.29×0.93 | oak, iron | ✔ |
+| `wicker-basket` | Props | 2326 | 3 | 0.34×0.16×0.35 | oak, produce |  |
+| `leather-book` | Props | 440 | 3 | 0.20×0.08×0.27 | leather, cloth, brass |  |
+| `glass-phial` | Props | 339 | 3 | 0.06×0.14×0.06 | glass, ember, oak, char |  |
+| `coin-pouch` | Props | 602 | 3 | 0.18×0.11×0.16 | leather, cloth, brass |  |
 | `wooden-ladder` | Structure | 440 | 2 | 0.49×2.20×0.06 | oak |  |
 | `wooden-fence` | Structure | 860 | 2 | 5.18×1.31×0.31 | oak |  |
-| `wooden-hoe` | Tools | 282 | 3 | 0.20×1.23×0.30 | oak, iron, steel |  |
-| `wooden-shovel` | Tools | 468 | 3 | 0.27×1.20×0.08 | oak, iron, steel |  |
-| `wooden-pitchfork` | Tools | 338 | 3 | 0.25×1.56×0.11 | oak, iron, steel |  |
+| `wooden-hoe` | Tools | 394 | 3 | 0.23×1.23×0.33 | oak, iron, steel |  |
+| `wooden-shovel` | Tools | 496 | 3 | 0.27×1.20×0.08 | oak, iron |  |
+| `wooden-pitchfork` | Tools | 392 | 3 | 0.27×1.58×0.15 | oak, iron |  |
+| `iron-cauldron` | Lighting | 1134 | 3 | 1.09×1.37×1.10 | stone, iron, char, ember |  |
+| `hand-cart` | Structure | 2044 | 4 | 0.88×1.03×2.60 | oak, iron |  |
+| `vegetables` | Props | 1718 | 2 | 0.60×0.12×0.59 | produce |  |
+| `round-shield` | Arms | 729 | 3 | 0.73×0.73×0.17 | oak, leather, iron |  |
+| `forge-hearth` | Smithy | 1426 | 4 | 2.06×1.78×0.87 | stone, char, ember, oak, leather, iron |  |
+| `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth |  |
+| `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
+| `oak-tree` | Nature | 2310 | 3 | 8.57×6.96×9.05 | oak, leaf |  |
 
-**15,425 triangles** in total. The whole kit in one scene has a budget smaller
+**31,404 triangles** in total. The whole kit in one scene has a budget smaller
 than a single medium-complexity character model.
 
 ### 5.1 One source: `my-registry/meta.ts`
@@ -396,7 +404,7 @@ declaration means a hidden material the consumer cannot reach with
 this check was added it caught a real drift in four models (a `steel` slot had
 been added but not declared).
 
-### 5.2 The material vocabulary — eleven slots
+### 5.2 The material vocabulary — thirteen slots
 
 | Slot | What | Why separate |
 | --- | --- | --- |
@@ -411,6 +419,8 @@ been added but not declared).
 | `produce` | fruit and vegetable skin | if I had given it the same roughness as straw an apple would look like dry hay |
 | `ember` | flame | `MeshBasicMaterial` — it does not receive light, it emits |
 | `char` | charcoal, pitch | — |
+| `stone` | dressed and rubble masonry | its color is close to weathered oak; what tells them apart at a glance is that stone scatters light completely flat, and roughness is not something vertex color can carry |
+| `leaf` | living foliage | the most matte thing here after stone: any sheen at all and a crown reads as plastic shrubbery, which is the usual failure of a lowpoly tree and is a material setting rather than a modelling one |
 
 `ember` also works as a rule in two places: bodies in this slot are skipped
 entirely while occlusion and mottle are baked. The reason is simple — on an
