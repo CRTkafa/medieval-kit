@@ -468,6 +468,24 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak', 'leather', 'iron'],
     parts: ['boards', 'rim', 'boss'],
   },
+  'grindstone': {
+    title: 'Grindstone',
+    description:
+      'Treadle grindstone: a sandstone wheel in a splayed timber trestle, with an iron crank and a trough of water it runs through. Turns.',
+    category: 'Smithy',
+    tags: ['medieval', 'lowpoly', 'smithy', 'procedural'],
+    controls: {
+      diameter: { type: 'number', label: 'Wheel diameter', min: 0.35, max: 0.95, step: 0.02, unit: 'm' },
+      thickness: { type: 'number', label: 'Wheel thickness', min: 0.05, max: 0.18, step: 0.005, unit: 'm' },
+      height: { type: 'number', label: 'Axle height', min: 0.4, max: 0.85, step: 0.02, unit: 'm' },
+      length: { type: 'number', label: 'Frame length', min: 0.7, max: 1.5, step: 0.05, unit: 'm' },
+      splay: { type: 'number', label: 'Leg splay', min: 0, max: 0.5, step: 0.02 },
+      water: { type: 'number', label: 'Water level', min: 0, max: 1, step: 0.05 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['stone', 'oak', 'iron', 'water'],
+    parts: ['wheel', 'frame', 'crank', 'water'],
+  },
   'stone-trough': {
     title: 'Stone Trough',
     description:

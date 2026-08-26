@@ -58,6 +58,7 @@ import { createModel as createShield } from '@/models/medieval-kit/round-shield/
 import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/model.ts'
 import { createModel as createOak } from '@/models/medieval-kit/oak-tree/model.ts'
 import { createModel as createTrough } from '@/models/medieval-kit/stone-trough/model.ts'
+import { createModel as createGrind } from '@/models/medieval-kit/grindstone/model.ts'
 
 const failures: string[] = []
 function expect(label: string, condition: boolean): void {
@@ -316,6 +317,10 @@ const CASES: readonly Case[] = [
     parts: 3, ownSlot: 'leather', borrowSlot: 'oak',
     variants: [{ planks: 3 }, { lean: 0 }, { rivets: 0 }],
     maxSize: [1.3, 1.3, 0.9] },
+  { id: 'grindstone', make: as(createGrind), patch: { diameter: 0.8, splay: 0.4 },
+    parts: 4, ownSlot: 'stone', borrowSlot: 'oak',
+    variants: [{ water: 0 }, { splay: 0 }, { diameter: 0.35 }, { thickness: 0.18 }],
+    maxSize: [2.2, 1.3, 1.2] },
   { id: 'stone-trough', make: as(createTrough), patch: { wall: 0.3, water: 0.8 },
     parts: 2, ownSlot: 'water', borrowSlot: 'stone',
     variants: [{ water: 0 }, { wall: 0.12 }, { wall: 0.34 }, { height: 0.25 }],

@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-26T19:43:46.488Z",
+      "installedAt": "2026-08-26T20:05:11.276Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -652,6 +652,21 @@
         {
           "path": "src\\models\\medieval-kit\\stone-trough\\model.ts",
           "sourceHash": "b582bcde5ea5ceae090bc16f3879619c1c10819333b571b11f5e1807d45a009a"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/grindstone": {
+      "address": "@medieval-kit/grindstone",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-26T20:05:11.279Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\grindstone\\model.ts",
+          "sourceHash": "1ceb242f9e053d7ce3f8810e5167ef80ca118880fd6a486b063abd3268400e00"
         }
       ],
       "dependencies": [
