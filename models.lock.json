@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-26T20:05:11.276Z",
+      "installedAt": "2026-08-26T20:14:45.008Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -667,6 +667,21 @@
         {
           "path": "src\\models\\medieval-kit\\grindstone\\model.ts",
           "sourceHash": "1ceb242f9e053d7ce3f8810e5167ef80ca118880fd6a486b063abd3268400e00"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/market-stall": {
+      "address": "@medieval-kit/market-stall",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-26T20:14:45.011Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\market-stall\\model.ts",
+          "sourceHash": "31fa88ff1df342465177b5b95b5814575f5691b255fcea5e75e591fc1fd3740e"
         }
       ],
       "dependencies": [

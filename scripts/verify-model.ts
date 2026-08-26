@@ -59,6 +59,7 @@ import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/m
 import { createModel as createOak } from '@/models/medieval-kit/oak-tree/model.ts'
 import { createModel as createTrough } from '@/models/medieval-kit/stone-trough/model.ts'
 import { createModel as createGrind } from '@/models/medieval-kit/grindstone/model.ts'
+import { createModel as createStall } from '@/models/medieval-kit/market-stall/model.ts'
 
 const failures: string[] = []
 function expect(label: string, condition: boolean): void {
@@ -317,6 +318,10 @@ const CASES: readonly Case[] = [
     parts: 3, ownSlot: 'leather', borrowSlot: 'oak',
     variants: [{ planks: 3 }, { lean: 0 }, { rivets: 0 }],
     maxSize: [1.3, 1.3, 0.9] },
+  { id: 'market-stall', make: as(createStall), patch: { planks: 9, sag: 0.3 },
+    parts: 4, ownSlot: 'cloth', borrowSlot: 'oak',
+    variants: [{ sag: 0 }, { planks: 2 }, { length: 2.6 }, { awning: 1.4 }],
+    maxSize: [3.2, 2.5, 1.6] },
   { id: 'grindstone', make: as(createGrind), patch: { diameter: 0.8, splay: 0.4 },
     parts: 4, ownSlot: 'stone', borrowSlot: 'oak',
     variants: [{ water: 0 }, { splay: 0 }, { diameter: 0.35 }, { thickness: 0.18 }],

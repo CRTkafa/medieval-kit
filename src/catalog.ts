@@ -53,6 +53,7 @@ import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/m
 import { createModel as createOak } from '@/models/medieval-kit/oak-tree/model.ts'
 import { createModel as createTrough } from '@/models/medieval-kit/stone-trough/model.ts'
 import { createModel as createGrind } from '@/models/medieval-kit/grindstone/model.ts'
+import { createModel as createStall } from '@/models/medieval-kit/market-stall/model.ts'
 
 export interface ParamSpec {
   readonly key: string
@@ -167,6 +168,7 @@ const FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'oak-tree': as(createOak),
   'stone-trough': as(createTrough),
   'grindstone': as(createGrind),
+  'market-stall': as(createStall),
   'wooden-ladder': as(createLadder),
   'wooden-fence': as(createFence),
   'wooden-hoe': as(createHoe),
@@ -325,6 +327,7 @@ const MEDIEVAL_ORDER = [
   'stone-well',
   'stone-trough',
   'grindstone',
+  'market-stall',
   'post-mill',
   // After the mill, because it is taller than the mill and half again as wide.
   // A tour that ends on the only living thing in the kit ends better than one

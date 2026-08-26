@@ -468,6 +468,24 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak', 'leather', 'iron'],
     parts: ['boards', 'rim', 'boss'],
   },
+  'market-stall': {
+    title: 'Market Stall',
+    description:
+      'Plank counter on a braced trestle under a linen awning slung between four posts, sagging the way cloth does.',
+    category: 'Structure',
+    tags: ['medieval', 'lowpoly', 'structure', 'procedural'],
+    controls: {
+      length: { type: 'number', label: 'Length', min: 1, max: 2.6, step: 0.05, unit: 'm' },
+      depth: { type: 'number', label: 'Depth', min: 0.45, max: 1.1, step: 0.02, unit: 'm' },
+      height: { type: 'number', label: 'Counter height', min: 0.55, max: 1, step: 0.02, unit: 'm' },
+      awning: { type: 'number', label: 'Awning height', min: 1.4, max: 2.4, step: 0.05, unit: 'm' },
+      sag: { type: 'number', label: 'Cloth sag', min: 0, max: 0.4, step: 0.02 },
+      planks: { type: 'number', label: 'Counter boards', min: 2, max: 10, step: 1 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['oak', 'cloth'],
+    parts: ['top', 'trestle', 'posts', 'awning'],
+  },
   'grindstone': {
     title: 'Grindstone',
     description:

@@ -14,7 +14,7 @@ on an opaque package. This repository holds one such registry.
 
 ![The whole kit in one scene](media/kit.png)
 
-37 models and one shared library, **32,316 triangles** for the whole kit — less
+38 models and one shared library, **32,700 triangles** for the whole kit — less
 than a single medium-detail character. Every one is procedural source you own
 and edit, not an asset you load.
 
@@ -137,9 +137,9 @@ viewer.html?showcase=60      # 30, 60 and 90 are offered
 ```
 
 **60 s is the default**, and the reason is arithmetic: the tour splits its
-running time equally between the models, so across 35 of them a 30 s run gives
-each 0.86 seconds — a flyby, not a demonstration — while 60 s gives 1.7 s and
-90 s gives 2.6 s.
+running time equally between the models, so across 38 of them a 30 s run gives
+each 0.79 seconds — a flyby, not a demonstration — while 60 s gives 1.6 s and
+90 s gives 2.4 s.
 
 That first number moves every time a model is added, which is worth saying out
 loud rather than leaving as a stale sentence in a README: at 27 models, 60 s
