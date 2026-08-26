@@ -122,10 +122,34 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
         // so the joint is an overlap rather than two faces meeting.
         const footThickness = footWidth * 0.3
         const footRise = archHeight + legHeight * 0.07
+
+        /**
+         * Each foot narrows on the way UP by exactly the board's own taper.
+         *
+         * This is the protrusion, and it was reported twice before I found it:
+         * the first time I planed the through-tenons and answered the wrong
+         * question. The feet were built at `footWidth`, the board's width at
+         * the GROUND -- but a foot starts at the top of the arch, a third of
+         * the way up, where the board has not widened that far yet. So every
+         * foot stood proud of the board it hangs from, on both sides, as a
+         * hard shoulder at shin height: 14 mm by default and 32 mm at full
+         * splay. Setting the splay to zero made it vanish, which is what
+         * finally named the cause.
+         *
+         * The leg's outer edge is a straight line from `footWidth / 2` at the
+         * floor to `legWidth / 2` under the seat, and the foot's outer face
+         * has to lie ON that line rather than run vertically up from its foot.
+         * A tapered box narrows about its own centre, so taking twice the
+         * taper off the top width moves the outer face in by exactly the taper
+         * -- and moves the inner face out by the same, which narrows the arch
+         * as it rises, which is also what a splayed leg does.
+         */
+        const footTaper = spread * (footRise / legHeight)
+        const footTop = Math.max(footThickness * 0.3, footThickness - footTaper * 2)
         for (const foot of [-1, 1]) {
           legPieces.push(taperedBoxGeometry(
             [footThickness, timber * 1.35],
-            [footThickness * 0.92, timber * 1.35],
+            [footTop, timber * 1.35],
             footRise,
             [
               side * legX + foot * (footWidth - footThickness) / 2,

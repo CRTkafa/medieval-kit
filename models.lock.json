@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T12:45:30.043Z",
+      "installedAt": "2026-08-26T19:00:27.476Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -362,11 +362,11 @@
       "address": "@medieval-kit/wooden-bench",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T09:56:44.514Z",
+      "installedAt": "2026-08-26T19:00:27.478Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-bench\\model.ts",
-          "sourceHash": "3b3468721c72911d1fd9eb54da61828cdc666c1b5a86871c5c5997ab9cc37533"
+          "sourceHash": "bb0aa806250a40e1bb52da17a79ba2c969327ef82a7b74d55b0819f9751e7d2c"
         }
       ],
       "dependencies": [
