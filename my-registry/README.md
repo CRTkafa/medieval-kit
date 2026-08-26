@@ -4,7 +4,9 @@ A lowpoly medieval model library for [Vibe3D](https://github.com/vibe-stack/vibe
 and Three.js. Install a prop and you own its source: readable TypeScript in your
 own tree, not an opaque package boundary.
 
-![The whole kit](https://raw.githubusercontent.com/CRTkafa/medieval-kit/main/media/kit.png)
+![The whole kit in one scene](https://raw.githubusercontent.com/CRTkafa/medieval-kit/main/media/kit.png)
+
+![Every model](https://raw.githubusercontent.com/CRTkafa/medieval-kit/main/media/models.png)
 
 ```sh
 bunx vibe3d add @medieval-kit/wooden-barrel

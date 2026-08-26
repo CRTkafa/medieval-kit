@@ -12,11 +12,17 @@ on an opaque package. This repository holds one such registry.
 - **`src/`** — a demo app that installs from both `@medieval-kit` and the
   first-party `@scifi-kit`, so the two can be inspected side by side.
 
-![The whole kit](media/kit.png)
+![The whole kit in one scene](media/kit.png)
 
 35 models and one shared library, **31,404 triangles** for the whole kit — less
 than a single medium-detail character. Every one is procedural source you own
 and edit, not an asset you load.
+
+That picture is a real scene, not a montage: the viewer's `kit` entry builds
+every model at once on a common ground plane, which is where inconsistencies in
+scale and tone have nowhere left to hide. Individually:
+
+![Every model](media/models.png)
 
 ## Run the viewer
 
@@ -176,7 +182,9 @@ scripts/
   probe-tree.ts         measures the oak against its reference photographs
   catalog-table.ts      regenerates the model table in the registry README
   export-glb.ts         batch GLB export
-media/                  images used by this README
+media/
+  kit.png               the whole catalogue as one scene
+  models.png            the contact sheet, one cell per model
 models.json             which registries this project resolves
 models.lock.json        install receipt; `vibe3d diff` compares against it
 ```

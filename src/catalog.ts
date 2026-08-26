@@ -371,7 +371,30 @@ function kitEntry(): Entry {
       placed.sort((a, b) => b.size.y - a.size.y)
 
       const gap = 0.42
-      const rowWidth = 5.6
+      /**
+       * The row width is MEASURED from the models, not fixed at 5.6 m.
+       *
+       * 5.6 was right for a kit of tankards and barrels and became wrong the
+       * moment anything bigger than a row went in: the oak is 8.6 m across and
+       * the mill 6.6, so each of them took a row to itself while the small
+       * props packed four and five deep, and the arrangement stretched into a
+       * long thin diagonal. A camera fits a bounding sphere, and the sphere
+       * around a diagonal line is enormous next to the things in it -- the kit
+       * ended up occupying about a quarter of its own picture with the rest
+       * empty floor.
+       *
+       * Packing to roughly a SQUARE plan is what fixes that, and the width
+       * that does it is the square root of the total footprint: rows then come
+       * out about as deep as they are wide whatever is in the kit. The 1.24
+       * covers the waste at the end of each row, and the floor is the widest
+       * single model, since no row can be narrower than the thing standing
+       * in it.
+       */
+      const footprint = placed.reduce(
+        (sum, item) => sum + (item.size.x + gap) * (item.size.z + gap), 0,
+      )
+      const widest = placed.reduce((most, item) => Math.max(most, item.size.x), 0)
+      const rowWidth = Math.max(widest, Math.sqrt(footprint) * 1.24)
       let cursorX = 0
       let cursorZ = 0
       let rowDepth = 0

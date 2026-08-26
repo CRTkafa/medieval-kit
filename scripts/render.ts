@@ -445,7 +445,11 @@ if (sweep) {
 }
 
 const ids = one ? [one]
-  : only ?? Object.keys(CATALOG).filter((id) => id !== 'pressure-gauge')
+  // `kit` is the whole catalogue arranged in one scene, not a model. Squeezed
+  // into a cell of the contact sheet it is an illegible smear, and it was the
+  // FIRST cell — the top left of the image this README opens with. It gets
+  // rendered on its own instead: `bun scripts/render.ts --one kit`.
+  : only ?? Object.keys(CATALOG).filter((id) => id !== 'pressure-gauge' && id !== 'kit')
 const frames = new Map<string, Frame>()
 
 for (const id of ids) {
