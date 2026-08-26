@@ -118,11 +118,12 @@ app.innerHTML = `
           60 s is the default, not 30.
 
           The tour gives every model an equal share of the running time, so
-          with 27 of them 30 s is 1.1 s each. A beat spends that time sweeping
-          its parameters and stepping its counts, and none of it reads in a
-          second: the 30 s run is a flyby of the kit, while 60 s is the one
-          that actually shows what each model can do. The order and the
-          emphasis say so.
+          across 35 of them 30 s is 0.86 s each, 60 s is 1.7 and 90 s is 2.6.
+          A beat spends its time sweeping the parameters and stepping the
+          counts, and none of that reads in under a second: the 30 s run is a
+          flyby of the kit, 60 s is the one that shows what each model can do,
+          and 90 s is there because that share shrinks every time a model is
+          added. The order and the emphasis say so.
         -->
         <button class="action action-primary" type="button" data-showcase="60">
           <span>Play 60 s tour</span><span class="state">&#9654;</span>
@@ -191,7 +192,18 @@ renderer.setPixelRatio(Math.min(globalThis.devicePixelRatio, 2))
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = PCFSoftShadowMap
 
-const backend = navigator.gpu ? 'WebGPU' : 'WebGL2 (fallback)'
+// Asked of the renderer, not of the browser.
+//
+// This read `navigator.gpu ? 'WebGPU' : 'WebGL2 (fallback)'`, which is the
+// browser's CAPABILITY and not the backend that ended up being used. Forcing
+// the WebGL2 path to see what a visitor without WebGPU gets, the readout went
+// on saying WebGPU throughout. The two agree in every ordinary case, which is
+// exactly why it would have gone on lying: this line is the only signal anyone
+// has about which path they are on, and a readout that can be wrong is worse
+// than none.
+const backend = (renderer.backend as { isWebGPUBackend?: boolean }).isWebGPUBackend
+  ? 'WebGPU'
+  : 'WebGL2 (fallback)'
 readout('backend').textContent = backend
 
 const scene = new Scene()

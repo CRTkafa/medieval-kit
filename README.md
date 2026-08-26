@@ -20,8 +20,10 @@ and edit, not an asset you load.
 
 ## Run the viewer
 
-Requires [Bun](https://bun.sh) and a browser with WebGPU (the `@scifi-kit` model
-in the demo uses TSL node materials; the medieval kit itself does not).
+Requires [Bun](https://bun.sh). The viewer runs on WebGPU where the browser has
+it and falls back to three's own WebGL2 backend where it does not — including
+for `@scifi-kit`'s TSL node materials, which compile on both paths. Only the
+separate demo app at `/` insists on WebGPU.
 
 ```sh
 bun install
