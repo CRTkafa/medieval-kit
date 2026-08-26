@@ -161,6 +161,9 @@ const MOTTLE_BY_SLOT: Readonly<Record<MedievalSlot, number>> = {
   // the machinery that already reproduces that detail -- which is the third
   // time this kit has learned that, after straw's saturation and bark's value.
   leaf: 0.95,
+  // Barely mottled. Ripples are a shape, not a stain, and a surface this
+  // smooth shows speckle as dirt floating on it.
+  water: 0.2,
 }
 
 export function createKitModel<

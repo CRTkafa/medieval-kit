@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-26T19:00:27.476Z",
+      "installedAt": "2026-08-26T19:43:46.488Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -94,7 +94,7 @@
         },
         {
           "path": "src\\models\\medieval-kit\\core\\materials.ts",
-          "sourceHash": "e39ce86ff1a3bd6e23ae9067b3dd241d449299b3ab24a0164eb8cb997c1e96cc"
+          "sourceHash": "1863cbe82d9cab014a6f83af57a5f647a2fb8d248759ffd1b5ae663e2b8ebac0"
         },
         {
           "path": "src\\models\\medieval-kit\\core\\random.ts",
@@ -106,7 +106,7 @@
         },
         {
           "path": "src\\models\\medieval-kit\\core\\kit.ts",
-          "sourceHash": "d2332388b6d4b2baec730dbe56572fa82ff9e8a0e155295b1b0910a2dc91d22d"
+          "sourceHash": "bcaafdb326cc4478305b28524f7b1472598530380c71441f8f0570c27e42f99f"
         },
         {
           "path": "src\\models\\medieval-kit\\core\\tool.ts",
@@ -637,6 +637,21 @@
         {
           "path": "src\\models\\medieval-kit\\oak-tree\\model.ts",
           "sourceHash": "16b83e44f96f3ac0e0c1a8c2107309476ccf9f17967d566e1325dcba86beecba"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@medieval-kit/stone-trough": {
+      "address": "@medieval-kit/stone-trough",
+      "source": "file:my-registry/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-26T19:43:46.491Z",
+      "files": [
+        {
+          "path": "src\\models\\medieval-kit\\stone-trough\\model.ts",
+          "sourceHash": "b582bcde5ea5ceae090bc16f3879619c1c10819333b571b11f5e1807d45a009a"
         }
       ],
       "dependencies": [

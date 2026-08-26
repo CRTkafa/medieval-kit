@@ -468,6 +468,23 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
     materialSlots: ['oak', 'leather', 'iron'],
     parts: ['boards', 'rim', 'boss'],
   },
+  'stone-trough': {
+    title: 'Stone Trough',
+    description:
+      'Watering trough cut from one block of weathered limestone, with a heavy rim, a worn basin and a film of standing water.',
+    category: 'Structure',
+    tags: ['medieval', 'lowpoly', 'structure', 'procedural'],
+    controls: {
+      length: { type: 'number', label: 'Length', min: 0.8, max: 2.6, step: 0.05, unit: 'm' },
+      width: { type: 'number', label: 'Width', min: 0.35, max: 0.95, step: 0.02, unit: 'm' },
+      height: { type: 'number', label: 'Height', min: 0.25, max: 0.7, step: 0.02, unit: 'm' },
+      wall: { type: 'number', label: 'Wall thickness', min: 0.12, max: 0.34, step: 0.01 },
+      water: { type: 'number', label: 'Water level', min: 0, max: 1, step: 0.05 },
+      seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
+    },
+    materialSlots: ['stone', 'water'],
+    parts: ['block', 'water'],
+  },
   'oak-tree': {
     title: 'Oak Tree',
     description:

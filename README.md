@@ -14,7 +14,7 @@ on an opaque package. This repository holds one such registry.
 
 ![The whole kit in one scene](media/kit.png)
 
-35 models and one shared library, **31,404 triangles** for the whole kit — less
+36 models and one shared library, **31,748 triangles** for the whole kit — less
 than a single medium-detail character. Every one is procedural source you own
 and edit, not an asset you load.
 

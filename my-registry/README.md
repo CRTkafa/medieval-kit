@@ -28,7 +28,7 @@ Configure `models.json` first so the namespace resolves:
 
 ## Models
 
-35 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
+36 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
 generated from the models themselves with `bun scripts/catalog-table.ts` — a
 hand-written list goes stale on the first model you add, and this one already
 did once.
@@ -68,10 +68,11 @@ did once.
 | `round-shield` | Arms | 729 | 3 | 0.73×0.73×0.17 | oak, leather, iron |  |
 | `forge-hearth` | Smithy | 1426 | 4 | 2.06×1.78×0.87 | stone, char, ember, oak, leather, iron |  |
 | `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth |  |
+| `stone-trough` | Structure | 344 | 2 | 1.52×0.45×0.60 | stone, water |  |
 | `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
 | `oak-tree` | Nature | 2310 | 3 | 8.57×6.96×9.05 | oak, leaf |  |
 
-**31 404 triangles** in total. The whole kit in one scene costs less than a
+**31 748 triangles** in total. The whole kit in one scene costs less than a
 single mid-complexity character model.
 
 Every model depends on `@medieval-kit/core`, a shared support item holding the
@@ -134,7 +135,7 @@ rebuilds topology and is not cheap. Anything that changes per frame belongs in
 
 ## Material slots
 
-Thirteen slots, and each one exists because a single material could not carry the
+Fourteen slots, and each one exists because a single material could not carry the
 difference.
 
 | Slot | What it covers | Why it is separate |
@@ -151,6 +152,7 @@ difference.
 | `ember` | flame | `MeshBasicMaterial` — it does not receive light, it emits |
 | `char` | charcoal and pitch | — |
 | `leaf` | living foliage | the most matte thing here after stone: any sheen at all and a crown reads as plastic shrubbery, which is the usual failure of a lowpoly tree and is a material setting rather than a modelling one |
+| `water` | standing water | a thin transparent film over whatever holds it: in the reference trough the basin reads hue 39.5, which is the hue of the STONE underneath, so it works through opacity rather than colour |
 | `stone` | dressed and rubble masonry | its colour is close to weathered oak; what separates them at a glance is that stone scatters light completely flat, and roughness is not something vertex colour can carry |
 
 `ember` also acts as a rule in two places: bodies in that slot are skipped

@@ -79,7 +79,7 @@ src/viewer.ts · src/viewer.css   the model viewer (WebGPU, sky, shadow)
 src/catalog.ts                   the viewer's catalog — DERIVED from meta.ts
 src/glb.ts                       GLB export (shared by viewer and CLI)
 src/models/scifi-kit/pressure-gauge/  the installed sci-fi model
-src/models/medieval-kit/…             your OWN installed models (35 models)
+src/models/medieval-kit/…             your OWN installed models (36 models)
 my-registry/
   meta.ts                          the SINGLE source of catalog metadata
   build.ts                         the registry.json generator
@@ -338,7 +338,7 @@ the same, the physical package changes.
 ## 5. Lowpoly medieval — yes, no problem
 
 This is not an assumption: `@medieval-kit` works, is validated and currently
-contains **35 models + 1 lib**. The table is generated from the models
+contains **36 models + 1 lib**. The table is generated from the models
 themselves with `bun scripts/catalog-table.ts` — a hand-written list goes stale
 on the first model you add, and in fact it had gone stale once.
 
@@ -377,10 +377,11 @@ on the first model you add, and in fact it had gone stale once.
 | `round-shield` | Arms | 729 | 3 | 0.73×0.73×0.17 | oak, leather, iron |  |
 | `forge-hearth` | Smithy | 1426 | 4 | 2.06×1.78×0.87 | stone, char, ember, oak, leather, iron |  |
 | `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth |  |
+| `stone-trough` | Structure | 344 | 2 | 1.52×0.45×0.60 | stone, water |  |
 | `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
 | `oak-tree` | Nature | 2310 | 3 | 8.57×6.96×9.05 | oak, leaf |  |
 
-**31,404 triangles** in total. The whole kit in one scene has a budget smaller
+**31,748 triangles** in total. The whole kit in one scene has a budget smaller
 than a single medium-complexity character model.
 
 ### 5.1 One source: `my-registry/meta.ts`
@@ -404,7 +405,7 @@ declaration means a hidden material the consumer cannot reach with
 this check was added it caught a real drift in four models (a `steel` slot had
 been added but not declared).
 
-### 5.2 The material vocabulary — thirteen slots
+### 5.2 The material vocabulary — fourteen slots
 
 | Slot | What | Why separate |
 | --- | --- | --- |
@@ -421,6 +422,7 @@ been added but not declared).
 | `char` | charcoal, pitch | — |
 | `stone` | dressed and rubble masonry | its color is close to weathered oak; what tells them apart at a glance is that stone scatters light completely flat, and roughness is not something vertex color can carry |
 | `leaf` | living foliage | the most matte thing here after stone: any sheen at all and a crown reads as plastic shrubbery, which is the usual failure of a lowpoly tree and is a material setting rather than a modelling one |
+| `water` | standing water | a thin transparent film over whatever holds it: it works through opacity rather than through a colour of its own |
 
 `ember` also works as a rule in two places: bodies in this slot are skipped
 entirely while occlusion and mottle are baked. The reason is simple — on an

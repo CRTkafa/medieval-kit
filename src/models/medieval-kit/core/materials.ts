@@ -27,6 +27,7 @@ export type MedievalSlot =
   | 'char'     // charcoal, pitch
   | 'stone'    // dressed and rubble masonry
   | 'leaf'     // living foliage
+  | 'water'    // standing water
 
 /**
  * The material TYPE can differ per slot. `ember` is an unlit MeshBasicMaterial;
@@ -47,6 +48,7 @@ export interface SlotMaterial {
   readonly char: MeshStandardMaterial
   readonly stone: MeshStandardMaterial
   readonly leaf: MeshStandardMaterial
+  readonly water: MeshStandardMaterial
 }
 
 export interface MedievalPalette {
@@ -156,6 +158,36 @@ export interface MedievalPalette {
    * lit and shadowed alike.
    */
   readonly leaf: Color
+
+  /**
+   * Weathered limestone, which is NOT the same rock as `stone`.
+   *
+   * `stone` was measured off dressed and rubble masonry: hue 44, saturation
+   * 0.05 — a wall stone, grey, and grey because a wall is quarried and laid
+   * face out. A trough is one block left in the open for a century, and the
+   * same measurement on one reads hue 36, saturation 0.16, lightness 0.48:
+   * warmer, THREE TIMES more saturated, and lighter. Reaching for `stone` on
+   * it gives a concrete planter.
+   *
+   * Both are correct and neither replaces the other, which is why this is a
+   * palette key rather than an edit to `stone` — the well and the forge were
+   * each measured against their own references and are not this rock.
+   */
+  readonly limestone: Color
+
+  /**
+   * Standing water, and it is far less green than it feels.
+   *
+   * Sampled inside the reference trough's basin the film reads hue 39.5 —
+   * which is the hue of the stone underneath it, not a colour of its own. It
+   * is shallow and it is clear; what it does is DARKEN and slightly saturate
+   * whatever it lies on (lightness 0.48 down to 0.36, saturation 0.16 up to
+   * 0.23). So this is nearly neutral, barely cool, and it does its work
+   * through the material's transparency rather than through its hue. Painted
+   * the pond green a first-instinct would have reached for, the composite
+   * would have missed the reference by 100 degrees of hue.
+   */
+  readonly water: Color
 }
 
 /**
@@ -207,6 +239,8 @@ export const MEDIEVAL_PALETTE: MedievalPalette = {
   stone: new Color(0x6e6b63),
   charHot: new Color(0xc4441a),
   bark: new Color(0x585032),
+  limestone: new Color(0x94846b),
+  water: new Color(0x3b4e45),
   leaf: new Color(0x6d8632),
 }
 
@@ -355,6 +389,21 @@ export function createMedievalMaterials<S extends MedievalSlot>(
       vertexColors: true,
       roughness: 0.93,
       metalness: 0,
+    }),
+    // Water is a THIN TRANSPARENT FILM, not a body of liquid. Everything in
+    // this kit that holds water holds a few centimetres of it over a floor you
+    // can see, so the colour that reaches the eye is mostly what is underneath
+    // — which is why the opacity is the important number here and the hue is
+    // nearly not a number at all. Smooth, because a trough out of the wind is
+    // the one surface in this kit that reflects.
+    water: () => new MeshStandardMaterial({
+      name: 'medieval-kit / standing water',
+      color: 0xffffff,
+      vertexColors: true,
+      roughness: 0.11,
+      metalness: 0,
+      transparent: true,
+      opacity: 0.72,
     }),
     char: () => new MeshStandardMaterial({
       name: 'medieval-kit / charcoal',
