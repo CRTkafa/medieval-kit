@@ -113,7 +113,7 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
        * photograph by finding the run of trunk pixels at that height, and the
        * profile they make is the whole character of the bole: a violent flare
        * in the bottom twentieth, then a shaft that hardly tapers for a quarter
-       * of the tree, then a steady run out to nothing at 78%.
+       * of the tree, then a steady run out to nothing at 74%.
        */
       const TAPER: ReadonlyArray<readonly [number, number]> = [
         [0.00, 1.95],

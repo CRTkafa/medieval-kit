@@ -286,9 +286,24 @@ export function createShowcase(host: ShowcaseHost, options: ShowcaseOptions = {}
     const { radius } = host.framing()
     // The margin is generous on purpose. A sweep changes the model's size while
     // the camera is already moving, and the framing chase always lags a little;
-    // with a tight fit that lag crops the model. 1.55 keeps the whole silhouette
-    // inside the frame even at the widest point of a sweep.
-    return (radius * 1.55) / Math.sin((host.camera.fov * Math.PI) / 360)
+    // with a tight fit that lag crops the model.
+    //
+    // 1.38, and measured rather than felt.
+    //
+    // `__probe.framing()` projects the model's bounding box into the frame and
+    // reports the worst corner, so the whole 60 seconds can be swept and the
+    // bad moments found by number instead of by scrubbing. Ignoring the frames
+    // the dip covers, the old 1.55 put the broom and the ladder outside the
+    // frame for one frame each -- not much, and not nothing either when the
+    // point of the tour is that someone records it once and posts it.
+    //
+    // The first attempt was to widen this to 1.62, which did fix the crop and
+    // cost every one of the thirty-five models a slice of the frame: mean fill
+    // fell to 0.515, so the models were sitting in half a screen of empty
+    // space. Fixing the CHASE instead (see `update`) let the margin come back
+    // in past where it started. At 1.38: no frame of the tour crops, the worst
+    // any model comes to the edge is 0.81, and mean fill is 0.605.
+    return (radius * 1.38) / Math.sin((host.camera.fov * Math.PI) / 360)
   }
 
   return {
@@ -361,7 +376,17 @@ export function createShowcase(host: ShowcaseHost, options: ShowcaseOptions = {}
       // The rate was raised from 3.4 to 7 after watching a run: at the slower
       // rate the camera was still catching up to the previous model's size a
       // second into the next beat.
-      distance += (wantedDistance - distance) * (1 - Math.exp(-7 * dt))
+      //
+      // ASYMMETRIC, because the two directions are not the same mistake.
+      // Falling behind a model that is GROWING crops it -- the broom's bundle
+      // and handle both sweep, and it was the one model still leaving the frame
+      // with everything else comfortably inside. Falling behind one that is
+      // shrinking only leaves it small for a moment, which nobody notices. So
+      // the camera retreats at better than twice the speed it closes in, and
+      // the fix costs no frame at all in the general case, where a blanket
+      // margin would have taken a slice off all thirty-five.
+      const chase = wantedDistance > distance ? 18 : 7
+      distance += (wantedDistance - distance) * (1 - Math.exp(-chase * dt))
 
       // A slow rise and fall in elevation over each beat keeps the move from
       // reading as a flat turntable.

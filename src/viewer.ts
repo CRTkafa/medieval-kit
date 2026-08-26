@@ -855,6 +855,37 @@ if (import.meta.env.DEV) {
         progress: +showcase.progress().toFixed(4),
         caption: app.querySelector('[data-caption-address]')?.textContent ?? '',
       }),
+      /**
+       * How much of the current model is actually ON SCREEN.
+       *
+       * The tour is the one part of this project that a still render cannot
+       * check, and looking at a handful of frames is how a model half out of
+       * frame gets shipped — it happened once already, with the bottom of
+       * every model cut off. This projects the model's own bounding box into
+       * normalised device coordinates and reports the worst overshoot, so the
+       * whole 60 seconds can be swept and the bad moments found by number
+       * rather than by scrubbing.
+       *
+       * 0 means comfortably inside. 1 means a corner is exactly on the edge of
+       * the frame. Above 1 is off screen.
+       */
+      framing: () => {
+        if (!current) return null
+        const box = new Box3().setFromObject(current.root)
+        if (box.isEmpty()) return null
+        camera.updateMatrixWorld(true)
+        const corner = new Vector3()
+        let worst = 0
+        for (let i = 0; i < 8; i += 1) {
+          corner.set(
+            i & 1 ? box.max.x : box.min.x,
+            i & 2 ? box.max.y : box.min.y,
+            i & 4 ? box.max.z : box.min.z,
+          ).project(camera)
+          worst = Math.max(worst, Math.abs(corner.x), Math.abs(corner.y))
+        }
+        return +worst.toFixed(3)
+      },
       state: () => {
         const info = survey(current!.root)
         return {

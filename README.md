@@ -60,7 +60,7 @@ bun run verify:glb    # export every model, read it back, compare
 bun run render        # renders/_sheet.png — actually look at the models
 ```
 
-`verify` runs ~800 browser-free checks against the installed sources: geometry
+`verify` runs 1,044 browser-free checks against the installed sources: geometry
 validity, winding, coplanar-face (z-fighting) detection, bounding-box limits,
 stable root and anchor identity across `configure()`, deterministic seeding,
 material ownership, idempotent disposal, action semantics, and agreement
@@ -115,13 +115,18 @@ camera move, morphing each model's parameters as it goes, with the interface
 hidden so the frame is clean enough to record.
 
 ```text
-viewer.html?showcase=60
+viewer.html?showcase=60      # 30, 60 and 90 are offered
 ```
 
-**60 s is the default.** The tour splits its running time equally between the
-models, so with 27 of them a 30 s run gives each 1.1 seconds — which is a flyby,
-not a demonstration. At 60 s each model gets 2.2 s, which is enough for the
-sweep to read.
+**60 s is the default**, and the reason is arithmetic: the tour splits its
+running time equally between the models, so across 35 of them a 30 s run gives
+each 0.86 seconds — a flyby, not a demonstration — while 60 s gives 1.7 s and
+90 s gives 2.6 s.
+
+That first number moves every time a model is added, which is worth saying out
+loud rather than leaving as a stale sentence in a README: at 27 models, 60 s
+was a comfortable 2.2 s each. It is now 1.7 s, and 90 s is there for anyone who
+wants the older pace back.
 
 Two things make the variation visible rather than merely present. Continuous
 controls travel the whole usable band every beat instead of two random draws
@@ -155,6 +160,8 @@ scripts/
   audit.ts              runs the support check across every configuration
   render.ts             offline software rasteriser → PNG contact sheet
   reference-shots.ts    one photographic reference per model, for comparison
+  probe-tree.ts         measures the oak against its reference photographs
+  catalog-table.ts      regenerates the model table in the registry README
   export-glb.ts         batch GLB export
 media/                  images used by this README
 models.json             which registries this project resolves
