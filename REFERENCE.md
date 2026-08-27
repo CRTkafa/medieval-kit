@@ -379,11 +379,11 @@ on the first model you add, and in fact it had gone stale once.
 | `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth |  |
 | `stone-trough` | Structure | 344 | 2 | 1.52×0.45×0.60 | stone, water |  |
 | `grindstone` | Smithy | 568 | 4 | 1.24×0.95×0.70 | stone, oak, iron, water |  |
-| `market-stall` | Structure | 384 | 4 | 1.83×2.02×0.97 | oak, cloth |  |
+| `market-stall` | Structure | 384 | 4 | 1.83×2.03×0.97 | oak, cloth |  |
 | `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
-| `oak-tree` | Nature | 2310 | 3 | 8.57×6.96×9.05 | oak, leaf |  |
+| `oak-tree` | Nature | 2408 | 3 | 7.71×7.00×9.10 | oak, leaf |  |
 
-**32,700 triangles** in total. The whole kit in one scene has a budget smaller
+**32,798 triangles** in total. The whole kit in one scene has a budget smaller
 than a single medium-complexity character model.
 
 ### 5.1 One source: `my-registry/meta.ts`
