@@ -1,8 +1,8 @@
 # Medieval Kit
 
 A lowpoly medieval model library for [Vibe3D](https://github.com/vibe-stack/vibe3d)
-and Three.js. Install a prop and you own its source: readable TypeScript in your
-own tree, not an opaque package boundary.
+and Three.js. Installing a prop puts its source in your own tree, as readable
+TypeScript you can edit.
 
 ![The whole kit in one scene](https://medieval.crt.fyi/kit.png)
 
@@ -35,8 +35,8 @@ so without it the source you just installed does not typecheck.
 }
 ```
 
-That map is how the namespace resolves — `vibe3d add` stops with
-`Registry @medieval-kit is not configured in models.json` without it.
+That map is how the namespace resolves. Without it `vibe3d add` stops with
+`Registry @medieval-kit is not configured in models.json`.
 
 Then take one model, or the lot:
 
@@ -49,7 +49,7 @@ bunx vibe3d add @medieval-kit
 
 The installed source imports through the `@/` alias that `models.json` declares,
 and it imports `.ts` files by their extension. Both have to be true on your side
-as well — in `tsconfig.json`:
+as well. In `tsconfig.json`:
 
 ```json
 {
@@ -61,11 +61,11 @@ as well — in `tsconfig.json`:
 }
 ```
 
-No `baseUrl`: it was removed in TypeScript 7 and `paths` resolves relative to
+No `baseUrl`. It was removed in TypeScript 7, and `paths` resolves relative to
 this file on its own. Verified against a clean project on 7.0.2.
 
-and in your bundler, because TypeScript's `paths` only teaches the type checker.
-For Vite:
+The alias has to be set in your bundler too, because TypeScript's `paths` only
+teaches the type checker. For Vite:
 
 ```ts
 resolve: { alias: [{ find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) }] }
@@ -74,7 +74,7 @@ resolve: { alias: [{ find: '@', replacement: fileURLToPath(new URL('./src', impo
 ## Models
 
 37 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
-generated from the models themselves with `bun scripts/catalog-table.ts` — a
+generated from the models themselves with `bun scripts/catalog-table.ts`. A
 hand-written list goes stale on the first model you add, and this one already
 did once.
 
@@ -156,7 +156,7 @@ Each model follows the Vibe3D protocol:
 
 - **`root`** keeps its object identity for the model's whole lifetime.
 - **`parts`** expose stable semantic anchors. Attach your own lights, labels, or
-  gameplay objects to `part.anchor` — they survive `configure()`, because only
+  gameplay objects to `part.anchor`. They survive `configure()`, because only
   `part.content` is rebuilt.
 - **`materials`** resolve per slot and can be overridden. Materials you supply
   are borrowed: the model never disposes them.
@@ -189,24 +189,23 @@ difference.
 
 | Slot | What it covers | Why it is separate |
 | --- | --- | --- |
-| `oak` | timber | — |
+| `oak` | timber | the baseline everything else is measured against |
 | `iron` | forged iron, oxidised and matte | separate from `steel`: the difference is not in colour but in ROUGHNESS, and vertex colour cannot carry roughness |
 | `steel` | steel polished by use | the anvil face, the shovel blade, the pitchfork tines |
 | `brass` | bronze and copper | the bell, the coins |
 | `straw` | straw, wicker, broom bristle | a bale declaring itself "oak" would be a lie told to the consumer |
-| `cloth` | linen, sackcloth, rope | — |
-| `leather` | worked leather | — |
+| `cloth` | linen, sackcloth, rope | woven, so it takes light softly and never glints |
+| `leather` | worked leather | darker and glossier than cloth at the same colour |
 | `glass` | blown glass | transparent, `depthWrite` OFF, `DoubleSide` |
 | `produce` | fruit and vegetable skin | given straw's roughness, an apple would look like dry grass |
-| `ember` | flame | `MeshBasicMaterial` — it does not receive light, it emits |
-| `char` | charcoal and pitch | — |
+| `ember` | flame | `MeshBasicMaterial`: it does not receive light, it emits |
+| `char` | charcoal and pitch | the darkest thing in the kit, and it has to stay readable against shadow |
 | `water` | standing water | a thin transparent film over whatever holds it: in the reference trough the basin reads hue 39.5, which is the hue of the STONE underneath, so it works through opacity rather than colour |
 | `stone` | dressed and rubble masonry | its colour is close to weathered oak; what separates them at a glance is that stone scatters light completely flat, and roughness is not something vertex colour can carry |
 
 `ember` also acts as a rule in two places: bodies in that slot are skipped
-entirely while ambient occlusion and mottle are baked. The reason is simple —
-in an unlit material the vertex colour *is* the final colour, so darkening it
-puts the flame out. The rule is attached to the slot itself rather than to a
+entirely while ambient occlusion and mottle are baked. The reason is simple: in an unlit material the vertex colour *is* the final
+colour, so darkening it puts the flame out. The rule is attached to the slot itself rather than to a
 per-model flag, so it cannot be forgotten.
 
 Colour variation lives in the geometry, not in the materials: each of the
@@ -222,12 +221,12 @@ bunx vibe3d registry validate dist/registry.json
 
 The build walks `models/`. A folder containing `model.ts` becomes a
 `vibe3d:model`; any other folder becomes a `vibe3d:lib`. Registry dependencies
-are derived from the source — an import from `../core/` makes
+are derived from the source. An import from `../core/` makes
 `@medieval-kit/core` a dependency automatically, so there is no hand-maintained
 list to go stale.
 
 `drafts/` is deliberately outside that walk: the code is kept in the tree but
-never reaches the published package — including its own `drafts/README.md`,
+never reaches the published package, including its own `drafts/README.md`,
 which is why this sentence does not link to it. A relative link on an npm
 package page resolves against the repository, and there is nothing at the
 other end of it for a reader of this page.

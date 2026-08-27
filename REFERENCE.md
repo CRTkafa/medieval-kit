@@ -1,4 +1,4 @@
-# vibe3d — working notes
+# vibe3d working notes
 
 What everything in this folder is for, how vibe3d works, and how to build your
 own asset pack.
@@ -12,7 +12,7 @@ Upstream: <https://github.com/vibe-stack/vibe3d> · Docs:
 
 **Not:** a 3D model library, an AI model generator, an engine.
 
-**What it is:** the 3D counterpart of shadcn/ui — a *source distribution
+**What it is:** the 3D counterpart of shadcn/ui, a *source distribution
 protocol*. You don't download models; you copy **the TypeScript code that
 generates the model** into your own project and own it. No `node_modules`
 boundary, no patching; the file is yours, open it and change it.
@@ -26,7 +26,7 @@ The system has four layers:
 | Validation | `@vibe3djs/conformance` | schema + path safety + hash check |
 | Interface | `vibe3d` (CLI) | `init`, `add`, `view`, `list`, `diff`, `remove`, `doctor` |
 
-`@scifi-kit` is none of these — it is **the protocol's first reference
+`@scifi-kit` is none of these. It is **the protocol's first reference
 registry**. Its being sci-fi is an accident; the platform makes no assumption
 about style.
 
@@ -74,9 +74,9 @@ src/lib/vibe3d/                  the universal contracts `init` installs
   model.ts                         ModelInstance, PartHandle, MaterialBindings
   ownership.ts                     ResourceScope (resource ownership)
   materials.ts                     the MaterialSource interface
-src/lib/vibe3d/scifi-kit/generator/   @scifi-kit/core — 2,100 lines of procedural tools
+src/lib/vibe3d/scifi-kit/generator/   @scifi-kit/core, 2,100 lines of procedural tools
 src/viewer.ts · src/viewer.css   the model viewer (WebGPU, sky, shadow)
-src/catalog.ts                   the viewer's catalog — DERIVED from meta.ts
+src/catalog.ts                   the viewer's catalog, DERIVED from meta.ts
 src/glb.ts                       GLB export (shared by viewer and CLI)
 src/models/scifi-kit/pressure-gauge/  the installed sci-fi model
 src/models/medieval-kit/…             your OWN installed models (37 models)
@@ -108,7 +108,7 @@ edited (unless you say `--overwrite`).
 ### Running
 
 ```bash
-bun run dev                    # playground — two registries, one project
+bun run dev                    # playground: two registries, one project
 bun run typecheck              # does the installed source really compile
 
 bun my-registry/build.ts       # generate registry.json
@@ -116,7 +116,7 @@ bunx vibe3d add @medieval-kit --overwrite   # install your own kit into yourself
 
 bun scripts/verify-model.ts    # geometry, protocol, metadata, actions
 bun scripts/verify-glb.ts      # export → read back → compare
-bun scripts/render.ts          # renders/_sheet.png — LOOK at the models
+bun scripts/render.ts          # renders/_sheet.png, to LOOK at the models
 bun scripts/export-glb.ts      # the whole kit under glb/
 ```
 
@@ -127,7 +127,7 @@ tests the old code.
 
 > **WebGPU required.** The `@scifi-kit` models use TSL node materials
 > (`colorNode`, `attribute(...)`), so `WebGPURenderer` is mandatory. Your own
-> `@medieval-kit` model uses plain `MeshStandardMaterial` — WebGL is enough.
+> `@medieval-kit` model uses plain `MeshStandardMaterial`, so WebGL is enough.
 
 > **The `three` vs `three/webgpu` trap.** These are separate bundles and both
 > contain their own copy of the core classes. Mix them and you get the "Multiple
@@ -148,24 +148,24 @@ born from code at runtime. GLB is only *output* (export), never *input*.
 `@scifi-kit/core` (`src/lib/vibe3d/scifi-kit/generator/`) is a five-stage
 pipeline:
 
-1. **`primitives.ts`** (867 lines) — `prism`, `extrudeProfile`, `filletRing`,
+1. **`primitives.ts`** (867 lines): `prism`, `extrudeProfile`, `filletRing`,
    `flatPlate`, `groove`, `cylinder`. These differ from Three.js's box/cylinder:
    they produce corner chamfers, tangential fillet rings and shared normals
    along the chamfer bands. The hard-surface look that "doesn't look
    AI-generated" comes from here.
-2. **`profile.ts`** — 2D profile generation: `rect`, `octagon`, `stepEdge`,
+2. **`profile.ts`**: 2D profile generation: `rect`, `octagon`, `stepEdge`,
    `offsetProfile`, `mirrorProfile`. The cross-section is drawn first, then
    extruded.
-3. **`materials.ts`** — `MaterialLibrary` + `mountMaterialSource`. Materials are
+3. **`materials.ts`**: `MaterialLibrary` + `mountMaterialSource`. Materials are
    fetched by semantic ids like `MAT-03/GRAPHITE-800` and can be overridden in the project.
-4. **`wear.ts`** (524 lines) — the trick lives here. `bakeOcclusion` and
+4. **`wear.ts`** (524 lines): the trick lives here. `bakeOcclusion` and
    `bakeSurfaceAttributes` write adjacency and surface identity into **vertex
    attributes** (`aMask`, `aColor`, `aSurface`, `aWearDir`, `aPlane`) while the
    parts are still separate. Then `createWearMaterial` produces paint chipping,
    scratches and grime with a single TSL node graph. The comment in the code
    states the intent plainly: fractal noise is deliberately avoided, because
    isotropic noise gives a soft cloud and a cloud reads as fog, not damage.
-5. **`batching.ts` + `glb.ts`** — `mergeStaticByMaterial` reduces the static
+5. **`batching.ts` + `glb.ts`**: `mergeStaticByMaterial` reduces the static
    parts to one draw call per material; `exportStaticGlb` *bakes* the procedural
    wear into standard PBR data to produce a portable GLB.
 
@@ -207,18 +207,18 @@ node (the needle pivot).
 `src/lib/vibe3d/model.ts` is small and deliberately so:
 
 - **`root` identity is fixed for life.** `configure()` may rebuild the topology
-  but cannot swap the root — so that scene parenting, editor selection and
+  but cannot swap the root, so that scene parenting, editor selection and
   external references survive.
-- **Semantic `parts`** — no dependence on anonymous mesh order. `anchor` is
+- **Semantic `parts`**, with no dependence on anonymous mesh order. `anchor` is
   fixed, `content` is rebuildable. A light or label the consumer attached to
   `anchor` survives a rebuild.
-- **`materials.get/override/reset`** — resolution order: instance override →
+- **`materials.get/override/reset`**, resolution order: instance override →
   project override → kit default.
 - **Ownership**: the model disposes its own resources exactly once, **never
   touches a material the consumer supplied**, and `dispose()` is idempotent.
 - **The scene, renderer, camera and render loop are YOURS.** See `src/main.ts`.
 
-`configure()` is expensive — it is for user settings, not for per-frame
+`configure()` is expensive. It is for user settings, not for per-frame
 animation. Continuous motion is done with `actions` + `update(dt)`.
 
 ### 3.4 How the models are *written* (the actual "generate" part)
@@ -242,17 +242,17 @@ The rules (`.agents/skills/vibe-model/SKILL.md`): the critiquing agent is given
 the code). The agent returns a similarity score and **at most three** prioritized
 fixes. Silhouette and proportions, main masses and negative space,
 distinguishing marks, and material/value reading are scored in that order.
-**Stop at 85**; stop as well if it plateaus twice or exceeds 10 iterations — a
+**Stop at 85**; stop as well if it plateaus twice or exceeds 10 iterations. A
 plateau is proof that the representation or the reference has to change.
 
 `references/modeling-rules.md` contains 17 hard rules. The most expensive ones:
 
-- Budget chamfers by perceptual role — the default is a **single** facet; give a
+- Budget chamfers by perceptual role. The default is a **single** facet; give a
   second one only to masses that carry the silhouette.
 - **Assume the winding direction flips** when a ring is inset inward; compare
   the edge cross product of the first triangle against the expected normal.
 - Keep chamfers below ~60% of the affected half-dimension.
-- Size physical features **in world units** — chamfer, seam, bolt, gap. Do not
+- Size physical features **in world units**: chamfer, seam, bolt, gap. Do not
   scale these as a percentage of the host part.
 - Compute the clearance for every layer you apply; in this meter-scale kit that
   is at least **0.015 units**, and verify it from a real camera (z-fighting).
@@ -268,7 +268,7 @@ A registry is, in the end, **a single JSON file**. No dependencies required.
 
 ### Steps
 
-**1) Write the source** — `my-registry/models/<model-id>/model.ts`
+**1) Write the source**, in `my-registry/models/<model-id>/model.ts`
 
 Use the canonical imports; they are rewritten during install:
 
@@ -279,7 +279,7 @@ Use the canonical imports; they are rewritten during install:
 
 This is why the registry never has to assume the consumer's folder layout.
 
-**2) Build the manifest** — `my-registry/build.ts`
+**2) Build the manifest**, with `my-registry/build.ts`
 
 For every file `{ path, target, content, hash }`. The `{models}` and `{vibe3d}`
 placeholders inside `target` are replaced with the `paths` from the consumer's
@@ -289,7 +289,7 @@ placeholders inside `target` are replaced with the `paths` from the consumer's
 bun my-registry/build.ts
 ```
 
-**3) Validate** — the official conformance check
+**3) Validate** with the official conformance check
 
 ```bash
 bunx vibe3d registry validate my-registry/dist/registry.json
@@ -311,7 +311,7 @@ bunx vibe3d add @medieval-kit/wooden-barrel --dry-run   # show it first
 bunx vibe3d add @medieval-kit/wooden-barrel
 ```
 
-**5) Publish** — put the `vibe3d.registry` field in `package.json` and push to
+**5) Publish**: put the `vibe3d.registry` field in `package.json` and push to
 npm:
 
 ```json
@@ -324,7 +324,7 @@ npm:
 ```
 
 Users write `"source": "npm:@medieval-kit/registry"` in their `models.json` and
-install with the same CLI. **You do not need anyone's permission** — you can
+install with the same CLI. **You do not need anyone's permission.** You can
 publish your own registry without touching the vibe3d repository. The
 architecture document states this as an explicit goal.
 
@@ -333,7 +333,7 @@ This one is live, which is how the claim stopped being theory:
 Publishing needed 2FA on the npm account and an org owning the `@medieval-kit`
 scope; nothing was needed from vibe3d itself. Worth knowing before you publish
 your own: npm stamps the publishing account's email into the packument per
-version, and later account changes do not rewrite it — so whatever address is
+version, and later account changes do not rewrite it, so whatever address is
 on the account at that moment is public for good.
 
 ### Size warning
@@ -341,16 +341,16 @@ on the account at that moment is public for good.
 `registry.json` keeps all the source embedded. `@scifi-kit/registry@0.0.1` →
 **1.8 MB of JSON**, a 404 KB tarball. npm downloads the entire tarball even for
 a single item. The architecture document foresees collection-based sharding for
-the future (`@scifi-kit/industrial`, `@scifi-kit/medical`…) — the address stays
+the future (`@scifi-kit/industrial`, `@scifi-kit/medical`…). The address stays
 the same, the physical package changes.
 
 ---
 
-## 5. Lowpoly medieval — yes, no problem
+## 5. Lowpoly medieval: yes, no problem
 
 This is not an assumption: `@medieval-kit` works, is validated and currently
 contains **37 models + 1 lib**. The table is generated from the models
-themselves with `bun scripts/catalog-table.ts` — a hand-written list goes stale
+themselves with `bun scripts/catalog-table.ts`. A hand-written list goes stale
 on the first model you add, and in fact it had gone stale once.
 
 | Model | Category | Triangles | Parts | Size (m) | Material slots | Animated |
@@ -404,7 +404,7 @@ registry.json) and `src/catalog.ts` (the viewer's sliders and descriptions).
 
 Previously the two were written out by hand separately, and by the seventeenth
 model they had diverged. Divergence is not impossible now, but being SILENT
-about it is: `verify-model.ts` compares metadata against reality on every model —
+about it is: `verify-model.ts` compares metadata against reality on every model,
 
 - are all the `meta.controls` keys really fields of the model's config,
 - is `meta.parts` the same as the model's real part names,
@@ -417,33 +417,33 @@ declaration means a hidden material the consumer cannot reach with
 this check was added it caught a real drift in four models (a `steel` slot had
 been added but not declared).
 
-### 5.2 The material vocabulary — thirteen slots
+### 5.2 The material vocabulary: thirteen slots
 
 | Slot | What | Why separate |
 | --- | --- | --- |
-| `oak` | timber | — |
+| `oak` | timber | the baseline everything else is measured against |
 | `iron` | forged iron, oxidized and matte | separate from `steel`: the difference is not in color but in ROUGHNESS, and vertex color cannot carry roughness |
 | `steel` | steel polished by use | the anvil face, the shovel blade, the pitchfork tip |
 | `brass` | bronze and copper | the bell, coins |
 | `straw` | straw, wicker, broom bristle | a bale declaring "oak" would be a lie told to the consumer |
-| `cloth` | linen, sackcloth, rope | — |
-| `leather` | worked leather | — |
+| `cloth` | linen, sackcloth, rope | woven, so it takes light softly and never glints |
+| `leather` | worked leather | darker and glossier than cloth at the same colour |
 | `glass` | blown glass | transparent, `depthWrite` OFF, `DoubleSide` |
 | `produce` | fruit and vegetable skin | if I had given it the same roughness as straw an apple would look like dry hay |
-| `ember` | flame | `MeshBasicMaterial` — it does not receive light, it emits |
-| `char` | charcoal, pitch | — |
+| `ember` | flame | `MeshBasicMaterial`: it does not receive light, it emits |
+| `char` | charcoal, pitch | the darkest thing in the kit, and it has to stay readable against shadow |
 | `stone` | dressed and rubble masonry | its color is close to weathered oak; what tells them apart at a glance is that stone scatters light completely flat, and roughness is not something vertex color can carry |
 | `water` | standing water | a thin transparent film over whatever holds it: it works through opacity rather than through a colour of its own |
 
 `ember` also works as a rule in two places: bodies in this slot are skipped
-entirely while occlusion and mottle are baked. The reason is simple — on an
+entirely while occlusion and mottle are baked. The reason is simple: on an
 unlit material the vertex color is the final color, and darkening it puts the
 flame out. The rule lives in `kit.ts` bound to the slot itself, not to a
 per-model flag, so that it cannot be forgotten.
 
 ### 5.3 `core`'s vocabulary
 
-**Geometry generators** (`geometry.ts`) — all non-indexed, all vertex-colored,
+**Geometry generators** (`geometry.ts`), all non-indexed, all vertex-colored,
 so flat shading comes for free:
 
 `boxGeometry`, `taperedBoxGeometry`, `chamferedBoxGeometry` (44 triangles, with
@@ -451,11 +451,11 @@ self-correcting edge/corner winding), `prismGeometry`, `latheGeometry`,
 `staveGeometry`, `bandGeometry` (with an optional inner face), `headGeometry`,
 `arcBarGeometry`, `dishedSheetGeometry`, `flipGeometry`, `mergeColoured`.
 
-**Deformation** — added later, and it is what stopped the models looking
+**Deformation**, added later, and it is what stopped the models looking
 "generated":
 
 - `bendGeometry(geometry, curvature)` wraps a straight body into an arc. A real
-  arc mapping, not "rotate every point in proportion to its height" — that
+  arc mapping, not "rotate every point in proportion to its height". That
   approach stretched and thinned the body. The pitchfork tines, the tankard
   handle, the hoe blade and the curve of the sign use it.
 - `roughenGeometry(geometry, amount)` makes the surface irregular. The critical
@@ -464,7 +464,7 @@ self-correcting edge/corner winding), `prismGeometry`, `latheGeometry`,
   independently tore the surface. A position hash gives every copy at the same
   point the same displacement.
 
-**Surface baking** — kit-wide, automatic inside `createKitModel`:
+**Surface baking**, kit-wide and automatic inside `createKitModel`:
 
 - `bakeOcclusion` (`occlusion.ts`) bakes ambient occlusion into the vertex
   colors. It derives the darkening from the surface's OWN shape: the more
@@ -475,7 +475,7 @@ self-correcting edge/corner winding), `prismGeometry`, `latheGeometry`,
   UV coordinates (our geometry has none), image files the registry would have to
   carry, and a change to the kit's identity. Instead there is a blotch pattern
   derived from the surface position; the blotch size comes from the model's
-  scale, the INTENSITY from the slot —
+  scale, the INTENSITY from the slot:
 
   ```
   straw 1.35 · cloth 1.15 · oak 1.00 · char 0.85 · leather 0.70
@@ -491,7 +491,7 @@ self-correcting edge/corner winding), `prismGeometry`, `latheGeometry`,
   triangles, so the mottle is almost invisible there. The remedy is to subdivide
   the triangle, and that eats the lowpoly budget.
 
-**Scaffolding** (`kit.ts`) — `createKitModel` makes every model set up the same
+**Scaffolding** (`kit.ts`): `createKitModel` makes every model set up the same
 contract: resource ownership, material resolution and override, a fixed anchor +
 replaceable content, a `configure()` that does not break identity, an idempotent
 `dispose()`. Writing a model is now just generating geometry.
@@ -500,14 +500,14 @@ replaceable content, a `configure()` that does not break identity, an idempotent
 
 `BuiltPart` carries three fields and two of them came later:
 
-- `geometry` + `slot` — the part's main body.
-- **`extras`** — bodies belonging to the same part that use a DIFFERENT slot.
+- `geometry` + `slot`: the part's main body.
+- **`extras`**: bodies belonging to the same part that use a DIFFERENT slot.
   Parts are sibling children of the root, so when one of them moves the others
   cannot follow it. The chest's lid is oak board and iron strap and lock hasp at
   once, and the three have to rotate together; as separate parts the straps
   would hang in mid-air while the lid opened. What is split is not the meaning,
   only the material.
-- **`origin`** — the part's own center of rotation. When given, the anchor is
+- **`origin`**: the part's own center of rotation. When given, the anchor is
   placed there and the geometry is assumed to be written relative to that point.
   This is the only thing needed to make the chest lid rotate around its hinge.
 
@@ -522,7 +522,7 @@ Eleven models carry actions:
 
 | Model | Action | Mechanic |
 | --- | --- | --- |
-| `wooden-chest` | `setOpen` / `toggle` / `isOpen` / `openness` / `snap` | exponential approach — independent of frame rate |
+| `wooden-chest` | `setOpen` / `toggle` / `isOpen` / `openness` / `snap` | exponential approach, independent of frame rate |
 | `pitch-torch` | `setLit` / `isLit` | sum of sines at incommensurate frequencies |
 | `iron-lantern` | `setLit` / `isLit` | the same, but slower: the glass shields the flame from wind |
 | `iron-cauldron` | `setLit` / `isLit` | the fire under it, on the torch's flicker |
@@ -537,7 +537,7 @@ Eleven models carry actions:
 Five of these are wired to a button in the viewer; the rest are driven through
 the model's own interface. That distinction cost a documentation bug: the
 generated table's Animated column was reading the VIEWER's button registration,
-so six of the eleven — including the mill, the well and the grindstone — were
+so six of the eleven, including the mill, the well and the grindstone, were
 published as static. It now asks the models.
 
 The distinction is written in the architecture document and it matters:
@@ -561,7 +561,7 @@ Three rules hold for every moving model:
 
 The bell is the most complex piece in the kit and what it teaches is this:
 **what rings a bell is not the bell swinging, it is the clapper LAGGING
-BEHIND.** On the first attempt I made the clapper an `extras` body of the bell —
+BEHIND.** On the first attempt I made the clapper an `extras` body of the bell,
 the bell swung and nothing happened. Now the two are separate parts, swinging on
 the same axis but with different damping; the difference between them produces
 the strike and increments the `actions.strikes()` counter. The model PLAYS NO
@@ -575,15 +575,15 @@ overlap, which one is in front is left to the floating-point precision of the
 depth buffer. As the camera moves the winner changes and the surface flickers.
 
 The first version of the crate fell into exactly this trap: the posts, the side
-boards and the lid boards all put their outer surface on the `±width/2` plane —
+boards and the lid boards all put their outer surface on the `±width/2` plane,
 **96 coincident faces.** The fix was not an "epsilon nudge" but real carpentry:
 
-- **The posts stand proud of the boards** — the side boards are pulled behind
+- **The posts stand proud of the boards.** The side boards are pulled behind
   the posts, so their outer faces are on a different plane.
 - **The lid and the base overhang the frame.**
 - **The posts go INTO the lid and the base**, so their ends stay inside a solid
   part and align with no plane at all.
-- **The boards are butt-joined** — they touch but they do not overlap. Edge
+- **The boards are butt-joined.** They touch but they do not overlap. Edge
   contact does not produce z-fighting.
 - **The straps stop before they meet each other at the corner.**
 
@@ -594,7 +594,7 @@ of them made the model more CORRECT:
   **that is where the lock is.** The rule is both historically correct and rules
   out at the root any chance of the strap and the lock bridge landing on the
   same plane at certain dimensions.
-- The broom's sheaves cannot sit perfectly parallel to each other — in a
+- The broom's sheaves cannot sit perfectly parallel to each other. In a
   hand-tied bundle no bristle is parallel to another anyway.
 - The bell's bearings stand proud of the rail; a real bearing does the same.
 
@@ -608,14 +608,14 @@ In hand-written geometry the sneakiest bug is inverted winding: the face becomes
 visible from the inside and it is only noticed at one particular camera angle.
 There are three separate criteria, because none of them is sufficient alone:
 
-**Radial alignment** — for bodies of revolution. Every radial face's normal on
+**Radial alignment**, for bodies of revolution. Every radial face's normal on
 the outer shell must point away from the axis. It is measured in height BANDS:
 on conical bodies a single radius threshold is meaningless.
 
-**Signed volume** — for closed solids. Σ a·(b×c)/6 comes out positive if the
+**Signed volume**, for closed solids. Σ a·(b×c)/6 comes out positive if the
 winding faces outward. But this criterion only catches a GLOBAL inversion.
 
-**Edge balance** — the only criterion that catches a single flipped face. It was
+**Edge balance**, the only criterion that catches a single flipped face. It was
 added because the signed volume test missed it: when I flipped one face the
 volume fell from 0.058 to 0.039 but stayed positive.
 
@@ -623,12 +623,12 @@ Three more subtleties:
 
 - The side surfaces of staves are TANGENTIAL, so the radial cross product is ~0
   for them by definition and its sign is only noise. They are filtered out and
-  **how many were filtered is reported** — they are not silently dropped.
+  **how many were filtered is reported.** They are not silently dropped.
 - Hollow bodies (the bell) deliberately carry an inward-facing shell. For those
   the threshold is raised so the inner shell is not taken for the "outer shell".
 - `bandGeometry` produces no inner face by default (a hoop always wraps a body,
-  the inner face is invisible). A free-standing ring — the sack's rope, the
-  bale's tie — was therefore not a closed solid; `{ inner: true }` exists for
+  the inner face is invisible). A free-standing ring such as the sack's rope or
+  the bale's tie was therefore not a closed solid; `{ inner: true }` exists for
   that.
 
 ### 5.8 Validation: three scripts
@@ -636,7 +636,7 @@ Three more subtleties:
 ```bash
 bun scripts/verify-model.ts   # ~500 checks · geometry, protocol, metadata, actions
 bun scripts/verify-glb.ts     # exports every model and READS IT BACK
-bun scripts/render.ts         # PNG contact sheet — for LOOKING at the model
+bun scripts/render.ts         # PNG contact sheet, for LOOKING at the model
 ```
 
 The method has been the same from the start: **every check was tested by
@@ -657,7 +657,7 @@ MINE, not the test's:
 `render.ts` was added last and it closed the thing that was missing. All the
 validation was GEOMETRIC: triangle count, winding, coplanarity, bounding box. It
 all caught real bugs but none of it could say "this shovel does not look like a
-shovel". To say that sentence you have to look at the model — the script is a
+shovel". To say that sentence you have to look at the model, and the script is a
 software rasterizer with no browser and no GPU: it collects the triangles,
 projects them with a camera, fills them with a z-buffer, writes a PNG. The
 shovel was rewritten a fourth time, the hoe a third and the hay bale a second
@@ -670,7 +670,7 @@ bun scripts/render.ts --one wooden-hoe --sweep "bladeAngle=62|80|98|116|134"
 ```
 
 That is how the hoe's blade angle was chosen. Around 98° the blade stays almost
-horizontal and is seen EDGE-ON by a camera looking from a 3/4 angle — the
+horizontal and is seen EDGE-ON by a camera looking from a 3/4 angle, so the
 model's most characteristic surface disappears from the silhouette. 66° was
 chosen.
 
@@ -689,12 +689,12 @@ Batch export is what they do not have and it is the one that actually earns its
 keep: it takes the kit to Blender, Godot or Unity with a single command.
 
 Because all the color information is in vertex colors it travels to glTF as
-`COLOR_0` and `baseColorFactor` stays white — there is no texture in the file at
+`COLOR_0` and `baseColorFactor` stays white. There is no texture in the file at
 all. The kit's entire identity travels in a single attribute.
 
 The one thing that does NOT travel is the shader: the wear on `@scifi-kit`'s
 gauge is a TSL node graph, i.e. code, and glTF does not carry code. This is not
-a shortcoming — it is the real difference between a vertex-color surface and a
+a shortcoming. It is the real difference between a vertex-color surface and a
 shader-based one.
 
 ---
@@ -707,7 +707,7 @@ The repository is MIT and a Bun workspace. `apps/*`, `packages/*`,
 ```bash
 git clone https://github.com/vibe-stack/vibe3d
 cd vibe3d && bun install
-bun run dev            # the docs catalog — a live preview of every model
+bun run dev            # the docs catalog, a live preview of every model
 ```
 
 Versioning is done with **Changesets**:
@@ -726,7 +726,7 @@ packages in dependency order.
    permission, and grows the ecosystem. `@scifi-kit` is only the *reference*
    registry.
 2. **Add a model to `@scifi-kit`.** Add `assets/prototypes/<model-id>/model.ts`
-   — `registries/scifi-kit/src/build.ts` **auto-discovers** every folder that
+   `registries/scifi-kit/src/build.ts` **auto-discovers** every folder that
    contains a `model.ts`, there is no registration list. Follow the `vibe-model`
    loop and fill in the `docs/templates/asset-spec-template.md` contract.
 3. **Close the protocol gaps.** Things written in the architecture document but
@@ -748,7 +748,7 @@ contribution opportunity too.
 
 `@scifi-kit/registry@0.0.1` as published on npm: **110 models** (Industrial 76,
 Architecture 12, Streets 9, Military 7, Medical 6) + 2 libs + 1 kit. GitHub
-`main` is further ahead — there are ~180 folders under `assets/prototypes/` (the
+`main` is further ahead: there are ~180 folders under `assets/prototypes/` (the
 cargo/logistics wave is not published yet). All packages are at `0.0.1`,
 published on 2026-08-11; the project is at a very early stage, so the timing for
 contributing is good.
