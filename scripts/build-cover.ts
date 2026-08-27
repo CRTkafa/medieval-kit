@@ -94,7 +94,7 @@ const left = MARGIN + 20
 const right = WIDTH - MARGIN - 20
 
 fillText(card, archivo, '@medieval-kit', { x: left - 2, y: 60, size: 52, colour: TEXT })
-fillText(card, mono, 'Procedural lowpoly props for three.js. Install the source, not the asset.', {
+fillText(card, mono, 'Procedural lowpoly props for three.js. The source installs into your project.', {
   x: left, y: 92, size: 16, colour: DIM,
 })
 

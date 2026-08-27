@@ -385,9 +385,23 @@ function kitEntry(): Entry {
         const box = new Box3().setFromObject(model.root)
         return { id, model, box, size: box.getSize(new Vector3()) }
       })
-      placed.sort((a, b) => b.size.y - a.size.y)
+      /**
+       * Sorted by DEPTH, which is the dimension a shelf's height is set by.
+       *
+       * It used to sort by the models' own height, and the two are unrelated:
+       * the post mill is 6.98 m deep and the ladder 0.06 m, so a row that
+       * happened to hold both was 6.98 m deep for all of them and the ladder
+       * sat at the front of six metres of empty floor. Three models shared that
+       * row with the mill. The camera then had to frame a plan mostly made of
+       * gaps, which is what "zoomed out" actually was.
+       *
+       * Sorting by depth makes every row about as deep as the things standing
+       * in it. Tall still lands at the back, because among these models the
+       * deep ones are the tall ones.
+       */
+      placed.sort((a, b) => b.size.z - a.size.z)
 
-      const gap = 0.42
+      const gap = 0.26
       /**
        * The row width is MEASURED from the models, not fixed at 5.6 m.
        *
@@ -411,13 +425,19 @@ function kitEntry(): Entry {
         (sum, item) => sum + (item.size.x + gap) * (item.size.z + gap), 0,
       )
       const widest = placed.reduce((most, item) => Math.max(most, item.size.x), 0)
-      const rowWidth = Math.max(widest, Math.sqrt(footprint) * 1.24)
+      const rowWidth = Math.max(widest, Math.sqrt(footprint) * 1.0)
       let cursorX = 0
       let cursorZ = 0
       let rowDepth = 0
 
       for (const item of placed) {
-        if (cursorX > 0 && cursorX + item.size.x > rowWidth) {
+        // Anything as wide as most of a row takes the row to itself. The post
+        // mill is 6.6 m across and 7 m deep, so whatever shared its row stood
+        // at the front of seven metres of empty floor with the mill beside it
+        // and a gap between them the width of the mill. One item, one row, and
+        // the rest pack against each other instead of against it.
+        const oversized = item.size.x > rowWidth * 0.6
+        if (cursorX > 0 && (oversized || cursorX + item.size.x > rowWidth)) {
           cursorX = 0
           cursorZ += rowDepth + gap
           rowDepth = 0
@@ -433,6 +453,11 @@ function kitEntry(): Entry {
         root.add(item.model.root)
         cursorX += item.size.x + gap
         rowDepth = Math.max(rowDepth, item.size.z)
+        if (oversized) {
+          cursorX = 0
+          cursorZ += rowDepth + gap
+          rowDepth = 0
+        }
       }
 
       // Centre the whole kit on the ORIGIN, otherwise the camera framing looks at a corner.

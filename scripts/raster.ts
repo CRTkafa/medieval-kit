@@ -369,7 +369,9 @@ function frameCamera(root: Object3D, width: number, height: number): { camera: P
   const sphere = box.getBoundingSphere(new Sphere())
   const camera = new PerspectiveCamera(32, width / height, 0.01, 100)
   // Three-quarter view: the one angle that shows two faces at once. Looking
-  // straight on hides depth completely.
+  // straight on hides depth completely. Raising it to look further down was
+  // measured on the whole-kit scene, the one subject with a reason to want it,
+  // and it made the frame emptier at every elevation tried.
   const direction = new Vector3(0.78, 0.5, 1).normalize()
 
   /**
@@ -388,25 +390,54 @@ function frameCamera(root: Object3D, width: number, height: number): { camera: P
    * inside a pixel at these sizes, and it settles on whichever axis is
    * actually tight rather than assuming it is the vertical one.
    */
+  /**
+   * Fitted to the GEOMETRY, not to the eight corners of its bounding box.
+   *
+   * A box fit is exact only for something that fills its box. The whole-kit
+   * scene is the opposite: a flat plan of small props with one 7 m mill in it,
+   * so four of the eight corners are pure air, and the frame was sized to hold
+   * air. That is what reads as being zoomed out.
+   *
+   * Sampling the real vertices costs one traversal and removes the slack
+   * exactly where there is slack, without ever cropping — a vertex outside the
+   * frame is what the loop is correcting for.
+   */
+  const points: Vector3[] = []
+  root.updateMatrixWorld(true)
+  root.traverse((object) => {
+    if (!(object instanceof Mesh)) return
+    const position = object.geometry.getAttribute('position')
+    if (!position) return
+    // Every vertex on a small model, a sample on a large one: 20k points is
+    // plenty to find the extremes and keeps this off the critical path.
+    const step = Math.max(1, Math.floor(position.count / 4096))
+    for (let i = 0; i < position.count; i += step) {
+      points.push(new Vector3().fromBufferAttribute(position, i).applyMatrix4(object.matrixWorld))
+    }
+  })
+  if (points.length === 0) for (let i = 0; i < 8; i += 1) {
+    points.push(new Vector3(
+      i & 1 ? box.max.x : box.min.x,
+      i & 2 ? box.max.y : box.min.y,
+      i & 4 ? box.max.z : box.min.z,
+    ))
+  }
+
   let distance = (sphere.radius / Math.sin((camera.fov * Math.PI) / 360)) * 1.12
-  const corner = new Vector3()
-  for (let pass = 0; pass < 3; pass += 1) {
+  const at = new Vector3()
+  for (let pass = 0; pass < 4; pass += 1) {
     camera.position.copy(sphere.center).addScaledVector(direction, distance)
     camera.lookAt(sphere.center)
     camera.updateMatrixWorld(true)
     camera.updateProjectionMatrix()
     let worst = 0
-    for (let i = 0; i < 8; i += 1) {
-      corner.set(
-        i & 1 ? box.max.x : box.min.x,
-        i & 2 ? box.max.y : box.min.y,
-        i & 4 ? box.max.z : box.min.z,
-      ).project(camera)
-      worst = Math.max(worst, Math.abs(corner.x), Math.abs(corner.y))
+    for (const p of points) {
+      at.copy(p).project(camera)
+      worst = Math.max(worst, Math.abs(at.x), Math.abs(at.y))
     }
     if (worst <= 0) break
-    // 0.9 of the frame, so nothing sits on the edge and a shadow has room.
-    distance *= worst / 0.9
+    // 0.94 of the frame, so nothing sits on the edge and a shadow has room.
+    distance *= worst / 0.94
   }
 
   camera.position.copy(sphere.center).addScaledVector(direction, distance)
