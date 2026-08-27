@@ -1,6 +1,6 @@
 {
   "name": "@medieval-kit/registry",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A lowpoly medieval procedural model library for Vibe3D and Three.js.",
   "type": "module",
   "license": "MIT",

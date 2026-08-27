@@ -56,11 +56,13 @@ as well — in `tsconfig.json`:
   "compilerOptions": {
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
-    "baseUrl": ".",
     "paths": { "@/*": ["./src/*"] }
   }
 }
 ```
+
+No `baseUrl`: it was removed in TypeScript 7 and `paths` resolves relative to
+this file on its own. Verified against a clean project on 7.0.2.
 
 and in your bundler, because TypeScript's `paths` only teaches the type checker.
 For Vite:
