@@ -56,7 +56,6 @@ import { createModel as createCart } from '@/models/medieval-kit/hand-cart/model
 import { createModel as createVeg } from '@/models/medieval-kit/vegetables/model.ts'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
 import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/model.ts'
-import { createModel as createOak } from '@/models/medieval-kit/oak-tree/model.ts'
 import { createModel as createTrough } from '@/models/medieval-kit/stone-trough/model.ts'
 import { createModel as createGrind } from '@/models/medieval-kit/grindstone/model.ts'
 import { createModel as createStall } from '@/models/medieval-kit/market-stall/model.ts'
@@ -348,10 +347,6 @@ const CASES: readonly Case[] = [
     parts: 2, ownSlot: 'water', borrowSlot: 'stone',
     variants: [{ water: 0 }, { wall: 0.12 }, { wall: 0.34 }, { height: 0.25 }],
     maxSize: [2.8, 0.8, 1.1] },
-  { id: 'oak-tree', make: as(createOak), patch: { limbs: 11, spread: 1.5 },
-    parts: 3, ownSlot: 'leaf', borrowSlot: 'oak',
-    variants: [{ leafiness: 0 }, { limbs: 3 }, { autumn: 1 }, { spread: 0.6 }, { height: 3 }],
-    maxSize: [22, 14, 22] },
   { id: 'forge-hearth', make: as(createForge), patch: { kerbBlocks: 24, chimney: 1.6 },
     parts: 4, ownSlot: 'stone', borrowSlot: 'oak',
     variants: [{ lit: 0 }, { kerbBlocks: 8 }, { chimney: 0.3 }],

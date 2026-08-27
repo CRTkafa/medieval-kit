@@ -14,7 +14,7 @@ on an opaque package. This repository holds one such registry.
 
 ![The whole kit in one scene](media/kit.png)
 
-38 models and one shared library, **32,798 triangles** for the whole kit — less
+37 models and one shared library, **30,390 triangles** for the whole kit — less
 than a single medium-detail character. Every one is procedural source you own
 and edit, not an asset you load.
 
@@ -137,8 +137,8 @@ viewer.html?showcase=60      # 30, 60 and 90 are offered
 ```
 
 **60 s is the default**, and the reason is arithmetic: the tour splits its
-running time equally between the models, so across 38 of them a 30 s run gives
-each 0.79 seconds — a flyby, not a demonstration — while 60 s gives 1.6 s and
+running time equally between the models, so across 37 of them a 30 s run gives
+each 0.81 seconds — a flyby, not a demonstration — while 60 s gives 1.6 s and
 90 s gives 2.4 s.
 
 That first number moves every time a model is added, which is worth saying out
@@ -194,7 +194,6 @@ scripts/
   render.ts             offline software rasteriser → PNG contact sheet
   check-docs.ts         documented counts against the models themselves
   reference-shots.ts    one photographic reference per model, for comparison
-  probe-tree.ts         measures the oak against its reference photographs
   catalog-table.ts      regenerates the model table in the registry README
   export-glb.ts         batch GLB export
 media/

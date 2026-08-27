@@ -28,7 +28,7 @@ Configure `models.json` first so the namespace resolves:
 
 ## Models
 
-38 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
+37 models and one shared lib. Addresses are `@medieval-kit/<id>`. This table is
 generated from the models themselves with `bun scripts/catalog-table.ts` — a
 hand-written list goes stale on the first model you add, and this one already
 did once.
@@ -72,9 +72,8 @@ did once.
 | `grindstone` | Smithy | 568 | 4 | 1.24×0.95×0.70 | stone, oak, iron, water |  |
 | `market-stall` | Structure | 384 | 4 | 1.83×2.03×0.97 | oak, cloth |  |
 | `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
-| `oak-tree` | Nature | 2408 | 3 | 7.71×7.00×9.10 | oak, leaf |  |
 
-**32 798 triangles** in total. The whole kit in one scene costs less than a
+**30 390 triangles** in total. The whole kit in one scene costs less than a
 single mid-complexity character model.
 
 Every model depends on `@medieval-kit/core`, a shared support item holding the
@@ -137,7 +136,7 @@ rebuilds topology and is not cheap. Anything that changes per frame belongs in
 
 ## Material slots
 
-Fourteen slots, and each one exists because a single material could not carry the
+Thirteen slots, and each one exists because a single material could not carry the
 difference.
 
 | Slot | What it covers | Why it is separate |
@@ -153,7 +152,6 @@ difference.
 | `produce` | fruit and vegetable skin | given straw's roughness, an apple would look like dry grass |
 | `ember` | flame | `MeshBasicMaterial` — it does not receive light, it emits |
 | `char` | charcoal and pitch | — |
-| `leaf` | living foliage | the most matte thing here after stone: any sheen at all and a crown reads as plastic shrubbery, which is the usual failure of a lowpoly tree and is a material setting rather than a modelling one |
 | `water` | standing water | a thin transparent film over whatever holds it: in the reference trough the basin reads hue 39.5, which is the hue of the STONE underneath, so it works through opacity rather than colour |
 | `stone` | dressed and rubble masonry | its colour is close to weathered oak; what separates them at a glance is that stone scatters light completely flat, and roughness is not something vertex colour can carry |
 
