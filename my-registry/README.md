@@ -8,12 +8,11 @@ own tree, not an opaque package boundary.
 
 ![Every model](https://medieval.crt.fyi/models.png)
 
-```sh
-bunx vibe3d add @medieval-kit/wooden-barrel
-bunx vibe3d add @medieval-kit
-```
+## Install
 
-Configure `models.json` first so the namespace resolves:
+Point `models.json` at the registry. This step is not optional and it is not
+last: `vibe3d add` resolves `@medieval-kit` through this map and stops with
+`Registry @medieval-kit is not configured in models.json` if it is missing.
 
 ```json
 {
@@ -24,6 +23,13 @@ Configure `models.json` first so the namespace resolves:
     }
   }
 }
+```
+
+Then take one model, or the lot:
+
+```sh
+bunx vibe3d add @medieval-kit/wooden-barrel
+bunx vibe3d add @medieval-kit
 ```
 
 ## Models

@@ -100,8 +100,15 @@ fillText(card, mono, 'Procedural lowpoly props for three.js. Install the source,
 
 // The install line is the whole point of a source registry, so it is set as
 // something you could type rather than as one more sentence about it.
+//
+// The bare namespace and not `@medieval-kit/<some-model>`. Both are valid
+// addresses, but this one resolves through the registry's `defaultItem` and
+// installs the whole kit, which is what someone reading a card of the whole
+// kit is being offered. It is also the shorter promise: a card has room for a
+// command but not for the `models.json` entry the command needs first, and
+// naming one arbitrary model implies a precision the card cannot deliver.
 const prompt = fillText(card, mono, '$ ', { x: left, y: 118, size: 16, colour: AMBER })
-fillText(card, mono, `bunx vibe3d add @medieval-kit/${ids[0]}`, { x: prompt, y: 118, size: 16, colour: TEXT })
+fillText(card, mono, 'bunx vibe3d add @medieval-kit', { x: prompt, y: 118, size: 16, colour: TEXT })
 
 // Counted, never typed.
 const count = `${ids.length} models`
