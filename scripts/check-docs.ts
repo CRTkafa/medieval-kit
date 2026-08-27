@@ -64,7 +64,21 @@ const WORDS = [
   'seventeen', 'eighteen', 'nineteen', 'twenty',
 ]
 
-for (const file of ['README.md', 'REFERENCE.md', 'my-registry/README.md']) {
+/**
+ * `viewer.html` is in this list because it is the published page.
+ *
+ * Its meta description is what a search result and a shared link show, and it
+ * quotes the model count and the triangle total — which is the same sentence
+ * that went stale three times in the READMEs before this check existed. A
+ * number in a card is worse than a number in a README: nobody reading the card
+ * can see the kit to know it is wrong.
+ *
+ * It carries no table, so the every-model-listed rule does not apply to it,
+ * any more than it does to the root README.
+ */
+const CARRIES_A_TABLE = new Set(['REFERENCE.md', 'my-registry/README.md'])
+
+for (const file of ['README.md', 'REFERENCE.md', 'my-registry/README.md', 'viewer.html']) {
   const text = readFileSync(file, 'utf8')
   console.log(file)
 
@@ -74,7 +88,7 @@ for (const file of ['README.md', 'REFERENCE.md', 'my-registry/README.md']) {
   // Every model has to appear by id, or the document is describing a smaller
   // kit than the one it ships with. The registry README and the reference each
   // carry a generated table; the root README does not, so it is exempt.
-  if (file !== 'README.md') {
+  if (CARRIES_A_TABLE.has(file)) {
     const missing = ids.filter((id) => !text.includes(`\`${id}\``))
     expect(`${file}: every model listed`, missing.length === 0, missing.join(', '))
   }

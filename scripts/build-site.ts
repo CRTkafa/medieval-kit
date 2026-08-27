@@ -41,6 +41,19 @@ await writeFile(`${dist}/_headers`, `/viewer-*
   Cache-Control: public, max-age=0, must-revalidate
 `, 'utf8')
 
+/**
+ * The images the page's own meta tags point at.
+ *
+ * `og:image` is an absolute URL to this host, so the file has to BE on this
+ * host: a card that 404s is a card that shows nothing, and nothing about the
+ * page itself would look wrong. `kit.png` and `models.png` come too, because
+ * the published README links to them and a reader of that page should not
+ * depend on a private repository being readable.
+ */
+for (const image of ['cover.png', 'icon.png', 'kit.png', 'models.png']) {
+  await copyFile(`media/${image}`, `${dist}/${image}`)
+}
+
 // Listed rather than named. The bundles are hashed, so writing `viewer.js`
 // here would be a lie the moment the bytes change — which is the same mistake
 // this script's own first version made, in this very line.

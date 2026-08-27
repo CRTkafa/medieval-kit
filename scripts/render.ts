@@ -340,13 +340,51 @@ function frameCamera(root: Object3D, width: number, height: number): { camera: P
   const box = new Box3().setFromObject(root)
   const sphere = box.getBoundingSphere(new Sphere())
   const camera = new PerspectiveCamera(32, width / height, 0.01, 100)
-  const distance = (sphere.radius / Math.sin((camera.fov * Math.PI) / 360)) * 1.12
   // Three-quarter view: the one angle that shows two faces at once. Looking
   // straight on hides depth completely.
   const direction = new Vector3(0.78, 0.5, 1).normalize()
+
+  /**
+   * Fit the BOX to the frame, not the sphere to the frame's short side.
+   *
+   * A sphere fit is one number and it is wrong for anything that is not
+   * roughly round. The whole-kit scene is wide and flat: its bounding sphere
+   * is set by the horizontal extent and is far taller than the scene is, so
+   * fitting that sphere into the vertical field left the models occupying a
+   * band across the middle with empty air above and below. On a 1.91:1 social
+   * card it was most of the picture.
+   *
+   * The box fit is iterative because perspective is not linear in distance:
+   * put the camera somewhere, project the eight corners, see how far past the
+   * frame edge the worst one lands, and move by that ratio. Two passes is
+   * inside a pixel at these sizes, and it settles on whichever axis is
+   * actually tight rather than assuming it is the vertical one.
+   */
+  let distance = (sphere.radius / Math.sin((camera.fov * Math.PI) / 360)) * 1.12
+  const corner = new Vector3()
+  for (let pass = 0; pass < 3; pass += 1) {
+    camera.position.copy(sphere.center).addScaledVector(direction, distance)
+    camera.lookAt(sphere.center)
+    camera.updateMatrixWorld(true)
+    camera.updateProjectionMatrix()
+    let worst = 0
+    for (let i = 0; i < 8; i += 1) {
+      corner.set(
+        i & 1 ? box.max.x : box.min.x,
+        i & 2 ? box.max.y : box.min.y,
+        i & 4 ? box.max.z : box.min.z,
+      ).project(camera)
+      worst = Math.max(worst, Math.abs(corner.x), Math.abs(corner.y))
+    }
+    if (worst <= 0) break
+    // 0.9 of the frame, so nothing sits on the edge and a shadow has room.
+    distance *= worst / 0.9
+  }
+
   camera.position.copy(sphere.center).addScaledVector(direction, distance)
   camera.lookAt(sphere.center)
   camera.updateMatrixWorld(true)
+  camera.updateProjectionMatrix()
   return { camera, floor: box.min.y }
 }
 
@@ -356,6 +394,15 @@ function renderOne(
   patch?: Record<string, number>,
   /** Pre-rotation of the model around the Y axis (radians). For turntables. */
   spin = 0,
+  /**
+   * Frame height, when it is not the width.
+   *
+   * Everything here is square because a contact sheet is a grid, but a social
+   * card is 1.91:1 and cropping a square down to it either loses the model or
+   * leaves it small. `newFrame` and `frameCamera` both took a width and a
+   * height already; only this function was insisting they be the same.
+   */
+  tall = size,
 ): Frame {
   const entry = CATALOG[id]
   if (!entry) throw new Error(`not in catalog: ${id}`)
@@ -368,8 +415,8 @@ function renderOne(
   // stay in a fixed direction, so turntable frames compare one to one.
   built.root.rotation.y = spin
   const triangles = collect(built.root)
-  const frame = newFrame(size, size)
-  const { camera, floor } = frameCamera(built.root, size, size)
+  const frame = newFrame(size, tall)
+  const { camera, floor } = frameCamera(built.root, size, tall)
   contactShadow(frame, camera, triangles, floor)
   raster(frame, camera, triangles)
   built.dispose()
@@ -387,6 +434,7 @@ const flag = (name: string): string | undefined => {
 const outDir = flag('out') ?? 'renders'
 const one = flag('one')
 const size = Number(flag('size') ?? (one ? 720 : 300))
+const tall = Number(flag('height') ?? size)
 
 const only = flag('ids')?.split(',')
 
@@ -453,7 +501,7 @@ const ids = one ? [one]
 const frames = new Map<string, Frame>()
 
 for (const id of ids) {
-  const frame = renderOne(id, size)
+  const frame = renderOne(id, size, undefined, 0, tall)
   frames.set(id, frame)
   await writeFile(`${outDir}/${id}.png`, encodePng(frame))
   console.log(`  ${id}`)

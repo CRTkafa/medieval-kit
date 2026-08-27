@@ -3,7 +3,51 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@medieval-kit · procedural model viewer</title>
+    <title>@medieval-kit · procedural lowpoly medieval models</title>
+    <meta
+      name="description"
+      content="37 lowpoly medieval models generated from TypeScript you install and own — barrels, tools, a forge, a windmill. 30,390 triangles for the whole kit."
+    />
+    <link rel="canonical" href="https://medieval.crt.fyi/" />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <meta name="theme-color" content="#0b0e12" />
+
+    <!--
+      The card. Every one of these is here because something reads it and shows
+      the page to somebody who has not opened it yet, and the default without
+      them is the URL and a blank square.
+
+      The image is ABSOLUTE, which is not a style choice: a scraper fetching
+      this page has no base to resolve "/cover.png" against and will drop it.
+      Same for the URL. And `og:image` is a real 1200x630 render of the whole
+      kit rather than a crop of a square one — the renderer will produce any
+      aspect now, and a card is 1.91:1, so a square image loses either the
+      windmill off the top or the props off the bottom.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="medieval-kit" />
+    <meta property="og:url" content="https://medieval.crt.fyi/" />
+    <meta property="og:title" content="@medieval-kit · procedural lowpoly medieval models" />
+    <meta
+      property="og:description"
+      content="37 lowpoly medieval models generated from TypeScript you install and own — barrels, tools, a forge, a windmill. 30,390 triangles for the whole kit."
+    />
+    <meta property="og:image" content="https://medieval.crt.fyi/cover.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="37 lowpoly medieval models arranged in one scene: a windmill and an oak-framed market stall behind, a forge, a grindstone and a cart wheel in the middle, barrels, crates and hand tools at the front."
+    />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="@medieval-kit · procedural lowpoly medieval models" />
+    <meta
+      name="twitter:description"
+      content="37 lowpoly medieval models generated from TypeScript you install and own. Open the viewer and turn any of them over."
+    />
+    <meta name="twitter:image" content="https://medieval.crt.fyi/cover.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
