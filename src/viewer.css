@@ -32,7 +32,19 @@ html, body {
 #app {
   display: grid;
   grid-template-columns: var(--rail) 1fr;
+  /*
+   * `dvh` first, `vh` as the fallback for anything that does not know it.
+   *
+   * `vh` is the LARGEST the viewport gets, not the size it currently is. Where
+   * those differ the grid is taller than the window, and since the body clips
+   * its overflow the difference is not scrolled to, it is simply gone — and
+   * what goes is the bottom of the left rail, which is the one part of this
+   * page that has more content than fits. `dvh` tracks the viewport it
+   * actually has. They are the same number in an ordinary window, which is why
+   * this only ever shows up somewhere the two come apart.
+   */
   height: 100vh;
+  height: 100dvh;
   background: var(--ink);
 }
 
@@ -46,6 +58,15 @@ html, body {
   border-right: 1px solid var(--rule);
   overflow-y: auto;
   overscroll-behavior: contain;
+  /*
+   * A grid item's automatic minimum size is its CONTENT, not zero. The rail is
+   * a scroll container so the browser already relaxes that to zero — but only
+   * as long as it stays one, and it is one line of CSS away from not being.
+   * Saying it outright costs nothing and removes the whole failure mode, which
+   * is the row quietly growing past the window and taking its own scrollbar
+   * out of reach.
+   */
+  min-height: 0;
 }
 
 .rail::-webkit-scrollbar { width: 10px; }
