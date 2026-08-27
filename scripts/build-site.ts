@@ -18,18 +18,36 @@
  *
  *   bun run site:build     → dist-viewer/, ready for any static host
  */
-import { copyFile, stat } from 'node:fs/promises'
+import { copyFile, readdir, stat, writeFile } from 'node:fs/promises'
 
-const from = 'dist-viewer/viewer.html'
-const to = 'dist-viewer/index.html'
+const dist = 'dist-viewer'
+await copyFile(`${dist}/viewer.html`, `${dist}/index.html`)
 
-await copyFile(from, to)
+/**
+ * Cache rules for the host, written into the output where it looks for them.
+ *
+ * The two bundles carry a content hash, so their names change whenever their
+ * bytes do and a year of immutable caching is exactly right. The HTML must
+ * NOT be cached that way: it is what points at the current hash, and a stale
+ * copy of it pins a visitor to a build that no longer exists.
+ */
+await writeFile(`${dist}/_headers`, `/viewer-*
+  Cache-Control: public, max-age=31536000, immutable
 
-const sizes = await Promise.all(
-  ['index.html', 'viewer.js', 'viewer.css', 'artifact.html'].map(async (name) => {
-    const info = await stat(`dist-viewer/${name}`)
-    return `${name} ${Math.round(info.size / 1024)} KB`
-  }),
-)
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
 
-console.log(`dist-viewer/ ready — ${sizes.join(' · ')}`)
+/
+  Cache-Control: public, max-age=0, must-revalidate
+`, 'utf8')
+
+// Listed rather than named. The bundles are hashed, so writing `viewer.js`
+// here would be a lie the moment the bytes change — which is the same mistake
+// this script's own first version made, in this very line.
+const names = (await readdir(dist)).filter((name) => !name.startsWith('_'))
+const sizes = await Promise.all(names.sort().map(async (name) => {
+  const info = await stat(`${dist}/${name}`)
+  return `${name} ${Math.round(info.size / 1024)} KB`
+}))
+
+console.log(`${dist}/ ready — ${sizes.join(' · ')}`)

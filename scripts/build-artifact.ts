@@ -8,7 +8,7 @@
  *   bunx vite build --config vite.viewer.config.ts
  *   bun scripts/build-artifact.ts
  */
-import { readFile, writeFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -21,8 +21,22 @@ const FONTS =
   'https://fonts.googleapis.com/css2?family=Archivo:wght@400;700' +
   '&family=IBM+Plex+Mono:wght@400;500;600&display=swap'
 
-const css = await readFile(join(distRoot, 'viewer.css'), 'utf8')
-const js = await readFile(join(distRoot, 'viewer.js'), 'utf8')
+/**
+ * By pattern, because the built names carry a content hash.
+ *
+ * They are hashed so the published site can serve them with a year of
+ * immutable caching, which is only correct if the name changes when the bytes
+ * do. The cost is exactly this: nothing downstream may name them literally.
+ */
+const built = await readdir(distRoot)
+const find = (extension: string): string => {
+  const hit = built.find((name) => name.startsWith('viewer-') && name.endsWith(extension))
+  if (!hit) throw new Error(`no viewer-*${extension} in dist-viewer — did the vite build run?`)
+  return join(distRoot, hit)
+}
+
+const css = await readFile(find('.css'), 'utf8')
+const js = await readFile(find('.js'), 'utf8')
 
 // A `</script` sequence inside the inlined script would close the HTML parser
 // early. This escape does not change the JavaScript meaning.
