@@ -35,6 +35,23 @@ const only = flag('ids')?.split(',')
 const groundHex = flag('ground')
 const ground = groundHex ? toLinear(groundHex) : undefined
 
+/**
+ * Where the camera stands, and why the whole-kit scene gets its own answer.
+ *
+ * A single model wants the three-quarter view: it shows two faces at once,
+ * where straight on hides depth completely. A SCENE of models laid out in rows
+ * is a different subject. From the corner its rows run diagonally across the
+ * frame and leave two corners empty; from nearer the front they read as rows,
+ * and the picture holds a quarter more of the kit at the same size.
+ *
+ * Applied here rather than left to the caller, because the alternative is a
+ * flag someone has to remember on every re-render, and the picture it produces
+ * is the one the README opens with.
+ */
+const towards = flag('towards')?.split(',').map(Number) as [number, number, number] | undefined
+const cameraFor = (id: string): [number, number, number] | undefined =>
+  towards ?? (id === 'kit' ? [0.24, 0.5, 1] : undefined)
+
 await mkdir(outDir, { recursive: true })
 
 function ids0(): string {
@@ -52,7 +69,7 @@ if (angles > 1) {
   const target = one ?? (only?.[0])
   if (!target) throw new Error('--angles needs --one <model> or --ids')
   const frames = Array.from({ length: angles }, (_, i) =>
-    renderOne(target, { size, ground, spin: (i / angles) * Math.PI * 2 }))
+    renderOne(target, { size, ground, towards: cameraFor(target), spin: (i / angles) * Math.PI * 2 }))
   await writeFile(`${outDir}/_turntable.png`, encodePng(tile(frames, size, angles, ground)))
   console.log(`${target} · ${angles} angles → ${outDir}/_turntable.png`)
   process.exit(0)
@@ -63,7 +80,7 @@ if (sweep) {
   const [key, values] = sweep.split('=')
   const list = values!.split('|').map(Number)
   const target = one ?? ids0()
-  const rendered = list.map((value) => renderOne(target, { size, ground, patch: { [key!]: value } }))
+  const rendered = list.map((value) => renderOne(target, { size, ground, towards: cameraFor(target), patch: { [key!]: value } }))
   await writeFile(`${outDir}/_sweep.png`, encodePng(tile(rendered, size, list.length, ground)))
   console.log(`${target} · ${key} = ${list.join(', ')} → ${outDir}/_sweep.png`)
   process.exit(0)
@@ -78,7 +95,7 @@ const ids = one ? [one]
 const frames = new Map<string, Frame>()
 
 for (const id of ids) {
-  const frame = renderOne(id, { size, tall, ground })
+  const frame = renderOne(id, { size, tall, ground, towards: cameraFor(id) })
   frames.set(id, frame)
   await writeFile(`${outDir}/${id}.png`, encodePng(frame))
   console.log(`  ${id}`)

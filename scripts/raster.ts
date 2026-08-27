@@ -364,15 +364,16 @@ export function encodePng(frame: Frame): Uint8Array {
 /* ------------------------------------------------------------------ framing */
 
 /** Camera that fits the model into frame. Same framing as in the viewer. */
-function frameCamera(root: Object3D, width: number, height: number): { camera: PerspectiveCamera; floor: number } {
+function frameCamera(
+  root: Object3D,
+  width: number,
+  height: number,
+  towards: readonly [number, number, number],
+): { camera: PerspectiveCamera; floor: number } {
   const box = new Box3().setFromObject(root)
   const sphere = box.getBoundingSphere(new Sphere())
   const camera = new PerspectiveCamera(32, width / height, 0.01, 100)
-  // Three-quarter view: the one angle that shows two faces at once. Looking
-  // straight on hides depth completely. Raising it to look further down was
-  // measured on the whole-kit scene, the one subject with a reason to want it,
-  // and it made the frame emptier at every elevation tried.
-  const direction = new Vector3(0.78, 0.5, 1).normalize()
+  const direction = new Vector3(towards[0], towards[1], towards[2]).normalize()
 
   /**
    * Fit the BOX to the frame, not the sphere to the frame's short side.
@@ -415,6 +416,17 @@ function frameCamera(root: Object3D, width: number, height: number): { camera: P
       points.push(new Vector3().fromBufferAttribute(position, i).applyMatrix4(object.matrixWorld))
     }
   })
+  /**
+   * The contact shadow is part of the picture, so it is part of the fit.
+   *
+   * It is the geometry flattened onto the floor, which projects somewhere else
+   * entirely: a tall model throws its shadow well to one side, past everything
+   * the fit was measuring. Fourteen of the thirty-seven had a shadow running
+   * off the edge of its own cell, which reads as a crop even though no part of
+   * the model was touched.
+   */
+  for (const p of points.slice()) points.push(new Vector3(p.x, box.min.y, p.z))
+
   if (points.length === 0) for (let i = 0; i < 8; i += 1) {
     points.push(new Vector3(
       i & 1 ? box.max.x : box.min.x,
@@ -423,25 +435,59 @@ function frameCamera(root: Object3D, width: number, height: number): { camera: P
     ))
   }
 
-  let distance = (sphere.radius / Math.sin((camera.fov * Math.PI) / 360)) * 1.12
+  /**
+   * Aimed at where the subject LANDS IN THE PICTURE, not at the middle of its
+   * bounding sphere.
+   *
+   * Those are the same point only for something symmetric about its centre.
+   * The whole-kit scene is a low wide plan with one tall mill standing off to
+   * one side, so its sphere centre sits well away from the middle of what you
+   * actually see, and the fit then padded one side to reach it. That is the
+   * margin down the right of the frame: not a fitting error, an aiming one.
+   *
+   * Centring and fitting run in the same loop because each one moves the other:
+   * re-aiming changes what the extremes project to, and pulling in changes
+   * where the centre falls. Four passes settles both inside a pixel here.
+   */
+  const target = sphere.center.clone()
+  const right = new Vector3()
+  const up = new Vector3()
   const at = new Vector3()
+  let distance = (sphere.radius / Math.sin((camera.fov * Math.PI) / 360)) * 1.12
+
   for (let pass = 0; pass < 4; pass += 1) {
-    camera.position.copy(sphere.center).addScaledVector(direction, distance)
-    camera.lookAt(sphere.center)
+    camera.position.copy(target).addScaledVector(direction, distance)
+    camera.lookAt(target)
     camera.updateMatrixWorld(true)
     camera.updateProjectionMatrix()
-    let worst = 0
+
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
     for (const p of points) {
       at.copy(p).project(camera)
-      worst = Math.max(worst, Math.abs(at.x), Math.abs(at.y))
+      minX = Math.min(minX, at.x); maxX = Math.max(maxX, at.x)
+      minY = Math.min(minY, at.y); maxY = Math.max(maxY, at.y)
     }
+    if (!Number.isFinite(minX)) break
+
+    // Slide the aim point across the image plane by however far off centre the
+    // content sits, in world units at this distance.
+    const halfHeight = Math.tan((camera.fov * Math.PI) / 360) * distance
+    const halfWidth = halfHeight * camera.aspect
+    right.setFromMatrixColumn(camera.matrixWorld, 0)
+    up.setFromMatrixColumn(camera.matrixWorld, 1)
+    target
+      .addScaledVector(right, ((minX + maxX) / 2) * halfWidth)
+      .addScaledVector(up, ((minY + maxY) / 2) * halfHeight)
+
+    // Then fit the half-extent, measured from that centre.
+    const worst = Math.max((maxX - minX) / 2, (maxY - minY) / 2)
     if (worst <= 0) break
     // 0.94 of the frame, so nothing sits on the edge and a shadow has room.
     distance *= worst / 0.94
   }
 
-  camera.position.copy(sphere.center).addScaledVector(direction, distance)
-  camera.lookAt(sphere.center)
+  camera.position.copy(target).addScaledVector(direction, distance)
+  camera.lookAt(target)
   camera.updateMatrixWorld(true)
   camera.updateProjectionMatrix()
   return { camera, floor: box.min.y }
@@ -461,10 +507,20 @@ export interface RenderOptions {
   /** Pre-rotation of the model around the Y axis (radians). For turntables. */
   readonly spin?: number
   readonly ground?: readonly number[]
+  /**
+   * Where the camera sits, as a direction from the subject.
+   *
+   * The default three-quarter view shows two faces of a single object at once,
+   * which is what a catalogue of single objects wants. A SCENE laid out in rows
+   * is a different subject: seen from the corner its rows run diagonally and
+   * two corners of the frame are left empty, so the whole-kit picture is taken
+   * from nearer the front, where the rows read as rows.
+   */
+  readonly towards?: readonly [number, number, number]
 }
 
 export function renderOne(id: string, options: RenderOptions): Frame {
-  const { size, tall = options.size, patch, spin = 0, ground } = options
+  const { size, tall = options.size, patch, spin = 0, ground, towards = [0.78, 0.5, 1] } = options
   const entry = CATALOG[id]
   if (!entry) throw new Error(`not in catalog: ${id}`)
   const built = entry.build()
@@ -477,7 +533,7 @@ export function renderOne(id: string, options: RenderOptions): Frame {
   built.root.rotation.y = spin
   const triangles = collect(built.root)
   const frame = newFrame(size, tall, ground)
-  const { camera, floor } = frameCamera(built.root, size, tall)
+  const { camera, floor } = frameCamera(built.root, size, tall, towards)
   contactShadow(frame, camera, triangles, floor)
   raster(frame, camera, triangles)
   built.dispose()
