@@ -90,7 +90,10 @@ scripts/
   verify-model.ts                  browserless conformance validation
   verify-glb.ts                    GLB round-trip validation
   zfight.ts                        coplanar face detection
-  render.ts                        offline software rasterizer → PNG
+  raster.ts                        the software renderer, no browser, no GPU
+  render.ts                        its command line: sheets, sweeps, turntables
+  text.ts                          TrueType outlines, filled by scanline
+  build-cover.ts                   media/cover.png, the card a link unfurls to
   export-glb.ts                    exports the whole kit to GLB
   catalog-table.ts                 generates the model table in REFERENCE.md
   build-artifact.ts                bundles the viewer into a single file
@@ -754,6 +757,8 @@ bun my-registry/build.ts                    # generate registry.json
 bun scripts/verify-model.ts                 # full validation
 bun scripts/verify-glb.ts                   # GLB round-trip
 bun scripts/render.ts [--one <id>] [--ids a,b] [--sweep "k=v1|v2"] [--size N]
+                      [--angles N] [--columns N] [--height N] [--ground <hex>]
+bun scripts/build-cover.ts                  # media/cover.png
 bun scripts/export-glb.ts [--one <id>] [--out dir]
 bun scripts/catalog-table.ts                # the document's table
 

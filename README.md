@@ -191,7 +191,10 @@ scripts/
   zfight.ts             coplanar overlap detection
   support.ts            voxel connectivity — nothing may float
   audit.ts              runs the support check across every configuration
-  render.ts             offline software rasteriser → PNG contact sheet
+  raster.ts             the software renderer: triangles in, PNG out
+  render.ts             its command line — sheets, sweeps, turntables
+  text.ts               a TrueType reader, so the renderer can set type
+  build-cover.ts        the social card, with its numbers counted not typed
   check-docs.ts         documented counts against the models themselves
   reference-shots.ts    one photographic reference per model, for comparison
   catalog-table.ts      regenerates the model table in the registry README
@@ -199,6 +202,8 @@ scripts/
 media/
   kit.png               the whole catalogue as one scene
   models.png            the contact sheet, one cell per model
+  cover.png             the card a shared link shows; built, not drawn
+  fonts/                Archivo and IBM Plex Mono, under the OFL
 models.json             which registries this project resolves
 models.lock.json        install receipt; `vibe3d diff` compares against it
 ```
