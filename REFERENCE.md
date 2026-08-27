@@ -374,16 +374,16 @@ on the first model you add, and in fact it had gone stale once.
 | `wooden-hoe` | Tools | 394 | 3 | 0.23×1.23×0.33 | oak, iron, steel |  |
 | `wooden-shovel` | Tools | 496 | 3 | 0.27×1.20×0.08 | oak, iron |  |
 | `wooden-pitchfork` | Tools | 392 | 3 | 0.27×1.58×0.15 | oak, iron |  |
-| `iron-cauldron` | Lighting | 1134 | 3 | 1.09×1.37×1.10 | stone, iron, char, ember |  |
-| `hand-cart` | Structure | 2044 | 4 | 0.88×1.03×2.60 | oak, iron |  |
+| `iron-cauldron` | Lighting | 1134 | 3 | 1.09×1.37×1.10 | stone, iron, char, ember | ✔ |
+| `hand-cart` | Structure | 2044 | 4 | 0.87×0.68×2.49 | oak, iron | ✔ |
 | `vegetables` | Props | 1718 | 2 | 0.60×0.12×0.59 | produce |  |
 | `round-shield` | Arms | 729 | 3 | 0.73×0.73×0.17 | oak, leather, iron |  |
-| `forge-hearth` | Smithy | 1426 | 4 | 2.06×1.78×0.87 | stone, char, ember, oak, leather, iron |  |
-| `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth |  |
+| `forge-hearth` | Smithy | 1426 | 4 | 2.06×1.78×0.87 | stone, char, ember, oak, leather, iron | ✔ |
+| `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth | ✔ |
 | `stone-trough` | Structure | 344 | 2 | 1.52×0.45×0.60 | stone, water |  |
-| `grindstone` | Smithy | 568 | 4 | 1.24×0.95×0.70 | stone, oak, iron, water |  |
+| `grindstone` | Smithy | 568 | 4 | 1.24×0.95×0.70 | stone, oak, iron, water | ✔ |
 | `market-stall` | Structure | 384 | 4 | 1.83×2.03×0.97 | oak, cloth |  |
-| `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
+| `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron | ✔ |
 
 **30,390 triangles** in total. The whole kit in one scene has a budget smaller
 than a single medium-complexity character model.
@@ -510,15 +510,27 @@ into place before baking and moves it back afterwards.
 
 ### 5.5 Actions and animation
 
-Five models move and four of them demonstrate a different mechanic:
+Eleven models carry actions:
 
 | Model | Action | Mechanic |
 | --- | --- | --- |
-| `wooden-chest` | `setOpen` / `toggle` / `openness` / `snap` | exponential approach — independent of frame rate |
+| `wooden-chest` | `setOpen` / `toggle` / `isOpen` / `openness` / `snap` | exponential approach — independent of frame rate |
 | `pitch-torch` | `setLit` / `isLit` | sum of sines at incommensurate frequencies |
 | `iron-lantern` | `setLit` / `isLit` | the same, but slower: the glass shields the flame from wind |
-| `bronze-bell` | `ring` / `still` / `strikes` | two independent pendulums |
+| `iron-cauldron` | `setLit` / `isLit` | the fire under it, on the torch's flicker |
+| `forge-hearth` | `setLit` / `isLit` | the same, banked lower: a forge fire is coals, not flame |
+| `bronze-bell` | `ring` / `still` / `isRinging` / `strikes` | two independent pendulums |
 | `tavern-sign` | `push` / `still` / `lean` | soft pendulum, long swing |
+| `grindstone` | `crank` / `still` / `isTurning` / `turns` | spun up by hand, then exponential decay plus a constant drag, so it stops rather than approaching zero forever |
+| `post-mill` | `setTurning` / `isTurning` / `setAngle` | constant rate about the windshaft |
+| `stone-well` | `setDepth` / `depth` / `setWinding` | the bucket travels the shaft and the rope pays out with it |
+| `hand-cart` | `setRoll` / `roll` | the wheels turn about their own axle origin |
+
+Five of these are wired to a button in the viewer; the rest are driven through
+the model's own interface. That distinction cost a documentation bug: the
+generated table's Animated column was reading the VIEWER's button registration,
+so six of the eleven — including the mill, the well and the grindstone — were
+published as static. It now asks the models.
 
 The distinction is written in the architecture document and it matters:
 `configure()` rebuilds the topology and is **expensive**, it is for user

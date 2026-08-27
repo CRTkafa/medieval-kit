@@ -100,6 +100,8 @@ export interface Entry {
   build(): {
     root: Group
     update?: (deltaSeconds: number) => void
+    /** Names of the model's own typed actions. Empty when it has none. */
+    actionNames?: readonly string[]
     action?: { label(): string; run(): void }
     params?: ParamGroup
     inspect?: Inspection
@@ -292,6 +294,18 @@ function entryFor(id: string): Entry {
       return {
         root: model.root,
         update: (dt) => { model.update(dt) },
+        /**
+         * The names of the model's OWN typed actions.
+         *
+         * Distinct from `action` below, which is the single button this demo
+         * registers by hand for five models. A model can carry a whole set of
+         * actions and have no button: the grindstone is cranked, the mill's
+         * sails are set turning, the well's bucket is lowered. Nothing outside
+         * the model could see any of that, so the generated table called those
+         * three static — a document wrong about the most animated things in
+         * the kit, and generated, so nobody thought to doubt it.
+         */
+        actionNames: Object.keys((model as { actions?: object }).actions ?? {}),
         ...(action ? { action } : {}),
         params: {
           specs,

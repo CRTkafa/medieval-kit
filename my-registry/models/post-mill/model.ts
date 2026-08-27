@@ -495,6 +495,26 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         steps.push(rung)
       }
 
+      /**
+       * Then MEASURE the foot and put it on the ground, rather than reasoning
+       * about where it ended up.
+       *
+       * `liftY` above is two analytic corrections to the same corner, and both
+       * are right about the thing they describe. What neither accounts for is
+       * the chamfer: the rail is a chamfered box, so the corner they compute
+       * the drop of has been cut off, and the ladder came to rest 14.5 mm high
+       * — very nearly the chamfer itself. That is the third arithmetic mistake
+       * at this one corner; the comments above are the first two.
+       *
+       * A bounding box cannot be wrong about this the way a derivation can, and
+       * it stays right when the chamfer, the taper or the rail section change.
+       * The head is buried in the gallery by a 3% overrun that is several times
+       * this shift, so moving the assembly does not pull it out.
+       */
+      const ladder = mergeColoured(steps)
+      ladder.computeBoundingBox()
+      ladder.translate(0, floor - ladder.boundingBox!.min.y, 0)
+
       return {
         trestle: { slot: 'oak' as const, geometry: mergeColoured(timber) },
         body: { slot: 'oak' as const, geometry: mergeColoured(shell) },
@@ -509,7 +529,7 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
           extras: [{ slot: 'iron' as const, geometry: shaftBands }],
           origin: [0, hubY, hubZ] as const,
         },
-        ladder: { slot: 'oak' as const, geometry: mergeColoured(steps) },
+        ladder: { slot: 'oak' as const, geometry: ladder },
       }
     },
 

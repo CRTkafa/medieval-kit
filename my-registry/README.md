@@ -10,9 +10,19 @@ own tree, not an opaque package boundary.
 
 ## Install
 
-Point `models.json` at the registry. This step is not optional and it is not
-last: `vibe3d add` resolves `@medieval-kit` through this map and stops with
-`Registry @medieval-kit is not configured in models.json` if it is missing.
+```sh
+bunx vibe3d init
+bun add three
+bun add -d @types/three
+```
+
+`init` writes `models.json` and puts the shared Vibe3D runtime under
+`src/lib/vibe3d/`, which the installed models import from. `@types/three` is a
+dev dependency and not optional: `three` ships no type declarations of its own,
+so without it the source you just installed does not typecheck.
+
+`init` seeds `models.json` with `@scifi-kit` only, so add this registry to the
+`registries` object it created:
 
 ```json
 {
@@ -25,11 +35,38 @@ last: `vibe3d add` resolves `@medieval-kit` through this map and stops with
 }
 ```
 
+That map is how the namespace resolves — `vibe3d add` stops with
+`Registry @medieval-kit is not configured in models.json` without it.
+
 Then take one model, or the lot:
 
 ```sh
 bunx vibe3d add @medieval-kit/wooden-barrel
 bunx vibe3d add @medieval-kit
+```
+
+### Project setup
+
+The installed source imports through the `@/` alias that `models.json` declares,
+and it imports `.ts` files by their extension. Both have to be true on your side
+as well — in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] }
+  }
+}
+```
+
+and in your bundler, because TypeScript's `paths` only teaches the type checker.
+For Vite:
+
+```ts
+resolve: { alias: [{ find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) }] }
 ```
 
 ## Models
@@ -68,16 +105,16 @@ did once.
 | `wooden-hoe` | Tools | 394 | 3 | 0.23×1.23×0.33 | oak, iron, steel |  |
 | `wooden-shovel` | Tools | 496 | 3 | 0.27×1.20×0.08 | oak, iron |  |
 | `wooden-pitchfork` | Tools | 392 | 3 | 0.27×1.58×0.15 | oak, iron |  |
-| `iron-cauldron` | Lighting | 1134 | 3 | 1.09×1.37×1.10 | stone, iron, char, ember |  |
-| `hand-cart` | Structure | 2044 | 4 | 0.88×1.03×2.60 | oak, iron |  |
+| `iron-cauldron` | Lighting | 1134 | 3 | 1.09×1.37×1.10 | stone, iron, char, ember | ✔ |
+| `hand-cart` | Structure | 2044 | 4 | 0.87×0.68×2.49 | oak, iron | ✔ |
 | `vegetables` | Props | 1718 | 2 | 0.60×0.12×0.59 | produce |  |
 | `round-shield` | Arms | 729 | 3 | 0.73×0.73×0.17 | oak, leather, iron |  |
-| `forge-hearth` | Smithy | 1426 | 4 | 2.06×1.78×0.87 | stone, char, ember, oak, leather, iron |  |
-| `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth |  |
+| `forge-hearth` | Smithy | 1426 | 4 | 2.06×1.78×0.87 | stone, char, ember, oak, leather, iron | ✔ |
+| `stone-well` | Structure | 1376 | 4 | 1.88×2.00×1.28 | stone, oak, iron, cloth | ✔ |
 | `stone-trough` | Structure | 344 | 2 | 1.52×0.45×0.60 | stone, water |  |
-| `grindstone` | Smithy | 568 | 4 | 1.24×0.95×0.70 | stone, oak, iron, water |  |
+| `grindstone` | Smithy | 568 | 4 | 1.24×0.95×0.70 | stone, oak, iron, water | ✔ |
 | `market-stall` | Structure | 384 | 4 | 1.83×2.03×0.97 | oak, cloth |  |
-| `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron |  |
+| `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron | ✔ |
 
 **30 390 triangles** in total. The whole kit in one scene costs less than a
 single mid-complexity character model.
@@ -121,9 +158,12 @@ Each model follows the Vibe3D protocol:
   `part.content` is rebuilt.
 - **`materials`** resolve per slot and can be overridden. Materials you supply
   are borrowed: the model never disposes them.
-- **`actions`** and **`update(delta)`** carry interactive state. Five models use
-  both — `wooden-chest`, `pitch-torch`, `iron-lantern`, `bronze-bell` and
-  `tavern-sign`:
+- **`actions`** and **`update(delta)`** carry interactive state. Eleven models
+  have them, and they are the ✔ column in the table above: `wooden-chest`,
+  `pitch-torch`, `iron-lantern`, `bronze-bell`, `tavern-sign`, `iron-cauldron`,
+  `hand-cart`, `forge-hearth`, `stone-well`, `grindstone` and `post-mill`. Crank
+  the grindstone and it turns and slows; set the mill turning and its sails go
+  round; lower the well's bucket down the shaft:
 
 ```ts
 const chest = createModel()
@@ -185,6 +225,9 @@ are derived from the source — an import from `../core/` makes
 list to go stale.
 
 `drafts/` is deliberately outside that walk: the code is kept in the tree but
-never reaches the published package. See [`drafts/README.md`](drafts/README.md).
+never reaches the published package — including its own `drafts/README.md`,
+which is why this sentence does not link to it. A relative link on an npm
+package page resolves against the repository, and there is nothing at the
+other end of it for a reader of this page.
 
 Released under the MIT License.

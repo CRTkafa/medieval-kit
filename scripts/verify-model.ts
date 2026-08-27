@@ -333,6 +333,17 @@ interface Case {
    * the axis had been run to the floor instead — so its wheels were still
    * fractionally clear of the ground after the big fix. A loose tolerance
    * would have called that done.
+   *
+   * The floor is the model's own lowest point, and that is worth knowing
+   * before declaring this on anything: a part that is deliberately BEDDED into
+   * the ground drags that datum down and makes every correctly placed part
+   * look as though it floats by exactly the bedding depth. The forge's base
+   * stones settle 6.8 mm and the well's drystone kerb 9.3 mm, both on purpose,
+   * and reading their neighbours against the bounding box is what made me
+   * report two more floating parts than there were. So this belongs on models
+   * whose ground contacts are meant to be LEVEL with each other, and every one
+   * of them has to be named — a part left out is a part the tolerance is then
+   * measured against.
    */
   readonly restsOn?: readonly string[]
 }
@@ -392,6 +403,7 @@ const CASES: readonly Case[] = [
     variants: [{ courses: 2 }, { depth: 1 }, { blocks: 6 }],
     maxSize: [2.2, 2.2, 1.7] },
   { id: 'post-mill', make: as(createMill), patch: { sailBars: 12, ladderRungs: 17 },
+    restsOn: ['trestle', 'ladder'],
     parts: 4, ownSlot: 'oak', borrowSlot: 'iron',
     variants: [{ sailBars: 3 }, { sailWidth: 0.28 }, { height: 3.5 }],
     maxSize: [8.2, 9.0, 7.4] },
