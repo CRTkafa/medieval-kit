@@ -231,8 +231,14 @@ export function createModel(overrides: Partial<MarketStallConfig> = {}) {
 
       for (const sx of [-1, 1] as const) {
         for (const sz of [-1, 1] as const) {
-          // A shade past the cloth's mid surface, so the head is buried in it.
-          const head = clothY(sx * postX, sz * legZ) + boardT * 0.15
+          // ON the cloth's mid surface, so half its thickness covers the head.
+          //
+          // A shade PAST it was the first version, and four dark post heads
+          // came through the awning like tacks — the same fault as the bench's
+          // tenons and made for the same reason: pushed proud to keep two
+          // faces out of one plane. Buried does that too, and cannot be seen
+          // doing it.
+          const head = clothY(sx * postX, sz * legZ)
           // Down PAST the rail and finishing as a stub below it, which is both
           // the reference's detail and the fix for a real fault: stopped at the
           // rail's underside, the post's foot lay in the same plane as it,
@@ -269,7 +275,10 @@ export function createModel(overrides: Partial<MarketStallConfig> = {}) {
         levels.push({
           y: halfDepth * (f * 2 - 1),
           halfWidth: halfLength,
-          thickness: boardT * 0.2,
+          // Thick enough to hide a post head in. At 0.2 of a board there was
+          // barely three millimetres of cloth either side of the mid surface,
+          // which is not enough to bury anything in with confidence.
+          thickness: boardT * 0.42,
           // Deeper at the front than the back. Cloth pulled over a ridge and
           // left loose at the eaves does not hang symmetrically.
           curve: sag * (0.72 + f * 0.55),

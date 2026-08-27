@@ -160,25 +160,39 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
           ))
         }
 
-        // Tenon: the end of the leg running THROUGH the seat and showing on
-        // top of it as a panel of end grain. It is the most recognisable
-        // detail of a medieval bench -- and it is nearly FLUSH.
-        //
-        // At 1.9 seat thicknesses it stood 42 mm proud of the seat: a block of
-        // oak the size of a thumb sticking straight up out of the surface you
-        // are meant to sit on. A real through-tenon is wedged and then planed
-        // back, so what shows is the grain and a hairline of shoulder, not a
-        // peg. Three millimetres proud, ten millimetres housed below.
-        const proud = seatThickness * 0.05
+        /**
+         * Tenon: HOUSED in the seat, stopping short of its top face.
+         *
+         * It was a through-tenon and it was reported twice. First at 42 mm
+         * proud, a block of oak the size of a thumb standing out of the
+         * surface you sit on; I planed it to 3 mm and called it done, and 3 mm
+         * is still a raised patch with a lit edge on it, still visible in the
+         * render, and still the thing being complained about. The brief is
+         * that nothing on the seat shows, and 3 mm is not nothing — it is
+         * small.
+         *
+         * So it ends INSIDE the slab, an eighth of the seat's thickness below
+         * the top. That is a real joint and not a compromise: a stub tenon
+         * into the underside of a board is how a bench is made when the top is
+         * thick enough to take it, which at 0.135 of the height it is. What is
+         * lost is the panel of end grain on top; what is gained is a seat.
+         *
+         * Ending it LEVEL with the top face was never an option, which is what
+         * sent me to 3 mm proud in the first place: two upward faces in one
+         * plane is the z-fight the checker exists to find. Buried has neither
+         * problem — a face inside a solid cannot fight anything and cannot be
+         * seen.
+         */
+        const buried = seatThickness * 0.12
         const housed = seatThickness * 0.16
         legPieces.push(chamferedBoxGeometry(
           [legWidth * 0.34, timber * 0.85],
           [legWidth * 0.32, timber * 0.8],
-          seatThickness + proud + housed,
+          seatThickness - buried + housed,
           timber * 0.16,
           [
             side * legX,
-            seatBottom + (seatThickness + proud - housed) / 2,
+            seatBottom + (seatThickness - buried - housed) / 2,
             jitter(random, timber * 0.1),
           ],
           tint('oak', 0.09),

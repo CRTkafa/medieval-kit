@@ -295,6 +295,24 @@ interface Case {
    * shot 0.23 m forward, the model grew to 0.42 m deep, and no test objected.
    */
   readonly maxSize?: readonly [number, number, number]
+  /**
+   * The part nothing else may rise above.
+   *
+   * "It should not be visible at all" is a real brief and it was given twice
+   * about the same bench, because the first time I answered it with a number
+   * instead of a rule: the through-tenons went from 42 mm proud to 3 mm, and
+   * 3 mm is still a raised patch with a lit edge on it. The market stall then
+   * repeated it exactly — four post heads through the awning — and for the
+   * same reason, which is the interesting part: both were pushed proud
+   * deliberately, to keep two faces out of one plane and away from the
+   * z-fight check.
+   *
+   * That trade is false. A piece that must not show ends INSIDE the solid it
+   * enters: a buried face cannot be coplanar with a surface and cannot be
+   * seen. This turns the brief into arithmetic — on a seat, on a counter, on
+   * an awning, nothing stands above the surface a person meets.
+   */
+  readonly nothingAbove?: string
 }
 
 const as = <T>(make: (o?: never) => T) => (o?: Record<string, number>): KitModel =>
@@ -318,7 +336,7 @@ const CASES: readonly Case[] = [
     parts: 3, ownSlot: 'leather', borrowSlot: 'oak',
     variants: [{ planks: 3 }, { lean: 0 }, { rivets: 0 }],
     maxSize: [1.3, 1.3, 0.9] },
-  { id: 'market-stall', make: as(createStall), patch: { planks: 9, sag: 0.3 },
+  { id: 'market-stall', make: as(createStall), nothingAbove: 'awning', patch: { planks: 9, sag: 0.3 },
     parts: 4, ownSlot: 'cloth', borrowSlot: 'oak',
     variants: [{ sag: 0 }, { planks: 2 }, { length: 2.6 }, { awning: 1.4 }],
     maxSize: [3.2, 2.5, 1.6] },
@@ -373,7 +391,7 @@ const CASES: readonly Case[] = [
   { id: 'wooden-pitchfork', make: as(createPitchfork), patch: { tineCount: 5, spread: 0.3 },
     parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
     variants: [{ tineCount: 2 }, { spread: 0 }, { tineCount: 6 }] , maxSize: [0.4, 1.9, 0.2] },
-  { id: 'trestle-table', make: as(createTable), patch: { plankCount: 6, splay: 0.35 },
+  { id: 'trestle-table', make: as(createTable), nothingAbove: 'top', patch: { plankCount: 6, splay: 0.35 },
     parts: 3, ownSlot: 'oak', borrowSlot: 'oak', closed: true, maxSize: [2.2, 0.9, 1.3],
     variants: [{ plankCount: 2 }, { splay: 0 }] },
   { id: 'cart-wheel', make: as(createWheel), patch: { spokeCount: 14, tyre: 0.07 },
@@ -382,7 +400,7 @@ const CASES: readonly Case[] = [
   { id: 'wooden-chest', make: as(createChest), patch: { bandCount: 4, width: 1.1 },
     parts: 4, ownSlot: 'iron', borrowSlot: 'oak', closed: true,
     variants: [{ bandCount: 0 }, { bandCount: 1 }, { depth: 0.7 }] , maxSize: [1, 0.62, 0.62] },
-  { id: 'wooden-bench', make: as(createBench), patch: { length: 2.1, splay: 0.4 },
+  { id: 'wooden-bench', make: as(createBench), nothingAbove: 'seat', patch: { length: 2.1, splay: 0.4 },
     parts: 3, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ splay: 0 }, { inset: 0.02 }, { width: 0.45 }] , maxSize: [1.7, 0.5, 0.35] },
   { id: 'pitch-torch', make: as(createTorch), patch: { wrapLength: 0.42, flameHeight: 2.2 },
@@ -477,6 +495,27 @@ for (const testCase of CASES) {
   expect('no NaN/Infinity vertices', report.nonFinite === 0)
   expect('bounds finite', report.size.every(Number.isFinite))
   expect('within lowpoly budget (< 2500 triangles)', report.triangles < 2500)
+  if (testCase.nothingAbove) {
+    const top = model.parts[testCase.nothingAbove]
+    const above: string[] = []
+    if (top) {
+      const ceiling = new Box3().setFromObject(top.anchor).max.y
+      for (const [name, handle] of Object.entries(model.parts)) {
+        if (name === testCase.nothingAbove || !handle) continue
+        const peak = new Box3().setFromObject((handle as { anchor: Object3D }).anchor).max.y
+        // A tenth of a millimetre, because a surface is allowed to be rough.
+        if (peak > ceiling + 0.0001) {
+          above.push(`${name} by ${((peak - ceiling) * 1000).toFixed(1)}mm`)
+        }
+      }
+    }
+    expect(
+      `nothing stands proud of ${testCase.nothingAbove}`
+      + (above.length ? ` — PROUD: ${above.join(', ')}` : ''),
+      top !== undefined && above.length === 0,
+    )
+  }
+
   if (testCase.maxSize) {
     const over = report.size
       .map((value, i) => (value > testCase.maxSize![i]! ? `${'xyz'[i]}=${value}>${testCase.maxSize![i]}` : ''))

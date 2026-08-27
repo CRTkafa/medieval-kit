@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-26T20:14:45.008Z",
+      "installedAt": "2026-08-27T06:50:20.568Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -362,11 +362,11 @@
       "address": "@medieval-kit/wooden-bench",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-26T19:00:27.478Z",
+      "installedAt": "2026-08-27T06:50:20.571Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\wooden-bench\\model.ts",
-          "sourceHash": "bb0aa806250a40e1bb52da17a79ba2c969327ef82a7b74d55b0819f9751e7d2c"
+          "sourceHash": "ddba6c89ac114bf2cc31c6e8df1631ec97a0dae79ad2b06de4cbdbdbc78c556e"
         }
       ],
       "dependencies": [
@@ -677,11 +677,11 @@
       "address": "@medieval-kit/market-stall",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-26T20:14:45.011Z",
+      "installedAt": "2026-08-27T06:46:34.436Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\market-stall\\model.ts",
-          "sourceHash": "31fa88ff1df342465177b5b95b5814575f5691b255fcea5e75e591fc1fd3740e"
+          "sourceHash": "1068f90351fae381f337fb2fc9e424ac1b96cb8d96c659e32219fe0e383a5adb"
         }
       ],
       "dependencies": [
