@@ -312,6 +312,29 @@ interface Case {
    * an awning, nothing stands above the surface a person meets.
    */
   readonly nothingAbove?: string
+  /**
+   * The parts that carry the model's weight. All of them must reach the floor.
+   *
+   * The support check next door asks "is every piece connected down to the
+   * ground", and a handcart standing on its two shaft tips answers yes: the
+   * bed hangs off the shafts, the wheels hang off the bed, everything is
+   * joined, nothing floats. It reported 0 failing cases while both wheels hung
+   * 304 mm in the air, because connectivity cannot tell a wheel from a
+   * decoration. Nor can the renderer be relied on to show it — the contact
+   * shadow is cast from the model's own lowest point, so a cart resting on the
+   * wrong parts still gets a shadow that looks correct.
+   *
+   * What the geometry cannot know, the author does: these are the parts that
+   * are supposed to be touching the floor. Naming them turns "it rests on its
+   * wheels" from a thing you notice in a render into arithmetic.
+   *
+   * A millimetre of tolerance, which is tight on purpose. The same cart also
+   * had its shaft tips buried 13.7 mm — the ground meets a pole's SURFACE and
+   * the axis had been run to the floor instead — so its wheels were still
+   * fractionally clear of the ground after the big fix. A loose tolerance
+   * would have called that done.
+   */
+  readonly restsOn?: readonly string[]
 }
 
 const as = <T>(make: (o?: never) => T) => (o?: Record<string, number>): KitModel =>
@@ -335,7 +358,7 @@ const CASES: readonly Case[] = [
     parts: 3, ownSlot: 'leather', borrowSlot: 'oak',
     variants: [{ planks: 3 }, { lean: 0 }, { rivets: 0 }],
     maxSize: [1.3, 1.3, 0.9] },
-  { id: 'market-stall', make: as(createStall), nothingAbove: 'awning', patch: { planks: 9, sag: 0.3 },
+  { id: 'market-stall', make: as(createStall), nothingAbove: 'awning', restsOn: ['trestle'], patch: { planks: 9, sag: 0.3 },
     parts: 4, ownSlot: 'cloth', borrowSlot: 'oak',
     variants: [{ sag: 0 }, { planks: 2 }, { length: 2.6 }, { awning: 1.4 }],
     maxSize: [3.2, 2.5, 1.6] },
@@ -360,6 +383,7 @@ const CASES: readonly Case[] = [
     variants: [{ lit: 0 }, { stones: 6 }, { potRadius: 0.36 }],
     maxSize: [1.6, 1.5, 1.6] },
   { id: 'hand-cart', make: as(createCart), patch: { spokes: 13, sideHeight: 0.42 },
+    restsOn: ['wheels', 'shafts'],
     parts: 4, ownSlot: 'iron', borrowSlot: 'oak',
     variants: [{ spokes: 6 }, { shaftLength: 1.8 }, { wheelRadius: 0.5 }],
     maxSize: [1.5, 1.2, 3.0] },
@@ -386,7 +410,7 @@ const CASES: readonly Case[] = [
   { id: 'wooden-pitchfork', make: as(createPitchfork), patch: { tineCount: 5, spread: 0.3 },
     parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
     variants: [{ tineCount: 2 }, { spread: 0 }, { tineCount: 6 }] , maxSize: [0.4, 1.9, 0.2] },
-  { id: 'trestle-table', make: as(createTable), nothingAbove: 'top', patch: { plankCount: 6, splay: 0.35 },
+  { id: 'trestle-table', make: as(createTable), nothingAbove: 'top', restsOn: ['trestles'], patch: { plankCount: 6, splay: 0.35 },
     parts: 3, ownSlot: 'oak', borrowSlot: 'oak', closed: true, maxSize: [2.2, 0.9, 1.3],
     variants: [{ plankCount: 2 }, { splay: 0 }] },
   { id: 'cart-wheel', make: as(createWheel), patch: { spokeCount: 14, tyre: 0.07 },
@@ -395,7 +419,7 @@ const CASES: readonly Case[] = [
   { id: 'wooden-chest', make: as(createChest), patch: { bandCount: 4, width: 1.1 },
     parts: 4, ownSlot: 'iron', borrowSlot: 'oak', closed: true,
     variants: [{ bandCount: 0 }, { bandCount: 1 }, { depth: 0.7 }] , maxSize: [1, 0.62, 0.62] },
-  { id: 'wooden-bench', make: as(createBench), nothingAbove: 'seat', patch: { length: 2.1, splay: 0.4 },
+  { id: 'wooden-bench', make: as(createBench), nothingAbove: 'seat', restsOn: ['legs'], patch: { length: 2.1, splay: 0.4 },
     parts: 3, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ splay: 0 }, { inset: 0.02 }, { width: 0.45 }] , maxSize: [1.7, 0.5, 0.35] },
   { id: 'pitch-torch', make: as(createTorch), patch: { wrapLength: 0.42, flameHeight: 2.2 },
@@ -508,6 +532,25 @@ for (const testCase of CASES) {
       `nothing stands proud of ${testCase.nothingAbove}`
       + (above.length ? ` — PROUD: ${above.join(', ')}` : ''),
       top !== undefined && above.length === 0,
+    )
+  }
+
+  if (testCase.restsOn) {
+    // The floor is the model's own lowest point: models are authored around
+    // their own base rather than a shared y = 0, which is why the renderer
+    // takes the floor from the bounding box too.
+    const floor = new Box3().setFromObject(model.root).min.y
+    const clear: string[] = []
+    for (const name of testCase.restsOn) {
+      const handle = model.parts[name] as { anchor: Object3D } | undefined
+      if (!handle) { clear.push(`${name} (no such part)`); continue }
+      const low = new Box3().setFromObject(handle.anchor).min.y
+      if (low > floor + 0.001) clear.push(`${name} by ${((low - floor) * 1000).toFixed(1)}mm`)
+    }
+    expect(
+      `rests on ${testCase.restsOn.join(' + ')}`
+      + (clear.length ? ` — OFF THE GROUND: ${clear.join(', ')}` : ''),
+      clear.length === 0,
     )
   }
 

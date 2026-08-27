@@ -109,6 +109,11 @@ export function createModel(overrides: Partial<HandCartConfig> = {}) {
       for (const side of [-1, 1]) {
         const parts: BufferGeometry[] = []
         // Hub, turned and belled at both ends the way a nave is.
+        //
+        // A lathe is built around Y and this wheel is drawn in the XY plane, so
+        // its axis is Z: without laying the hub over it stands upright inside
+        // the wheel like a little drum, mostly hidden behind the spokes, which
+        // is exactly why it survived so long.
         parts.push(latheGeometry(
           [
             { y: -wheelR * 0.16, radius: hubR * 0.72 },
@@ -117,7 +122,7 @@ export function createModel(overrides: Partial<HandCartConfig> = {}) {
             { y: wheelR * 0.16, radius: hubR * 0.72 },
           ] as Level[],
           9, [0, 0, 0], tint('oak', -0.02, 1.1),
-        ))
+        ).rotateX(Math.PI / 2))
         // Spokes. Each reaches INTO the hub at one end and INTO the felloe at
         // the other, so both joints are overlaps rather than faces meeting.
         const spokeInner = hubR * 0.5
@@ -147,16 +152,31 @@ export function createModel(overrides: Partial<HandCartConfig> = {}) {
             [0, 0, 0],
             tint('oak', -0.05 + jitter(random, 0.05)),
           )
-          // Built lying flat with its height along Y; standing it on edge and
-          // then swinging it round puts its thickness across the wheel.
+          // Built lying flat with its height along Y; standing it on edge puts
+          // X along the arc, Y radial and Z across the wheel.
+          //
+          // Then out along +Y and only THEN round, which is the order the
+          // cart-wheel model uses and the order that is correct. Turning first
+          // and placing afterwards looks equivalent and is not: rotateZ sends
+          // local +X to (cos a, sin a) and local +Y to (-sin a, cos a), so a
+          // piece placed at (cos a, sin a) ends up with its ARC pointing
+          // radially and its 59 mm thickness wrapped round the rim — a wheel
+          // built from twelve stubby blocks sticking 89 mm past their own
+          // felloe, straight through the iron tyre that is supposed to bind it.
           seg.rotateX(Math.PI / 2)
+          seg.translate(0, mid, 0)
           seg.rotateZ(a)
-          seg.translate(Math.cos(a) * mid, Math.sin(a) * mid, 0)
           parts.push(seg)
         }
         const wheel = mergeColoured(parts)
         wheel.rotateY(Math.PI / 2)
-        wheel.translate(side * wheelX, axleY, axleZ)
+        // Only the sideways offset. This part declares `origin` at the axle so
+        // that `setRoll` turns it in place, and a part with an origin has its
+        // geometry written RELATIVE to that point — the anchor supplies the
+        // height and the position along the cart. Writing axleY and axleZ in
+        // here as well applied them twice and hung both wheels 30 cm off the
+        // ground, with the cart standing on its shaft tips.
+        wheel.translate(side * wheelX, 0, 0)
         wheelBody.push(wheel)
 
         // Iron tyre, set INTO the tread and narrower than the felloe, the same
@@ -167,7 +187,7 @@ export function createModel(overrides: Partial<HandCartConfig> = {}) {
           tint('iron', jitter(random, 0.04), 0.7), { inner: true },
         )
         tyre.rotateZ(Math.PI / 2)
-        tyre.translate(side * wheelX, axleY, axleZ)
+        tyre.translate(side * wheelX, 0, 0)
         wheelIron.push(tyre)
       }
 
@@ -180,7 +200,7 @@ export function createModel(overrides: Partial<HandCartConfig> = {}) {
         tint('oak', -0.1),
       )
       axle.rotateZ(Math.PI / 2)
-      axle.translate(0, axleY, axleZ)
+      // Already at the axle: the anchor puts it there. See the wheel above.
       wheelBody.push(axle)
 
       // --- Bed ------------------------------------------------------------------
@@ -266,8 +286,16 @@ export function createModel(overrides: Partial<HandCartConfig> = {}) {
       const shafts: BufferGeometry[] = []
       const rootY = bedY - plank * 1.2
       const rootZ = -L / 2
-      const shaftDrop = rootY
       const reach = config.shaftLength
+      // The shaft is a pole, so the ground meets its SURFACE, not its axis.
+      // Running the axis down to y = 0 buried the tip: the end face is cut
+      // square across an inclined pole, so its low corner sits a radius further
+      // down, and the cart was resting on two buried shaft tips with its wheels
+      // 13.7 mm clear of the floor. Small, but the same defect as the big one
+      // above and the same lie about what is holding the cart up. The axis
+      // stops one tip-radius short instead, and wheels and shafts share a floor.
+      const tipRadius = plank * 0.62
+      const shaftDrop = rootY - tipRadius * Math.cos(Math.atan2(rootY, reach))
       const lean = Math.atan2(shaftDrop, reach)
       const shaftLength = Math.hypot(shaftDrop, reach)
       const shaftX = W / 2 - plank * 1.6
@@ -275,7 +303,7 @@ export function createModel(overrides: Partial<HandCartConfig> = {}) {
       for (const side of [-1, 1]) {
         const shaft = latheGeometry(
           [
-            { y: -shaftLength / 2, radius: plank * 0.62 },
+            { y: -shaftLength / 2, radius: tipRadius },
             { y: -shaftLength * 0.42, radius: plank * 0.72 },
             { y: shaftLength * 0.36, radius: plank * 0.86 },
             { y: shaftLength / 2, radius: plank * 0.95 },
