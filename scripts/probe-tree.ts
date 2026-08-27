@@ -158,7 +158,7 @@ if (crown) {
     sizes.push({ count, cells: piece })
   }
   sizes.sort((a, b) => b.count - a.count)
-  console.log(`\nCROWN IS IN ${sizes.length} SEPARATE PIECE(S)   (a crown should be 1)`)
+  console.log(`\nCROWN IS IN ${sizes.length} PIECE(S)   (gaps are wanted; the support check owns whether any of them float)`)
   // WHERE a piece is matters more than how big it is: a tear low down means
   // the bottom limbs have outrun the rest, a tear at one bearing means a gap
   // between two neighbours, a tear far out means a limb reaching past its

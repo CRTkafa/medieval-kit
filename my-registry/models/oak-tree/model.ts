@@ -72,8 +72,12 @@ export const oakTreeDefaults: OakTreeConfig = {
   spread: 1.3,
   // 0.037, straight off the reference: the bole measured 0.073 of the tree's
   // height ACROSS at the point where it has finished flaring.
-  bole: 0.037,
-  limbs: 9,
+  // 0.046, not the reference's own 0.037. That number came off a photograph
+  // of a tree seen whole from a distance; at this size, with a crown of
+  // twenty masses sitting over it, a bole at 0.037 disappears entirely and
+  // what is left is a cabbage on a stick. The trunk has to read.
+  bole: 0.046,
+  limbs: 12,
   leafiness: 1,
   autumn: 0,
   seed: 11,
@@ -150,6 +154,26 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
        * climbs with it — an autumn oak is a more saturated object than a
        * summer one, which is the opposite of what fading suggests.
        */
+      /**
+       * Clump to clump, the tone varies a LOT, and that is the whole depth of
+       * a lowpoly crown.
+       *
+       * At +/-0.09 every mass came out the same green and the crown read as
+       * one solid object with facet shading on it — a cabbage. The reference's
+       * crown varies by 0.45 in lightness WITHIN one band; a smooth mass
+       * cannot reproduce that at the leaf's scale, but it can carry it at the
+       * clump's, which is the only scale this budget has. What must NOT vary
+       * is hue: measured across the reference, lit and shadowed alike, it
+       * holds between 77 and 81 degrees.
+       *
+       * ASYMMETRIC, and that took a render to learn. A symmetric +/-0.19 put
+       * whole masses through the floor — not clipped pixels here and there but
+       * six or seven entirely black clumps, because the tint's own jitter, the
+       * mottle and the baked occlusion all pull the same way underneath it. It
+       * is also wrong about foliage: a lit mass is far brighter than the base
+       * green, while a shaded one is filled in by the sky and never gets that
+       * far below it. So the range is -0.03 to +0.23.
+       */
       const leafColour = (lift: number): Color => {
         const c = tint('leaf', lift, 1)
         // Darker clumps are MORE saturated, which is the measurement and is the
@@ -213,11 +237,15 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
        * bubbles.
        */
       const clump = (radius: number, at: readonly [number, number, number], lift: number): BufferGeometry => {
-        // Three rings, not four: a hexagonal barrel with a point at each end,
-        // 24 triangles. Halving the cost per clump is what pays for there
-        // being half again as many of them, and more smaller clumps is what
-        // makes a crown of LOBES instead of one lump.
-        const rings = 3
+        // Four rings on six sides: a rounded mass at 36 triangles.
+        //
+        // Three on five was a coarse bipyramid and sixty-five of them read as
+        // crumpled paper. Five on eight was smooth and twenty of them read as
+        // a cabbage. This is the middle, and the middle is where it belongs:
+        // enough facets that the mass is round, few enough that forty of them
+        // fit in the budget, and forty is what it takes to have a crown made
+        // of parts rather than a crown made of one thing.
+        const rings = 4
         const levels: Level[] = []
         for (let i = 0; i <= rings; i += 1) {
           const t = i / rings
@@ -234,7 +262,7 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
         // triangles across every clump in the crown, and at this size nobody
         // counts them. What the budget must not buy is fewer clumps, because
         // the clump count is what holds the crown together.
-        return latheGeometry(levels, 5, [at[0], 0, at[2]], leafColour(lift))
+        return latheGeometry(levels, 6, [at[0], 0, at[2]], leafColour(lift))
       }
 
       /**
@@ -253,7 +281,22 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
        * into each other. Which is how the reference is built, one mass of
        * foliage to each big bough.
        */
-      const clumpR = crownR * 0.23 * (0.55 + 0.45 * leafiness)
+      /**
+       * Small enough that the masses DO NOT ALL MERGE.
+       *
+       * This is the correction that mattered, and it was my own rule that had
+       * to go: I decided early that "a crown is one piece" and made the probe
+       * fail anything else, so every version since has been tuned until the
+       * flood fill returned 1 — which is exactly the instruction "be a single
+       * smooth blob", and that is what it kept producing.
+       *
+       * The support rule requires the crown to be connected to the TREE, not
+       * to itself. A clump that swallows a branch end is held up by that
+       * branch whatever its neighbours do. Letting them separate is what buys
+       * the gaps, and the gaps are the silhouette — a crown you can see
+       * through in places is the difference between foliage and a cabbage.
+       */
+      const clumpR = crownR * 0.26 * (0.55 + 0.45 * leafiness)
       // The tips stop short of the crown radius by most of a clump, so that
       // `spread` describes the width of the FINISHED crown rather than of the
       // bare branchwork inside it.
@@ -279,7 +322,7 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
          */
         const g = Math.pow(f, 1.35)
         const ay = H * (0.24 + 0.44 * g) + jitter(random, H * 0.015)
-        const ty = H * (0.34 + 0.54 * g) + jitter(random, H * 0.02)
+        const ty = H * (0.390 + 0.490 * g) + jitter(random, H * 0.02)
 
         // Driven by g, the same crowded parameter the heights use, so that a
         // limb low on the bole is also a LONG one -- which is the reference's
@@ -326,7 +369,7 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
           // Not lifted. A bough lifted above the bole's own tone came out
           // sandy next to it, which is invisible under a full crown and is the
           // entire model at `leafiness: 0`.
-          5, [0, 0, 0], tint('bark', -0.02, 0.9),
+          4, [0, 0, 0], tint('bark', -0.02, 0.9),
         )
         local.push(limb)
 
@@ -387,14 +430,17 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
               y: secLen * t,
               radius: secR * [1, 0.5, 0.2][k]!,
             })) as Level[],
-            4, [0, 0, 0], tint('bark', 0.0, 0.9),
+            3, [0, 0, 0], tint('bark', 0.0, 0.9),
           )
           sec.rotateZ(splay)
           sec.rotateY(spin)
           sec.translate(0, at, 0)
           local.push(sec)
 
-          if (leafiness > 0) {
+          // Only the OUTER fork gets a clump, which is what pays for the
+          // inner one above. The inner fork sits under the crown's own mass
+          // and its clump was never seen.
+          if (false) {
             // The tip, worked out rather than guessed: rotateZ then rotateY
             // sends +Y to this direction, and a clump centred there is
             // guaranteed to contain the branch end it hangs on.
@@ -406,7 +452,7 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
             const tip: readonly [number, number, number] = [
               dir[0] * secLen, at + dir[1] * secLen, dir[2] * secLen,
             ]
-            for (let k = 0; k < 2; k += 1) {
+            for (let k = 0; k < 1; k += 1) {
               const r = clumpR * (0.78 + random() * 0.5)
               // Offsets stay inside the clump's own radius, so consecutive
               // clumps always overlap and the branch tip is always inside one.
@@ -414,7 +460,7 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
                 tip[0] + jitter(random, r * 0.5),
                 tip[1] + jitter(random, r * 0.45),
                 tip[2] + jitter(random, r * 0.5),
-              ], jitter(random, 0.09)))
+              ], 0.1 + jitter(random, 0.13)))
             }
           }
         }
@@ -439,11 +485,24 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
            * guaranteed to work rather than tuned to, because every bough passes
            * through the middle.
            */
-          for (const along of [0.38, 0.8, 0.95]) {
+          /**
+           * INCLUDING one well inboard, at 0.34.
+           *
+           * Every clump sat on the outer half of its limb, which makes a
+           * crown that is a RING: full at the rim, hollow in the middle, and
+           * from a third of the compass you are looking straight through the
+           * hole. The turntable is what showed it — one three-quarter view
+           * looked fine and two of six were full of daylight.
+           *
+           * I had this right once and removed it while cutting triangles,
+           * which is the cheapest kind of regression to make and the hardest
+           * to notice: nothing failed, the model just got worse.
+           */
+          for (const along of [0.36, 0.68, 0.95]) {
             const r = clumpR * (0.85 + random() * 0.45)
             leaves.push(clump(r, [
               jitter(random, r * 0.55), len * along + jitter(random, r * 0.3), jitter(random, r * 0.55),
-            ], jitter(random, 0.09)))
+            ], 0.1 + jitter(random, 0.13)))
           }
         }
 
@@ -474,7 +533,7 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
          * division gives every gap 40 degrees, and the jitter keeps it from
          * looking like a wheel.
          */
-        const spin = (i / limbCount) * Math.PI * 2 + jitter(random, 0.3)
+        const spin = (i / limbCount) * Math.PI * 2 + jitter(random, 0.11)
         for (const group of [local, leaves]) {
           if (group.length === 0) continue
           const merged = mergeColoured(group)
@@ -500,7 +559,7 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
             jitter(random, r * 0.9),
             trunkTop + r * 0.1 + jitter(random, r * 0.35),
             jitter(random, r * 0.9),
-          ], jitter(random, 0.09)))
+          ], 0.1 + jitter(random, 0.13)))
         }
       }
 
@@ -596,9 +655,16 @@ export function createModel(overrides: Partial<OakTreeConfig> = {}) {
        *
        * It goes AFTER both scalings so the amount is in finished metres.
        */
-      if (leaves) {
-        roughenGeometry(leaves, clumpR * 0.17, { salt: 31 })
-      }
+      /**
+       * The crown is NOT roughened.
+       *
+       * It was, at 0.17 of a clump radius, on the reasoning that ragged edges
+       * read as foliage where smooth ones read as stone. That is true of a
+       * silhouette and false of a surface: what it actually did was crease
+       * every facet of every clump and turn the mass into crumpled paper.
+       * Rounded shapes that overlap already give a ragged OUTLINE — the
+       * raggedness has to come from the arrangement, not from the skin.
+       */
 
       return {
         trunk: { slot: 'oak' as const, geometry: trunk },

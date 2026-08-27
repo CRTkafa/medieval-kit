@@ -82,7 +82,7 @@
       "address": "@medieval-kit/core",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-27T06:50:20.568Z",
+      "installedAt": "2026-08-27T07:04:40.383Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\core\\geometry.ts",
@@ -632,11 +632,11 @@
       "address": "@medieval-kit/oak-tree",
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-23T12:45:30.045Z",
+      "installedAt": "2026-08-27T07:04:40.385Z",
       "files": [
         {
           "path": "src\\models\\medieval-kit\\oak-tree\\model.ts",
-          "sourceHash": "16b83e44f96f3ac0e0c1a8c2107309476ccf9f17967d566e1325dcba86beecba"
+          "sourceHash": "1f612e4fbb0da08294b4392c7da5fc07dc9b67f502aebbd437e46a665b14ce29"
         }
       ],
       "dependencies": [
