@@ -63,6 +63,13 @@ jobs:
       - name: Build
         run: bun run build
 
+      # The build the published site is made from. It had never run anywhere
+      # but a Windows laptop until it failed on the host's runner, so it runs
+      # here now: `vite` is a devDependency and a host that skips its install
+      # step gets `vite: command not found` after everything else has passed.
+      - name: Build the site
+        run: bun run site:build
+
       # A software rasteriser, no GPU. The contact sheet is uploaded because
       # geometry checks cannot say "this does not look like a shovel", and
       # having the picture attached to the run is what makes that reviewable.

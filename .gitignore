@@ -28,3 +28,13 @@ scripts/zdiag.ts
 # Reference images. They belong to the (private) studio repo, not to the
 # registry that consumers clone.
 references/
+
+# Cloudflare's "import a repository" flow offers to write one of these, and it
+# describes a WORKER serving static assets rather than a Pages project. The
+# site is deployed as Pages, so a config for the other path does not belong in
+# the tree — and it is not inert if it gets there: the build log reports
+# "Checking for configuration in a Wrangler configuration file", so a stray one
+# would change how the project is treated.
+wrangler.toml
+wrangler.json
+wrangler.jsonc
