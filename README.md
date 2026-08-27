@@ -155,6 +155,38 @@ parameters a viewer actually notices, and morphing cannot interpolate them,
 so before the split they were pinned for the whole beat and the tour looked
 static.
 
+## Publish the viewer
+
+```sh
+bun run site:build      # → dist-viewer/, ready for any static host
+```
+
+The output is the viewer at a domain root: an `index.html`, a `viewer.js` and a
+`viewer.css` it loads by absolute path. Nothing is fetched at run time — the
+registry address in the sidebar is a label, not a request — so there is no API
+to stand up and nothing to 404.
+
+Beside it is `artifact.html`, the same viewer collapsed into one self-contained
+file. That is the one to hand to anyone who wants it without a server.
+
+| Host | Free with a PRIVATE repo | Build command | Output |
+| --- | :-: | --- | --- |
+| Vercel | yes | `bun run site:build` | `dist-viewer` |
+| Cloudflare Pages | yes | `bun run site:build` | `dist-viewer` |
+| GitHub Pages | **no** — needs Pro | — | — |
+
+`vercel.json` already carries the first row, so Vercel needs the repository
+imported and nothing else. GitHub Pages is in the table because it is the
+obvious guess and the answer is no: on the free plan Pages serves public
+repositories only, so it costs either a subscription or making the source
+public.
+
+One thing worth being deliberate about rather than discovering later:
+publishing the viewer publishes the MODELS. The bundle carries every builder
+in it, minified. That is a different thing from the npm package, which ships
+the source as source — but it is not nothing, and a page anyone can open is a
+page anyone can read.
+
 ## Layout
 
 ```text
