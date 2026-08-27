@@ -328,6 +328,14 @@ install with the same CLI. **You do not need anyone's permission** — you can
 publish your own registry without touching the vibe3d repository. The
 architecture document states this as an explicit goal.
 
+This one is live, which is how the claim stopped being theory:
+[`@medieval-kit/registry`](https://www.npmjs.com/package/@medieval-kit/registry).
+Publishing needed 2FA on the npm account and an org owning the `@medieval-kit`
+scope; nothing was needed from vibe3d itself. Worth knowing before you publish
+your own: npm stamps the publishing account's email into the packument per
+version, and later account changes do not rewrite it — so whatever address is
+on the account at that moment is public for good.
+
 ### Size warning
 
 `registry.json` keeps all the source embedded. `@scifi-kit/registry@0.0.1` →

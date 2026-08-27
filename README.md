@@ -7,10 +7,13 @@ Vibe3D is a source-first model registry for Three.js: you install the
 TypeScript that *generates* a model into your own project rather than depending
 on an opaque package. This repository holds one such registry.
 
-- **[`my-registry/`](my-registry/)** — the `@medieval-kit` registry, published
-  to npm as [`@medieval-kit/registry`](my-registry/README.md).
+- **[`my-registry/`](my-registry/)** — the `@medieval-kit` registry, on npm as
+  [`@medieval-kit/registry`](https://www.npmjs.com/package/@medieval-kit/registry).
 - **`src/`** — a demo app that installs from both `@medieval-kit` and the
   first-party `@scifi-kit`, so the two can be inspected side by side.
+
+**[Open the viewer →](https://medieval.crt.fyi/)** — every model in the kit,
+turn it over, pull its sliders, press play. No install, no sign-in.
 
 ![The whole kit in one scene](media/kit.png)
 
@@ -45,11 +48,28 @@ overlay, and per-model GLB download.
 
 ```sh
 bunx vibe3d init
-bunx vibe3d add @medieval-kit/wooden-barrel
+bun add three
+bun add -d @types/three
 ```
 
-See [`my-registry/README.md`](my-registry/README.md) for the model list,
-configuration fields, and runtime contract.
+`init` writes `models.json` and seeds it with `@scifi-kit` only, so add this
+registry to the `registries` object it created — `vibe3d add` resolves the
+namespace through that map and stops without it:
+
+```json
+"@medieval-kit": { "source": "npm:@medieval-kit/registry", "version": "latest" }
+```
+
+Then take one model, or the lot:
+
+```sh
+bunx vibe3d add @medieval-kit/wooden-barrel
+bunx vibe3d add @medieval-kit
+```
+
+See [`my-registry/README.md`](my-registry/README.md) for the model list, the
+`tsconfig.json` the installed source needs, the configuration fields and the
+runtime contract.
 
 ## Export to GLB
 
@@ -169,6 +189,11 @@ to 404.
 
 Beside it is `artifact.html`, the same viewer collapsed into one self-contained
 file. That is the one to hand to anyone who wants it without a server.
+
+This output is what runs at [medieval.crt.fyi](https://medieval.crt.fyi/),
+rebuilt on every push. The social card it links to is built there too, by
+`bun run cover:build`, so the model count on the card is counted rather than
+typed and cannot fall behind the kit.
 
 ## Layout
 
