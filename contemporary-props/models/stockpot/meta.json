@@ -1,0 +1,58 @@
+{
+  "title": "Lidded Stockpot",
+  "description": "Stainless stockpot with a rolled rim, two riveted strap lugs standing clear of the wall, and a separable lid whose flange sits inside the mouth. The rim curl and the sit-in step are the read; the liftLid action takes the lid straight off the seat.",
+  "category": "Kitchen",
+  "tags": [
+    "contemporary",
+    "kitchen",
+    "cookware",
+    "vessel",
+    "procedural"
+  ],
+  "controls": {
+    "diameter": {
+      "type": "number",
+      "label": "Diameter",
+      "min": 0.14,
+      "max": 0.4,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "height": {
+      "type": "number",
+      "label": "Height",
+      "min": 0.1,
+      "max": 0.36,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "lidDome": {
+      "type": "number",
+      "label": "Lid dome",
+      "min": 0.05,
+      "max": 0.22,
+      "step": 0.01
+    },
+    "segments": {
+      "type": "number",
+      "label": "Sides",
+      "min": 16,
+      "max": 64,
+      "step": 1
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "stainless"
+  ],
+  "parts": [
+    "body",
+    "lid"
+  ]
+}

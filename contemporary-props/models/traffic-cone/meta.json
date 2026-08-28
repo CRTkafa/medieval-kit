@@ -1,0 +1,66 @@
+{
+  "title": "Traffic Cone",
+  "description": "Hi-vis cone on a stepped square base. The wall is one concave profile and the retroreflective collars are y-ranges of that profile stood 3 mm proud, which is the banding pattern every striped revolve in the kit copies.",
+  "category": "Street",
+  "tags": [
+    "contemporary",
+    "street",
+    "roadworks",
+    "safety",
+    "procedural"
+  ],
+  "controls": {
+    "height": {
+      "type": "number",
+      "label": "Height",
+      "min": 0.3,
+      "max": 1.2,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "baseWidth": {
+      "type": "number",
+      "label": "Base width",
+      "min": 0.2,
+      "max": 0.6,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "collars": {
+      "type": "number",
+      "label": "Collars",
+      "min": 1,
+      "max": 2,
+      "step": 1
+    },
+    "flare": {
+      "type": "number",
+      "label": "Wall sag",
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    "segments": {
+      "type": "number",
+      "label": "Sides",
+      "min": 12,
+      "max": 64,
+      "step": 1
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "plastic",
+    "retroreflective"
+  ],
+  "parts": [
+    "base",
+    "body"
+  ]
+}

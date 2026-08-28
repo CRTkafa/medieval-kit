@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Color } from 'three'
+import { BufferAttribute, BufferGeometry, Color, Vector3 } from 'three'
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 
 /**
@@ -6,8 +6,14 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
  *
  * Everything is generated NON-INDEXED. The reason: on non-indexed geometry
  * computeVertexNormals() gives every triangle its own normal, so flat shading
- * becomes a natural consequence of the geometry — no material flag is needed.
- * In lowpoly that is exactly what we want.
+ * becomes a natural consequence of the geometry and no material flag is needed.
+ *
+ * That was the whole answer in a kit with a lowpoly budget, where a barrel is
+ * meant to read as staves. This kit has no such budget and is full of turned
+ * and pressed objects that are genuinely smooth: a kettle, a basin, a mug, a
+ * bollard, a traffic cone. Flat shading those puts visible bands across every
+ * curve, so `smoothNormals` below is the way out, applied per object rather
+ * than globally, because the choice belongs to the object.
  *
  * Position frame: point(a, r, y) = (sin a · r, y, cos a · r)
  * So a = 0 → the +Z direction; as a grows it turns toward +X.
@@ -866,5 +872,77 @@ export function mottleGeometry(
     )
   }
   colour.needsUpdate = true
+  return geometry
+}
+
+/**
+ * Averages normals across edges that are not creases, in place.
+ *
+ * Non-indexed geometry has no idea which triangles are neighbours, so this
+ * finds out the only way available: vertices at the same POSITION belong
+ * together. Positions are quantised before comparison because two triangles
+ * that share an edge were generated from the same numbers and land on the same
+ * point to the last bit, while anything merely close is a different corner.
+ *
+ * The crease angle is what makes it usable. Averaging every shared vertex
+ * would round the rim of the vase into the wall and the foot into the table,
+ * which is how a smoothed lowpoly object turns to soap. Only faces that agree
+ * to within the crease angle are averaged with each other, so a curve comes
+ * out smooth and an edge stays an edge, with no hand-marked smoothing groups.
+ *
+ * @param crease Degrees. 30 keeps chamfers crisp; 60 smooths all but hard
+ *               corners; above about 80 everything melts together.
+ */
+export function smoothNormals(geometry: BufferGeometry, crease = 40): BufferGeometry {
+  const position = geometry.getAttribute('position')
+  if (!position || geometry.getIndex()) return geometry
+  const count = position.count
+  const limit = Math.cos((crease * Math.PI) / 180)
+
+  // Face normal per triangle, computed once.
+  const faceNormal = new Float32Array((count / 3) * 3)
+  const ax = new Vector3(), bx = new Vector3(), cx = new Vector3()
+  const e1 = new Vector3(), e2 = new Vector3(), n = new Vector3()
+  for (let f = 0; f < count / 3; f += 1) {
+    ax.fromBufferAttribute(position, f * 3)
+    bx.fromBufferAttribute(position, f * 3 + 1)
+    cx.fromBufferAttribute(position, f * 3 + 2)
+    n.copy(e1.subVectors(bx, ax)).cross(e2.subVectors(cx, ax))
+    if (n.lengthSq() > 0) n.normalize()
+    faceNormal[f * 3] = n.x; faceNormal[f * 3 + 1] = n.y; faceNormal[f * 3 + 2] = n.z
+  }
+
+  // Which faces meet at each position.
+  const at = new Map<string, number[]>()
+  const key = (i: number): string => {
+    const x = Math.round(position.getX(i) * 1e5)
+    const y = Math.round(position.getY(i) * 1e5)
+    const z = Math.round(position.getZ(i) * 1e5)
+    return `${x},${y},${z}`
+  }
+  for (let i = 0; i < count; i += 1) {
+    const k = key(i)
+    const list = at.get(k)
+    if (list) list.push(Math.floor(i / 3))
+    else at.set(k, [Math.floor(i / 3)])
+  }
+
+  const out = new Float32Array(count * 3)
+  const sum = new Vector3()
+  for (let i = 0; i < count; i += 1) {
+    const face = Math.floor(i / 3)
+    n.set(faceNormal[face * 3]!, faceNormal[face * 3 + 1]!, faceNormal[face * 3 + 2]!)
+    sum.set(0, 0, 0)
+    for (const other of at.get(key(i)) ?? [face]) {
+      const m = new Vector3(faceNormal[other * 3]!, faceNormal[other * 3 + 1]!, faceNormal[other * 3 + 2]!)
+      // Only neighbours on the same side of the crease contribute. A face
+      // beyond it keeps its own normal and the edge survives.
+      if (m.dot(n) >= limit) sum.add(m)
+    }
+    if (sum.lengthSq() === 0) sum.copy(n)
+    sum.normalize()
+    out[i * 3] = sum.x; out[i * 3 + 1] = sum.y; out[i * 3 + 2] = sum.z
+  }
+  geometry.setAttribute('normal', new BufferAttribute(out, 3))
   return geometry
 }

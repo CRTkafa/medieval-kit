@@ -677,15 +677,15 @@
       "address": "@contemporary-props/core",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T11:55:55.316Z",
+      "installedAt": "2026-08-28T13:01:08.200Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\core\\geometry.ts",
-          "sourceHash": "b47141c115c48d48e3a4c643fe9634343458288688ea586f044e6a7e7cdbaad5"
+          "sourceHash": "00ec2d2b459c909612841820f0afd2db97dc85729baec695493f6ec609178fbc"
         },
         {
           "path": "src\\models\\contemporary-props\\core\\index.ts",
-          "sourceHash": "82ec12371362c5e72d4b5049f35c3c249276f4dde0f2a94c6db97dc8789d172e"
+          "sourceHash": "fd3705b61a7df5290b2d05d67ed9d18a9cc1db2aa2d2466b14093744453d33be"
         },
         {
           "path": "src\\models\\contemporary-props\\core\\kit.ts",
@@ -719,6 +719,104 @@
       "dependencies": [
         "three@>=0.185.0"
       ]
+    },
+    "@contemporary-props/ceramic-vase": {
+      "address": "@contemporary-props/ceramic-vase",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-28T13:01:08.203Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\ceramic-vase\\model.ts",
+          "sourceHash": "ab7a91d0e4090ecbf6118b25b5c5cf21a06c68570d1b3df21b1b9c240e4c0537"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@contemporary-props/coffee-mug": {
+      "address": "@contemporary-props/coffee-mug",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-28T13:01:08.204Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\coffee-mug\\model.ts",
+          "sourceHash": "3ac9a507c369cb4c3a3badb53f818a2b8e985560da690108923692431b74e39e"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@contemporary-props/pepper-mill": {
+      "address": "@contemporary-props/pepper-mill",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-28T13:01:08.206Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\pepper-mill\\model.ts",
+          "sourceHash": "132dd1816b7c74badc307d3b9d05fff0c0c9754508e740145a50e568ff34b1ff"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@contemporary-props/stockpot": {
+      "address": "@contemporary-props/stockpot",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-28T13:01:08.209Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\stockpot\\model.ts",
+          "sourceHash": "f0f618489a6d6fd27624918a29eb6109f8287dad50dd939cce69a29b38a224e4"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@contemporary-props/traffic-cone": {
+      "address": "@contemporary-props/traffic-cone",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-28T13:01:08.211Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\traffic-cone\\model.ts",
+          "sourceHash": "0a6f387c3fbc9b2883137d65efdc17abafc74a20ba11d681e0b8fc13757beac4"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@contemporary-props/wine-glass": {
+      "address": "@contemporary-props/wine-glass",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-28T13:01:08.215Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\wine-glass\\model.ts",
+          "sourceHash": "b50c1fda8b9accdbb1751e1009ae02c36b54c69dc4e4fff3a8c2dd2957b81c77"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@contemporary-props/kit": {
+      "address": "@contemporary-props/kit",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-28T13:01:08.215Z",
+      "files": [],
+      "dependencies": []
     }
   }
 }

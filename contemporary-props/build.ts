@@ -25,7 +25,26 @@ const NAMESPACE = '@contemporary-props'
 const THREE_RANGE = 'three@>=0.185.0'
 
 /** Catalogue data per model. The source files themselves are read from disk. */
-import { MODEL_META } from './meta.ts'
+import type { ModelMeta } from './meta.ts'
+
+/**
+ * Metadata lives beside the model it describes, in `models/<id>/meta.json`.
+ *
+ * The medieval kit keeps one hand-maintained map for the whole registry, which
+ * is fine while one person adds one model at a time. It is the wrong shape the
+ * moment several models are being written at once: every author has to edit the
+ * same file, and the last write wins. A sidecar has no such contention, and it
+ * also cannot describe the wrong model, because deleting the folder deletes the
+ * description with it.
+ */
+async function readMeta(sourceRoot: string, id: string): Promise<ModelMeta> {
+  const path = join(sourceRoot, id, 'meta.json')
+  try {
+    return JSON.parse(await readFile(path, 'utf8')) as ModelMeta
+  } catch {
+    throw new Error(`${id}: no meta.json beside model.ts. Every model describes itself.`)
+  }
+}
 
 const LIB_DESCRIPTION: Record<string, { title: string; description: string }> = {
   core: {
@@ -126,8 +145,7 @@ async function main(): Promise<void> {
   for (const id of models) {
     const paths = await collectTypeScript(join(sourceRoot, id))
     const contents = await Promise.all(paths.map((path) => readFile(path, 'utf8')))
-    const meta = MODEL_META[id]
-    if (!meta) throw new Error(`no MODEL_META entry for ${id}`)
+    const meta = await readMeta(sourceRoot, id)
     items.push({
       name: id,
       type: 'vibe3d:model',

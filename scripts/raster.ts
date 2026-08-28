@@ -307,10 +307,41 @@ function raster(frame: Frame, camera: PerspectiveCamera, triangles: readonly Tri
   }
 }
 
-/** Contact shadow: flatten the model onto the y=floor plane and draw it dark. */
-function contactShadow(frame: Frame, camera: PerspectiveCamera, triangles: readonly Triangle[], floor: number): void {
+/**
+ * Contact shadow: flatten the model onto the floor and darken what lands there.
+ *
+ * With a falloff, and that is the whole difference between a shadow and a
+ * stain. Flattening everything at full strength is right for a barrel, whose
+ * mass sits on the ground anyway, and badly wrong for anything with a raised
+ * part standing in a vertical plane: a mug's handle flattens to its own reach
+ * by its own width and lands on the floor as a hard black bar beside the mug,
+ * reading as a separate object lying there. It was the first thing anyone
+ * noticed in the first picture this kit produced.
+ *
+ * So a triangle contributes by how close it is to the floor. The scale is the
+ * model's own height rather than a constant, because a 7 m mill and a 0.1 m mug
+ * should both cast something that looks like contact rather than like paint.
+ */
+function contactShadow(
+  frame: Frame,
+  camera: PerspectiveCamera,
+  triangles: readonly Triangle[],
+  floor: number,
+  height: number,
+): void {
+  // A quarter of the model's height. Above that a piece is not touching
+  // anything and has no business darkening the floor.
+  const reach = Math.max(1e-4, height * 0.25)
   for (const tri of triangles) {
     if (tri.unlit) continue
+    // Skip only when the WHOLE triangle is out of reach. The strength itself
+    // is worked out per pixel below: taking one value for the triangle looks
+    // fine on a wall and tears a fan apart, because neighbouring triangles in
+    // a base cap have different centre heights and alternate light and dark.
+    // On the first vase that came out as a black starburst around the foot,
+    // which is a worse artifact than the bar it replaced.
+    const lowest = Math.min(tri.a.y, tri.b.y, tri.c.y) - floor
+    if (lowest >= reach) continue
     const flat = (v: Vector3): Vector3 => new Vector3(v.x, floor + 0.0005, v.z)
     const pa = project(flat(tri.a), camera, frame)
     const pb = project(flat(tri.b), camera, frame)
@@ -330,8 +361,13 @@ function contactShadow(frame: Frame, camera: PerspectiveCamera, triangles: reado
         const w1 = ((pc.x - pb.x) * (py - pb.y) - (px - pb.x) * (pc.y - pb.y)) / area
         const w2 = 1 - w0 - w1
         if (w0 < 0 || w1 < 0 || w2 < 0) continue
+        // w1 -> a, w2 -> b, w0 -> c, matching the colour interpolation.
+        const above = (tri.a.y * w1 + tri.b.y * w2 + tri.c.y * w0) - floor
+        if (above >= reach) continue
+        const strength = Math.pow(1 - above / reach, 1.6)
         const i = (y * frame.width + x) * 3
-        for (let k = 0; k < 3; k += 1) frame.colour[i + k] = frame.colour[i + k]! * 0.55
+        const darken = 1 - 0.45 * strength
+        for (let k = 0; k < 3; k += 1) frame.colour[i + k] = frame.colour[i + k]! * darken
       }
     }
   }
@@ -574,7 +610,7 @@ export function renderObject(root: Object3D, options: RenderOptions): Frame {
   const triangles = collect(root)
   const frame = newFrame(size, tall, ground)
   const { camera, floor } = frameCamera(root, size, tall, towards)
-  contactShadow(frame, camera, triangles, floor)
+  contactShadow(frame, camera, triangles, floor, new Box3().setFromObject(root).getSize(new Vector3()).y)
   raster(frame, camera, triangles)
   return frame
 }
