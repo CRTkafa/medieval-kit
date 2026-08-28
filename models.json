@@ -18,6 +18,10 @@
     "@medieval-kit": {
       "source": "file:my-registry/dist/registry.json",
       "version": "workspace"
+    },
+    "@contemporary-props": {
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace"
     }
   }
 }

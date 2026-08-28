@@ -519,23 +519,36 @@ export interface RenderOptions {
   readonly towards?: readonly [number, number, number]
 }
 
+/**
+ * Renders anything with a transform tree, catalogued or not.
+ *
+ * Split out of `renderOne` so a model can be drawn straight from the folder it
+ * is being written in, before it has a catalogue entry, a registry build or an
+ * install. That is the whole difference between looking at your work now and
+ * looking at it after a four step round trip.
+ */
+export function renderObject(root: Object3D, options: RenderOptions): Frame {
+  const { size, tall = options.size, spin = 0, ground, towards = [0.78, 0.5, 1] } = options
+  // We rotate the MODEL, not the camera: framing and the shadow computation
+  // stay in a fixed direction, so turntable frames compare one to one.
+  root.rotation.y = spin
+  const triangles = collect(root)
+  const frame = newFrame(size, tall, ground)
+  const { camera, floor } = frameCamera(root, size, tall, towards)
+  contactShadow(frame, camera, triangles, floor)
+  raster(frame, camera, triangles)
+  return frame
+}
+
 export function renderOne(id: string, options: RenderOptions): Frame {
-  const { size, tall = options.size, patch, spin = 0, ground, towards = [0.78, 0.5, 1] } = options
   const entry = CATALOG[id]
   if (!entry) throw new Error(`not in catalog: ${id}`)
   const built = entry.build()
-  if (patch && built.params) built.params.apply(patch)
+  if (options.patch && built.params) built.params.apply(options.patch)
   // Catch animated models mid-motion: a frozen flame does not show that the
   // flame flickers.
   built.update?.(0.42)
-  // We rotate the MODEL, not the camera: framing and the shadow computation
-  // stay in a fixed direction, so turntable frames compare one to one.
-  built.root.rotation.y = spin
-  const triangles = collect(built.root)
-  const frame = newFrame(size, tall, ground)
-  const { camera, floor } = frameCamera(built.root, size, tall, towards)
-  contactShadow(frame, camera, triangles, floor)
-  raster(frame, camera, triangles)
+  const frame = renderObject(built.root, options)
   built.dispose()
   return frame
 }

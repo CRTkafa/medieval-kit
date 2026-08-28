@@ -672,6 +672,53 @@
       "dependencies": [
         "three@>=0.185.0"
       ]
+    },
+    "@contemporary-props/core": {
+      "address": "@contemporary-props/core",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-28T11:55:55.316Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\core\\geometry.ts",
+          "sourceHash": "b47141c115c48d48e3a4c643fe9634343458288688ea586f044e6a7e7cdbaad5"
+        },
+        {
+          "path": "src\\models\\contemporary-props\\core\\index.ts",
+          "sourceHash": "82ec12371362c5e72d4b5049f35c3c249276f4dde0f2a94c6db97dc8789d172e"
+        },
+        {
+          "path": "src\\models\\contemporary-props\\core\\kit.ts",
+          "sourceHash": "c9063637b59bece2491efb8ddb0d8aa98c1521cf35783ea1cd614aa47db39a46"
+        },
+        {
+          "path": "src\\models\\contemporary-props\\core\\materials.ts",
+          "sourceHash": "9ad9297a997c1e2691032f481f0fe502aa670ff3183eb2ca91fc0d69928ebb15"
+        },
+        {
+          "path": "src\\models\\contemporary-props\\core\\occlusion.ts",
+          "sourceHash": "6abb37ba737d80279f8af5b3dce94367028af99340baf495c8727e7e5a6dcd7c"
+        },
+        {
+          "path": "src\\models\\contemporary-props\\core\\parts.ts",
+          "sourceHash": "6554e1092e02d46fbb78c44462124ec2980a10cbf6f014d01d86ffbf0308e975"
+        },
+        {
+          "path": "src\\models\\contemporary-props\\core\\random.ts",
+          "sourceHash": "8294a81f783f53333dbedcae5ee2511b94d333f957ee51d553c439ee6884c510"
+        },
+        {
+          "path": "src\\models\\contemporary-props\\core\\tint.ts",
+          "sourceHash": "96a18dca8d0f02c988741c6222efbc5da7cce403900a5192bb01eb4f2c0f9315"
+        },
+        {
+          "path": "src\\models\\contemporary-props\\core\\tool.ts",
+          "sourceHash": "a6a5f1a5d2cde798556330638fc113f88d72bb707fd8a607f5d11a56ce2857a4"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
     }
   }
 }

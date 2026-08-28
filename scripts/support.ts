@@ -103,16 +103,23 @@ export function findFloating(root: Object3D, options: SupportOptions = {}): Supp
   const cells = new Map<string, Cell>()
   const vertex = new Vector3()
   root.traverse((object) => {
-    if (!(object instanceof Mesh)) return
-    const position = object.geometry.getAttribute('position')
+    // `.isMesh`, not `instanceof Mesh`. Two copies of three can be loaded at
+    // once (plain `three` and `three/webgpu` are separate builds, and a second
+    // project brings its own install), and across copies instanceof matches
+    // nothing at all. The failure is silent and total: the traversal samples
+    // no geometry, finds no components, and reports every model clean. That is
+    // exactly what it did the first time this ran against another repository.
+    if (!(object as { isMesh?: boolean }).isMesh) return
+    const mesh = object as unknown as Mesh
+    const position = mesh.geometry.getAttribute('position')
     if (!position) return
-    const index = object.geometry.getIndex()
+    const index = mesh.geometry.getIndex()
     const count = index ? index.count : position.count
-    const name = object.name || 'unnamed'
+    const name = mesh.name || 'unnamed'
 
     const at = (i: number): Vector3 => {
       const v = index ? index.getX(i) : i
-      return vertex.fromBufferAttribute(position, v).applyMatrix4(object.matrixWorld).clone()
+      return vertex.fromBufferAttribute(position, v).applyMatrix4(mesh.matrixWorld).clone()
     }
 
     for (let i = 0; i < count; i += 3) {

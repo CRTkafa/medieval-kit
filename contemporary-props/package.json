@@ -1,0 +1,36 @@
+{
+  "name": "@contemporary-props/registry",
+  "version": "0.0.0",
+  "description": "Present-day props generated from TypeScript, for Vibe3D and Three.js.",
+  "type": "module",
+  "license": "MIT",
+  "author": "CRTkafa",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "keywords": [
+    "vibe3d",
+    "vibe3d-registry",
+    "threejs",
+    "3d-models",
+    "props",
+    "procedural"
+  ],
+  "vibe3d": {
+    "registry": "./dist/registry.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "bun build.ts",
+    "validate": "vibe3d registry validate dist/registry.json",
+    "prepublishOnly": "bun build.ts && vibe3d registry validate dist/registry.json"
+  },
+  "peerDependencies": {
+    "three": ">=0.185.0"
+  }
+}

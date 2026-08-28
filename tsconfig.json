@@ -12,7 +12,17 @@
     "types": ["vite/client", "node", "@webgpu/types"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // The authoring trees under my-registry/ and contemporary-props/ write
+      // their imports as "@vibe3d/...", which `vibe3d add` rewrites to
+      // "@/lib/vibe3d/..." on the way in. Mapping the pre-install form too is
+      // what lets a model be built and looked at straight from the folder it
+      // is written in, without a registry rebuild and a reinstall first.
+      //
+      // It changes nothing about the installed copy, which still resolves
+      // through "@/*", and nothing about typecheck scope: "include" does not
+      // cover either authoring tree.
+      "@vibe3d/*": ["./src/lib/vibe3d/*"]
     }
   },
   "include": ["src", "scripts", "vite.config.ts"]
