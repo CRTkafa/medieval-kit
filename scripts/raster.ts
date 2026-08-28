@@ -20,6 +20,7 @@ import { deflateSync } from 'node:zlib'
 
 import {
   Box3,
+  Matrix3,
   Mesh,
   PerspectiveCamera,
   Sphere,
@@ -44,6 +45,17 @@ interface Triangle {
   /** Unlit surface (flame). The vertex colour is the result directly. */
   readonly unlit: boolean
   readonly opacity: number
+  /**
+   * Vertex normals, when the geometry carries ones that differ from the face.
+   *
+   * Null on flat-shaded geometry, which is most of it: these models are
+   * non-indexed and `computeVertexNormals` then hands every triangle its own
+   * normal, so interpolating three copies of the same vector would be work
+   * for nothing.
+   */
+  readonly na: Vector3 | null
+  readonly nb: Vector3 | null
+  readonly nc: Vector3 | null
 }
 
 function collect(root: Object3D): Triangle[] {
@@ -68,20 +80,34 @@ function collect(root: Object3D): Triangle[] {
     const unlit = material.isMeshBasicMaterial === true
     const opacity = material.transparent ? (material.opacity ?? 1) : 1
 
-    const vertex = (i: number): { p: Vector3; c: [number, number, number] } => {
+    const normals = geometry.getAttribute('normal')
+    // Rotation only: a normal is a direction, so the translation in the world
+    // matrix must not move it.
+    const rotation = new Matrix3().getNormalMatrix(object.matrixWorld)
+
+    const vertex = (i: number): { p: Vector3; c: [number, number, number]; n: Vector3 | null } => {
       const v = index ? index.getX(i) : i
       const p = new Vector3().fromBufferAttribute(position, v).applyMatrix4(object.matrixWorld)
       const c: [number, number, number] = colour
         ? [colour.getX(v), colour.getY(v), colour.getZ(v)]
         : [0.8, 0.8, 0.8]
-      return { p, c }
+      const n = normals
+        ? new Vector3().fromBufferAttribute(normals, v).applyMatrix3(rotation).normalize()
+        : null
+      return { p, c, n }
     }
 
     for (let i = 0; i < count; i += 3) {
       const a = vertex(i), b = vertex(i + 1), c = vertex(i + 2)
+      // Only worth interpolating when the three actually disagree. On flat
+      // geometry they are identical and the face normal is both cheaper and
+      // exactly as correct.
+      const smooth = a.n !== null && b.n !== null && c.n !== null
+        && (a.n.dot(b.n) < 0.9995 || a.n.dot(c.n) < 0.9995)
       out.push({
         a: a.p, b: b.p, c: c.p,
         ca: a.c, cb: b.c, cc: c.c,
+        na: smooth ? a.n : null, nb: smooth ? b.n : null, nc: smooth ? c.n : null,
         metalness: material.metalness ?? 0,
         roughness: material.roughness ?? 0.8,
         unlit,
@@ -256,7 +282,20 @@ function raster(frame: Frame, camera: PerspectiveCamera, triangles: readonly Tri
           tri.ca[1] * w1 + tri.cb[1] * w2 + tri.cc[1] * w0,
           tri.ca[2] * w1 + tri.cb[2] * w2 + tri.cc[2] * w0,
         ]
-        const rgb = shade(tri, normal, albedo)
+        // Interpolate the normal across the face when the geometry asked for
+        // smooth shading. Without this the renderer is flat by construction
+        // and cannot show the difference between a faceted vase and a turned
+        // one, which makes it useless for judging exactly the objects this
+        // kit is full of.
+        let shadingNormal = normal
+        if (tri.na && tri.nb && tri.nc) {
+          shadingNormal = new Vector3(
+            tri.na.x * w1 + tri.nb.x * w2 + tri.nc.x * w0,
+            tri.na.y * w1 + tri.nb.y * w2 + tri.nc.y * w0,
+            tri.na.z * w1 + tri.nb.z * w2 + tri.nc.z * w0,
+          ).normalize()
+        }
+        const rgb = shade(tri, shadingNormal, albedo)
         const i = at * 3
         const alpha = tri.opacity
         frame.colour[i] = frame.colour[i]! * (1 - alpha) + rgb[0] * alpha

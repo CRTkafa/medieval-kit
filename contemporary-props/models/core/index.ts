@@ -14,6 +14,7 @@ export {
   prismGeometry,
   roughenGeometry,
   staveGeometry,
+  smoothNormals,
   taperedBoxGeometry,
 } from './geometry.ts'
 export type { Level, MottleOptions, RoughenOptions, SheetLevel, Vec3 } from './geometry.ts'

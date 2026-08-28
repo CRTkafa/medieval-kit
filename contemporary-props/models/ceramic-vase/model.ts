@@ -36,6 +36,7 @@ import {
   jitter,
   latheGeometry,
   mergeColoured,
+  smoothNormals,
   type Level,
 } from '../core/index.ts'
 
@@ -115,8 +116,12 @@ export function createModel(overrides: Partial<CeramicVaseConfig> = {}) {
         ),
       ]
 
+      // Smoothed at 40 degrees. The wall is a curve and reads as one; the
+      // lip, the foot and the base cap all turn through more than that and
+      // stay as edges. Flat shading put a visible band at every level of the
+      // profile, which on a glazed white surface is the first thing you see.
       return {
-        body: { slot: 'ceramic' as const, geometry: mergeColoured(pieces) },
+        body: { slot: 'ceramic' as const, geometry: smoothNormals(mergeColoured(pieces), 40) },
       }
     },
   }, overrides)
