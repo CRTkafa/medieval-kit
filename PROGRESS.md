@@ -92,6 +92,37 @@ modelling errors listed separately from resemblance gaps, each with a location.
 `scripts/check-model.ts` and `scripts/audit.ts` exist to catch what the critic
 cannot see.
 
+### The critic, and what it is worth
+
+`scripts/critique-model.ts` is the half of the loop that was missing. It
+renders a model at four angles, hands a critic the brief, the CATALOGUE ROW and
+the reference photograph, and never the code, and takes back JSON: a score, a
+blind "would you name it", at most three resemblance gaps each naming a
+measurable quantity, and modelling errors listed separately with locations. One
+file per model under `critiques/`, so twenty models leave twenty comparable
+numbers instead of twenty opinions.
+
+It works, and the first thing it did was catch something a person had missed:
+the mill's body was tan against a black reference, which no amount of geometry
+was ever going to fix, and it said so as its top finding three rounds running.
+
+It is also a NOISY INSTRUMENT and the numbers matter here. Six rounds on the
+pepper mill scored 68, 68, 69, 79, 74, 78. The findings rotate: an item raised
+as most important in one round vanishes from the next. And in the last round
+two of its three measurements were simply wrong — it reported the model at
+2.7:1 height to diameter and its collar at 0.29 diameters, where the geometry
+is 3.65 and 0.44. That is the same lesson the medieval kit already wrote down,
+reproduced exactly: **a critic finding is a report, not a fact.**
+
+So before acting on a number, falsify it. `bun scripts/check-model.ts <registry>
+<id>` prints the real extent in one line, and the source has the real
+fractions. Act on findings that repeat across rounds, because those are signal;
+the mill's knob was reported as having no knurl in every single round and that
+one was true. Two plateaus means the reference or the representation has to
+change, not that the grinding continues: the plateau at 68 was the tan-against-
+black mismatch, and it broke the moment the reference was re-shot to the
+material the kit actually declares.
+
 `references/modeling-rules.md` carries 17 hard rules. The ones that cost real
 time here: bevels budgeted by perceptual role, physical features sized in world
 units, clearance calculated for every applied layer, and critic feedback treated

@@ -80,7 +80,11 @@ const STYLE: Record<string, string> = {
  * that model is fourth in the build order at all: the catalogue's own row for
  * it reads "the flute grip is the first radial cut". Read the catalogue row
  * before writing a hint, and do not put a material in one unless the model's
- * declared slots demand it.
+ * declared slots demand it. When they DO, name it: the mill declares `wood`
+ * and `stainless`, the hint left the body open, the generator returned a black
+ * anodised one, and the critic then spent every round of the loop reporting a
+ * finish the kit had never claimed. A score cannot move under a mismatch of
+ * that size, which is what a plateau is for saying.
  */
 const HINT: Record<string, string> = {
   // --- medieval ---
@@ -116,7 +120,7 @@ const HINT: Record<string, string> = {
   'ceramic-vase': 'a plain glazed ceramic vase, empty, with no flowers in it',
   'coffee-mug': 'a plain glazed stoneware coffee mug with a loop handle, empty, seen so the handle is to one side',
   'wine-glass': 'an empty stemmed wine glass in clear glass',
-  'pepper-mill': 'a contemporary table pepper mill of current design: a straight cylindrical body, a flat top with a small knurled steel knob, a polished steel grinder collar at the base, and a band of VERTICAL machined flutes cut around the middle of the body for grip. The flutes run up and down, not around',
+  'pepper-mill': 'a contemporary table pepper mill of current design: a straight cylindrical body in pale natural wood, a flat wooden top with a small knurled steel knob, a polished steel grinder collar at the base, and a band of VERTICAL machined flutes cut around the middle of the body for grip. The flutes run up and down, not around',
   'stockpot': 'a stainless steel lidded stockpot with two riveted side handles',
   'traffic-cone': 'an orange PVC traffic cone with a white reflective band, on its square base',
 

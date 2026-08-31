@@ -43,3 +43,7 @@ references/
 wrangler.toml
 wrangler.json
 wrangler.jsonc
+
+# The critic writes one verdict per model here. Regenerated, and the working
+# copies of the two images it compares live under it.
+critiques/

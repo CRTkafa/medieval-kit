@@ -72,13 +72,15 @@ export const pepperMillDefaults: PepperMillConfig = {
   // this one is a tube and that one was a baluster.
   baseRadius: 0.0315,
   bandDepth: 0.075,
-  bandAt: 0.55,
-  // The reference carries about forty and forty is wrong here, which is the
-  // difference between copying a photograph and reading one. At prop scale a
-  // mill is a hundred and fifty pixels wide, half of them facing the camera:
-  // forty ribs is four pixels each and the band turns into a grey smear.
-  // Twenty-two is the same object at the size it is actually seen.
-  flutes: 22,
+  // 0.515 puts the top of the band 31% below the top of the tube, which is
+  // where the reference's is. Two rounds were spent moving this by feel and
+  // one measurement settled it.
+  bandAt: 0.515,
+  // 34. Twenty-two was an argument about prop scale that a critic counting
+  // ribs in the render disagreed with twice: it sees eighteen across the front
+  // against the reference's twenty-six. Reading a reference beats reasoning
+  // about one, and this is the number that came back from looking.
+  flutes: 34,
   segments: 40,
   seed: 23,
 }
@@ -113,12 +115,17 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       // covers the grinder housing, the tube runs to the seat, the cap disc
       // sits on the seat and the knob stands on the disc.
       const collarH = H * 0.12
-      const knobH = H * 0.042
+      // 0.9 of its own diameter tall, against 0.5 before: the critic could see
+      // a nut where the reference has a knob you can actually turn.
+      const knobH = H * 0.069
       const capDisc = H * 0.028
       const seat = H - knobH - capDisc
       const bodyH = seat
 
-      const bandHalf = bodyH * 0.24
+      // The band is 35% of the tube, not 48%. Measured by the critic against
+      // the reference twice; at 48% it swallows the plain wood either side of
+      // it and the critic's word for that was "oversized".
+      const bandHalf = bodyH * 0.175
       const bandLo = bodyH * bandAt - bandHalf
       const bandHi = bodyH * bandAt + bandHalf
       const recessR = R * (1 - bandDepth)
@@ -133,10 +140,12 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
         { y: bandLo, radius: recessR },
         { y: bandHi, radius: recessR },
         { y: bandHi + 0.0008, radius: R },
-        { y: bodyH - 0.0012, radius: R },
+        { y: bodyH - 0.0006, radius: R },
         // The top edge is broken, not sharp: a tube cut off square catches a
-        // white line along its rim from every angle.
-        { y: bodyH, radius: R * 0.988 },
+        // white line along its rim from every angle. Small, though: at 1.2 mm
+        // this and the cap's own break read together as one soft roll taking
+        // a tenth of the diameter, against the reference's sharp 4%.
+        { y: bodyH, radius: R * 0.994 },
       ]
 
       const woodBase = tint('wood', jitter(random, 0.02))
@@ -153,8 +162,13 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       // own flats. Under, not level: a revolve of `segments` sides has its
       // faces at R·cos(pi/segments), and a rib reaching exactly that height
       // fights the flat it is sitting on.
-      const inscribed = Math.cos(Math.PI / segments)
-      const ribOuter = R * inscribed * 0.99
+      // The ribs come back out to the FULL silhouette, not to just under it.
+      // Keeping them a shade inside was meant to leave the outline a clean
+      // cylinder; what it actually did was cut a visible waist into the mill,
+      // and the critic's word for it was that the band "breaks the intended
+      // clean cylindrical silhouette". On the reference the ribs ARE the
+      // outline through the band.
+      const ribOuter = R * 1.002
       const ribDepth = Math.max(0.0004, ribOuter - recessR)
       // Nearly touching: the grip reads from the narrow dark gaps between the
       // ribs, not from the ribs themselves.
@@ -219,8 +233,8 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       const discLevels: Level[] = [
         { y: 0, radius: R * 0.985 },
         { y: 0.0008, radius: R },
-        { y: capDisc - 0.0012, radius: R },
-        { y: capDisc, radius: R * 0.988 },
+        { y: capDisc - 0.0006, radius: R },
+        { y: capDisc, radius: R * 0.994 },
       ]
       const disc = latheGeometry(discLevels, segments, [0, 0, 0], tint('wood', jitter(random, 0.02)), {
         colourTop: tint('wood', 0.05),
@@ -232,7 +246,10 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       // enough to read as knurling rather than as a nut, and it is the only
       // thing on the mill whose rotation is visible.
       const knobR = R * 0.28
-      const knurl = Math.max(10, Math.round(knobR / R * 40))
+      // A knurl, not a nut. At eleven sides the critic counted eight and read
+      // no knurl at all: a knob that small needs its facets fine enough that
+      // the eye takes them as texture rather than counting them.
+      const knurl = Math.max(20, Math.round(knobR / R * 90))
       const knobLevels: Level[] = [
         { y: capDisc - 0.002, radius: knobR * 0.55 },
         { y: capDisc + 0.0015, radius: knobR },
@@ -240,11 +257,44 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
         { y: capDisc + knobH * 0.93, radius: knobR * 0.86 },
         { y: capDisc + knobH, radius: knobR * 0.62 },
       ]
-      const knob = latheGeometry(
+      const knobPieces: BufferGeometry[] = [latheGeometry(
         knobLevels, knurl, [0, 0, 0],
         tint('stainless', jitter(random, 0.02), 0.5),
         { colourTop: tint('stainless', 0.05, 0.5), capBottom: true, capTop: true },
-      )
+      )]
+
+      /**
+       * The knurl, as geometry.
+       *
+       * Every round of the critique said the same thing about this knob and it
+       * was the only finding that never moved: no knurl. More facets did not
+       * fix it, because a facet count is not a texture — at this size the eye
+       * either sees teeth or it sees a smooth nut. So the teeth are real, made
+       * the same way the grip band is made, which is the whole argument for
+       * the mill being the kit's first radial cut: the technique scales from a
+       * 63 mm tube down to a 17 mm knob without changing.
+       */
+      const teeth = 20
+      const toothR = knobR * 0.055
+      for (let i = 0; i < teeth; i += 1) {
+        const angle = (i / teeth) * Math.PI * 2
+        const tooth = chamferedBoxGeometry(
+          [toothR * 1.5, toothR * 2],
+          [toothR * 1.5, toothR * 2],
+          knobH * 0.72,
+          toothR * 0.3,
+          [0, 0, 0],
+          tint('stainless', jitter(random, 0.02), 0.5),
+        )
+        tooth.rotateY(angle)
+        tooth.translate(
+          Math.sin(angle) * knobR,
+          capDisc + knobH * 0.42,
+          Math.cos(angle) * knobR,
+        )
+        knobPieces.push(tooth)
+      }
+      const knob = mergeColoured(knobPieces)
 
       // 40 degrees: the revolve smooths, and the collar step, the recess
       // shoulders, the rib chamfers and the knurl facets all turn harder than
@@ -261,7 +311,7 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
         cap: {
           slot: 'wood' as const,
           geometry: smoothNormals(mergeColoured([disc]), 40),
-          extras: [{ slot: 'stainless' as const, geometry: smoothNormals(mergeColoured([knob]), 30) }],
+          extras: [{ slot: 'stainless' as const, geometry: smoothNormals(knob, 30) }],
           origin: [0, seat, 0] as const,
         },
       }
