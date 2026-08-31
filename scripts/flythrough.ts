@@ -58,23 +58,23 @@ const ground = groundHex ? toLinear(groundHex) : undefined
  * it has to be able to hold it.
  */
 const EYE = new CatmullRomCurve3([
-  new Vector3(5.2, 1.75, 5.6),
-  new Vector3(3.3, 1.5, 4.0),
-  new Vector3(1.0, 1.35, 2.2),
-  new Vector3(-0.9, 1.5, 0.4),
-  new Vector3(-1.7, 2.1, -1.0),
-  new Vector3(-0.6, 3.4, 1.2),
-  new Vector3(1.8, 5.2, 6.0),
+  new Vector3(7.0, 1.8, 8.2),
+  new Vector3(5.2, 1.6, 5.6),
+  new Vector3(3.8, 1.45, 3.4),
+  new Vector3(3.0, 1.55, 1.2),
+  new Vector3(2.6, 2.2, -0.6),
+  new Vector3(2.4, 3.6, 1.8),
+  new Vector3(2.0, 5.6, 7.0),
 ], false, 'catmullrom', 0.5)
 
 const AIM = new CatmullRomCurve3([
-  new Vector3(0.6, 1.2, -0.4),
-  new Vector3(-1.0, 1.1, -0.6),
-  new Vector3(-0.6, 1.1, -1.6),
-  new Vector3(0.3, 1.1, -2.4),
-  new Vector3(-0.2, 1.6, -3.6),
-  new Vector3(-0.3, 2.2, -4.6),
-  new Vector3(-0.35, 2.4, -5.0),
+  new Vector3(0.8, 1.3, 0.2),
+  new Vector3(-0.4, 1.2, -1.2),
+  new Vector3(-1.8, 1.2, -2.2),
+  new Vector3(-3.0, 1.3, -3.0),
+  new Vector3(-2.0, 1.8, -4.2),
+  new Vector3(-0.8, 2.3, -5.0),
+  new Vector3(-0.3, 2.7, -5.4),
 ], false, 'catmullrom', 0.5)
 
 /**
@@ -96,7 +96,8 @@ const square = buildSquare()
 console.log(`square: ${square.root.children.length} models, ${square.height.toFixed(2)} m tall`)
 await mkdir(outDir, { recursive: true })
 
-const shot = { size: width, tall: height, ground, floor: 0, height: square.height }
+const underlay = gather(square.ground)
+const shot = { size: width, tall: height, ground, floor: 0, height: square.height, underlay }
 
 if (has('plan')) {
   // Straight down, to check the layout rather than to look at it. The up

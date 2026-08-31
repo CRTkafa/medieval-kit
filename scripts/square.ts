@@ -21,6 +21,8 @@ import { Box3, Group, Vector3 } from 'three/webgpu'
 
 import { FACTORIES } from '@/catalog.ts'
 
+import { buildGround, buildHouses } from './scenery.ts'
+
 export interface Placement {
   readonly id: string
   /** Footprint centre, in metres. */
@@ -54,8 +56,9 @@ export const SQUARE: readonly Placement[] = [
   { id: 'log-pile', at: [-3.75, -5.93], yaw: 0.3 },
   { id: 'hay-bale', at: [3.45, -6.08], yaw: -0.2 },
   { id: 'hay-bale', at: [4.28, -5.38], yaw: 0.4 },
-  { id: 'wooden-fence', at: [-6.15, -5.77] },
-  { id: 'wooden-fence', at: [5.93, -5.93] },
+  { id: 'wooden-fence', at: [-3.8, -13.2], yaw: 0.06 },
+  { id: 'wooden-fence', at: [-1.0, -13.25] },
+  { id: 'wooden-fence', at: [1.8, -13.2], yaw: -0.05 },
 
   // --- The forge, on the left ----------------------------------------------
   { id: 'forge-hearth', at: [-4.8, -2.81], yaw: 0.42 },
@@ -105,8 +108,18 @@ export const SQUARE: readonly Placement[] = [
   { id: 'wooden-pitchfork', at: [5.4, 0.86], yaw: -0.1, lean: [0.16, -0.08] },
   { id: 'wooden-stool', at: [1.95, 1.17], yaw: 0.5 },
   { id: 'pitch-torch', at: [1.5, 0.16] },
-  { id: 'wooden-fence', at: [-6.45, 1.72], yaw: Math.PI / 2 },
-  { id: 'wooden-fence', at: [6.45, 1.87], yaw: Math.PI / 2 },
+  { id: 'wooden-fence', at: [-13.0, 0.8], yaw: Math.PI / 2 },
+  { id: 'wooden-fence', at: [-13.0, -6.2], yaw: Math.PI / 2 + 0.05 },
+  { id: 'wooden-fence', at: [13.4, 1.4], yaw: Math.PI / 2 },
+  { id: 'wooden-fence', at: [13.4, -5.4], yaw: Math.PI / 2 - 0.05 },
+  // Foreground, so the near half of the frame is not bare floor. A camera at
+  // standing height sees a lot of ground and nothing else unless something is
+  // close enough to pass it.
+  { id: 'wooden-crate', at: [4.6, 4.2], yaw: -0.3 },
+  { id: 'wooden-barrel', at: [5.6, 3.4] },
+  { id: 'linen-sack', at: [4.0, 4.7], yaw: 0.5 },
+  { id: 'hay-bale', at: [-8.6, 2.6], yaw: 0.3 },
+  { id: 'pitch-torch', at: [-2.2, -6.0] },
 ]
 
 /**
@@ -128,6 +141,14 @@ const WAKE: Readonly<Record<string, (actions: Record<string, (arg?: unknown) => 
 
 export interface Square {
   readonly root: Group
+  /**
+   * The floor, kept out of `root` so it can be drawn before the shadows.
+   *
+   * A ground plane rasterised with everything else paints over every contact
+   * shadow in the picture, and being on the floor itself, darkens itself from
+   * edge to edge.
+   */
+  readonly ground: Group
   /** Called once per frame, so the sails turn and the forge burns. */
   readonly update: (seconds: number) => void
   readonly dispose: () => void
@@ -164,11 +185,15 @@ export function buildSquare(layout: readonly Placement[] = SQUARE): Square {
     built.push(model)
   }
 
+  root.add(buildHouses())
   root.updateMatrixWorld(true)
+  const ground = buildGround()
+  ground.updateMatrixWorld(true)
   const height = new Box3().setFromObject(root).getSize(new Vector3()).y
 
   return {
     root,
+    ground,
     height,
     update: (seconds: number) => {
       for (const model of built) model.update?.(seconds)

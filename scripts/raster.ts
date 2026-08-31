@@ -643,12 +643,25 @@ export function renderFrom(
     readonly floor?: number
     /** Tallest thing in the scene, which is what the shadow falls off over. */
     readonly height: number
+    /**
+     * Drawn first, and not counted as something that casts.
+     *
+     * The contact shadow is painted onto the frame BEFORE the triangles are,
+     * so it only ever showed because the background was all that was under it.
+     * Give the scene a ground and the ground rasterises straight over every
+     * shadow in the picture. Worse, a ground plane sitting on the floor is
+     * itself within reach of the falloff, so it darkens itself from edge to
+     * edge. Both go away if the ground is laid down first and then shadowed:
+     * underlay, shadow, everything else.
+     */
+    readonly underlay?: Gathered
   },
 ): Frame {
-  const { size, tall = size, ground, floor = 0, height } = options
+  const { size, tall = size, ground, floor = 0, height, underlay } = options
   const frame = newFrame(size, tall, ground)
   camera.updateMatrixWorld(true)
   camera.updateProjectionMatrix()
+  if (underlay) raster(frame, camera, underlay)
   contactShadow(frame, camera, triangles, floor, height)
   raster(frame, camera, triangles)
   return frame

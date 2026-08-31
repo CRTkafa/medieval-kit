@@ -186,11 +186,27 @@ bun scripts/flythrough.ts --still 0.35            # one frame, to look at
 bun scripts/flythrough.ts --seconds 24 --fps 30   # the sequence, into frames/
 ```
 
-`scripts/square.ts` is the layout: 47 placements covering every model in the
+`scripts/square.ts` is the layout: 56 placements covering every model in the
 kit, each one authored rather than packed. The anvil stands beside the forge,
 the tankards are on the tavern table, the tools lean where somebody left them
 and the mill is at the far end. Anything with an action is switched on first,
 so the sails turn, the forge burns and the sign swings while the camera moves.
+
+`scripts/scenery.ts` is the part the kit does not contain, and it is kept in
+its own file so the line stays visible: packed earth underfoot, and eight
+timber-framed houses making a frontage for the square to happen against. The
+first cut had neither, and it was the whole problem with it. Every object stood
+in its own patch of the same grey the sky was, so nothing was standing on
+anything, and the fences enclosed nothing because a single 2.7 m rail alone in
+the open encloses nothing. A floor and a wall are what turn a correct
+arrangement into a place.
+
+Two things that only show up once there is a floor. The ground has to be drawn
+BEFORE the contact shadows, or it paints straight over every one of them, and
+it has to be excluded from casting, or a plane lying on the floor darkens
+itself from edge to edge. And its colour has to vary per vertex rather than per
+face: a flat plane has no shading to break up its own grid, so a colour per
+cell is a chessboard and nothing else.
 
 The camera runs on two splines, one for where it is and one for what it is
 looking at, because a camera that only looks along its own path can never show
