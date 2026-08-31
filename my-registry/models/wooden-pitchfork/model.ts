@@ -79,7 +79,16 @@ export function createModel(overrides: Partial<WoodenPitchforkConfig> = {}) {
       const pieces: BufferGeometry[] = []
 
       // Cross forging: flat iron tying the tines to the socket. Thins towards the ends.
-      const crossWidth = config.shaftRadius * 2.6 * count
+      //
+      // Sized FROM the tine roots so it cannot overhang them. It was
+      // `shaftRadius * 2.6 * count`, which has nothing to do with where the
+      // tines actually sit: at four tines the bar came to 229 mm across while
+      // the outermost root sat 55 mm from the centre, so 59 mm of iron stuck out
+      // past the last tine at each end and finished in a flat slab holding
+      // nothing. The bar now ends just outboard of the outer roots, which is
+      // where a forged head ends.
+      const rootHalf = config.shaftRadius * 2.5
+      const crossWidth = (rootHalf + config.shaftRadius * 1.3) * 2
       pieces.push(chamferedBoxGeometry(
         [crossWidth, config.shaftRadius * 2],
         [crossWidth * 0.94, config.shaftRadius * 1.3],
@@ -119,7 +128,7 @@ export function createModel(overrides: Partial<WoodenPitchforkConfig> = {}) {
         // stops it from looking "manufactured".
         tine.rotateZ(-t * config.spread + jitter(random, 0.02))
         tine.rotateX(jitter(random, 0.025))
-        tine.translate(t * config.shaftRadius * 2.5, base + config.length * 0.008, 0)
+        tine.translate(t * rootHalf, base + config.length * 0.008, 0)
         pieces.push(tine)
       }
 

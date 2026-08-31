@@ -1,7 +1,8 @@
 /**
  * @medieval-kit/tavern-sign
  *
- * A wooden board swinging from the end of a forged iron bracket fixed to a wall.
+ * A wooden board swinging on chains from a forged iron arm on a freestanding
+ * timber post.
  *
  * Since literacy was rare, a period sign carried a PICTURE, not TEXT: a garland
  * meant the vintner, a boot the cobbler, a mortar the apothecary. So the model
@@ -13,6 +14,48 @@
  * is not gravity but the friction of two rings. So a sign at rest always hangs
  * STRAIGHT, but once pushed it oscillates for a long time. Put next to the
  * bell's hard, fast damping, the difference between the two reads immediately.
+ *
+ * DEAD ENDS, so far four rounds of them:
+ *   1. The bracket was bolted to a wall the model did not contain, so the
+ *      whole sign floated. It became a standing post.
+ *   2. The brace and the curl were boxes put through `bendGeometry`, which
+ *      shears a two-level box instead of bending it; both were replaced with
+ *      `arcBarGeometry`.
+ *   3. The post was a stick. A blind critique scored the model 60 and put
+ *      almost all of the loss below the sign; the cross base, heavy post, cap,
+ *      collars and knee brace date from that pass, as does the grey-washed oak
+ *      (the `oak` helper below, with its lightness floor against the
+ *      renderer's gamma crush).
+ *   4. A second blind critique (66) found the pass-3 fixes overshot or
+ *      half-done, plus real modelling bugs:
+ *      - The battens were built 8 mm BEHIND the board's back face — floating,
+ *        and from half the angles they read as a stray strap lying on the
+ *        front. Battens are gone; the planks now touch at a chamfer-groove
+ *        seam instead.
+ *      - The planks were wedge-tapered through their thickness, so the board
+ *        read as two splayed slabs. They are straight now.
+ *      - The chain lugs were thicker than the board and ran down its face.
+ *        Replaced with eye rings half-buried in the board's top edge, and the
+ *        chain stops above the edge so no link crosses the face.
+ *      - The cone cap overhung the post like a roof; now a slim pyramid whose
+ *        base matches the post's cross-section (about half a post-width tall).
+ *      - The two collars were black blocks a third of a post-width tall,
+ *        stacked into one collar; now two thin straps (about an eighth), one
+ *        at the arm, one up where the tie rod anchors, projecting only a few
+ *        percent past the post faces — which also terminates the rod's top.
+ *      - The bearer was a stub; it is now a real through-timber about 0.8
+ *        post-widths across reaching 55% of the arm's length, the arm seats
+ *        flat on its top face, and the knee brace lands inside its underside.
+ *      - The hexagonal ring "scroll" is now a C-scroll volute: a 255-degree
+ *        arc rising off the arm at the tie-rod junction, its free end closed
+ *        by a forged ball so nothing terminates in the open.
+ *      - The post dropped from 1:9 to 1:13 width-to-height (the reference is
+ *        nearer 1:14), the board widened to 1.26:1 with two planks, and every
+ *        board corner carries the hanging-sign cusp: the edges step in before
+ *        the corner and a diagonal tab pokes back out to the corner point.
+ *      - `plankCount` changed MEANING: it now counts the SEAMS, and the board
+ *        carries plankCount + 1 planks. Do not change it back to a plank
+ *        count with a default of 2.
  */
 import type { BufferGeometry } from 'three'
 
@@ -33,13 +76,13 @@ export interface TavernSignConfig {
   readonly width: number
   /** Board height (metres). */
   readonly height: number
-  /** How far the bracket projects from the wall (metres). */
+  /** How far the bracket projects from the post (metres). */
   readonly reach: number
   /** Height of the post the arm is bolted to (metres). */
   readonly postHeight: number
   /** Length of the hanging chain (metres). */
   readonly drop: number
-  /** Number of planks. */
+  /** Seams between the boards: the sign carries plankCount + 1 planks. */
   readonly plankCount: number
   /** How fast the swing damps out. */
   readonly damping: number
@@ -47,15 +90,21 @@ export interface TavernSignConfig {
 }
 
 export const tavernSignDefaults: TavernSignConfig = {
-  width: 0.72,
-  height: 0.52,
-  reach: 0.62,
+  // 1.26:1, wider than tall — the reference board is about 1.2:1. The old
+  // 0.72 x 0.52 read as roughly square once the corner cusps came off.
+  width: 0.78,
+  height: 0.62,
+  // About 1.5 board widths. At 0.62 the board's inner planks ended flush
+  // against the post face and read as clipped by it; now the inner edge
+  // clears the post comfortably.
+  reach: 1.15,
   postHeight: 2.15,
   // Long enough to see the chain. At 0.12 the board hung almost against the
   // bracket and the five links that connect them were a smudge; the chain is
   // half of what makes a hanging sign read as hanging.
-  drop: 0.28,
-  plankCount: 3,
+  drop: 0.3,
+  // One seam: two planks, which is what the reference board is made of.
+  plankCount: 1,
   damping: 0.42,
   seed: 73,
 }
@@ -83,127 +132,227 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
 
     build: ({ config, random }) => {
       const tint = createTinter(random)
+      // Decades outdoors: rain leaches the tannin out of oak and leaves it
+      // grey-brown. The palette's oak is fresh-sawn; every timber tint here is
+      // pulled toward grey. The critique called the untreated colour
+      // "bright orange-tan" and it was right.
+      const oak = (lift = 0, spread = 1) => {
+        const c = tint('oak', lift, spread)
+        c.offsetHSL(0.004, -0.17, -0.025)
+        // Floor the lightness. The renderer's gamma crushes this palette to
+        // pure black somewhere around L 0.18, and the tinter's own jitter can
+        // land a piece there even from a mild lift -- that is what painted the
+        // old battens (and one unlucky foot per seed) as black plastic.
+        const hsl = { h: 0, s: 0, l: 0 }
+        c.getHSL(hsl)
+        if (hsl.l < 0.19) c.setHSL(hsl.h, hsl.s, 0.19)
+        return c
+      }
       const bar = config.reach * 0.035
-      // Axis of rotation: the line where the chains leave the bracket. The
-      // board and the chains are written RELATIVE to this point.
+      // A slender structural timber: about 1:13 width to height. The first
+      // heavy-post pass used 1:9 and the whole sign came out stocky; the
+      // reference is nearer 1:14.
+      const w = config.postHeight / 13
+      // Axis of rotation: the line where the chains leave the arm. The board
+      // and the chains are written RELATIVE to this point.
       const pivotY = config.height * 0.5 + config.drop
       const armY = pivotY
-      // Where the two chains meet the arm, measured ALONG it.
-      const hangA = config.reach * 0.34
-      const hangB = config.reach * 0.92
+      // The post continues well past the ironwork before the cap, the way the
+      // reference does, and the tie rod needs the vertical run.
+      const postTop = armY + w * 1.6
+      const ground = postTop - config.postHeight
+      // Board centre along the arm, and where the two chains meet it.
+      const zc = config.reach * 0.72
+      const hangA = zc - config.width * 0.3
+      const hangB = zc + config.width * 0.3
 
-      // --- Bracket -----------------------------------------------------------
-      // Sits against the wall at Z zero and reaches out along +Z.
-      // --- Post ------------------------------------------------------------
-      // The bracket used to be bolted to a wall the model did not contain, so
-      // the whole sign floated in the air. A standing signpost is
-      // period-correct — plenty of inn signs were on posts rather than walls —
-      // and it is the version that can actually be dropped into a scene,
-      // because it holds itself up.
-      // A signpost is a structural timber, not a stake. At reach*0.1 it came
-      // out 62 mm square carrying a 0.72 m board two metres up -- thinner than
-      // the board is thick, and part of the same across-the-kit habit of
-      // under-sizing timber that the bench, the table and the fence all share.
-      const postWidth = config.reach * 0.19
-      const postTop = pivotY + config.reach * 0.1
-      const postBase = postTop - config.postHeight
+      // --- Post and base -----------------------------------------------------
       const timber: BufferGeometry[] = [chamferedBoxGeometry(
-        [postWidth, postWidth],
-        [postWidth * 0.82, postWidth * 0.82],
+        [w, w],
+        [w * 0.92, w * 0.92],
         config.postHeight,
-        postWidth * 0.12,
-        [0, (postTop + postBase) / 2, 0],
-        tint('oak', -0.06),
-        tint('oak', 0.04),
+        w * 0.08,
+        // The post's foot ends INSIDE the plinth, not on the ground: two
+        // ground-touching interpenetrating solids would share coplanar
+        // down-facing faces.
+        [0, (postTop + ground + w * 0.4) / 2, 0],
+        oak(-0.03),
+        oak(0.03),
       )]
-      // Soil mound at the foot, the same device the fence uses: it explains how
-      // the post stays upright and hides where it meets the ground.
-      const soil = tint('oak', -0.2)
-      soil.offsetHSL(0, -0.28, 0)
+      // Cap: a slim four-sided pyramid whose base matches the post's
+      // cross-section, about half a post-width tall. The old cone overhung the
+      // post on every side and read as a fence-post roof.
+      const capH = w * 0.55
       timber.push(taperedBoxGeometry(
-        [postWidth * 3.2, postWidth * 3.2],
-        [postWidth * 1.6, postWidth * 1.6],
-        postWidth * 1.1,
-        [0, postBase + postWidth * 0.4, 0],
-        soil,
+        [w * 0.945, w * 0.945],
+        [w * 0.06, w * 0.06],
+        capH,
+        [0, postTop - 0.02 + capH / 2, 0],
+        oak(-0.02),
+        oak(-0.05),
       ))
 
-      const iron: BufferGeometry[] = []
-      iron.push(boxGeometry(
-        [bar * 4.4, config.height * 0.9, bar * 1.6],
-        [0, armY - config.height * 0.1, bar * 0.4],
-        tint('iron', -0.05, 0.7),
-      ))
-      // The horizontal arm.
-      iron.push(boxGeometry(
-        [bar * 1.5, bar * 1.7, config.reach],
-        [0, armY + bar * 0.5, config.reach / 2],
-        tint('iron', 0.02, 0.7),
-      ))
-      // Brace: the curved support tying the arm back to the wall. Without it
-      // the arm looks like it is hanging in the air and the eye's question of
-      // "what is holding this up" goes unanswered.
-      // A real quarter-arc, not a sheared box.
+      // The cross base: a centre plinth, four feet radiating on the ground
+      // axes, four angled struts. This is the bottom third of the reference.
       //
-      // This and the curl below were both `boxGeometry` put through
-      // `bendGeometry`, and a box has two levels in Y. `bendGeometry` cannot
-      // bend two levels -- it shears them -- so neither piece was ever a
-      // curve. The sheared curl is what pushed the bracket's top to 0.579
-      // while the post it is bolted to ends at 0.442: an arm standing above
-      // its own post, which is why the sign read as broken rather than as
-      // ironwork.
-      //
-      // `arcBarGeometry` sweeps a real arc. Its ends are placed rather than
-      // corrected: one inside the post, one inside the arm.
-      const braceRadius = config.reach * 0.45
+      // Ground contact is divided so no two down-facing faces overlap in the
+      // ground plane: the FEET stand on the ground at four disjoint patches,
+      // and the plinth they all embed into rides 6 mm up, hidden behind them.
+      const footH = w * 0.75
+      const footW = w * 0.88
+      const rIn = w * 0.55   // feet start inside the plinth
+      const rOut = w * 2.3   // and reach over two post-widths out
+      timber.push(chamferedBoxGeometry(
+        [w * 1.55, w * 1.55],
+        [w * 1.42, w * 1.42],
+        footH * 1.2,
+        w * 0.06,
+        [0, ground + 0.006 + footH * 0.6, 0],
+        oak(-0.02),
+      ))
+      for (const [axis, sign] of [['x', 1], ['x', -1], ['z', 1], ['z', -1]] as const) {
+        const len = rOut - rIn
+        const foot = chamferedBoxGeometry(
+          axis === 'x' ? [footH, footW] : [footW, footH],
+          axis === 'x' ? [footH * 0.88, footW * 0.88] : [footW * 0.88, footH * 0.88],
+          len,
+          footH * 0.14,
+          [0, 0, 0],
+          oak(jitter(random, 0.025), 0.6),
+        )
+        // Built standing, then laid over so the chamfered end points outward.
+        if (axis === 'x') foot.rotateZ(-sign * Math.PI / 2)
+        else foot.rotateX(sign * Math.PI / 2)
+        const mid = rIn + len / 2
+        foot.translate(axis === 'x' ? sign * mid : 0, ground + footH / 2, axis === 'z' ? sign * mid : 0)
+        timber.push(foot)
+
+        // Strut: from a fifth of the way up the post down to the outer end of
+        // this foot. Both end caps terminate inside their solids.
+        const s = w * 0.38
+        const top = { r: w * 0.3, y: ground + config.postHeight * 0.19 }
+        const bot = { r: rOut - w * 0.4, y: ground + footH * 0.5 }
+        const run = bot.r - top.r
+        const rise = top.y - bot.y
+        const len2 = Math.hypot(run, rise)
+        const lean = Math.atan2(-run, rise)
+        const strut = boxGeometry([s * 0.92, len2, s], [0, 0, 0], oak(jitter(random, 0.02), 0.6))
+        if (axis === 'x') strut.rotateZ(-sign * lean)
+        else strut.rotateX(sign * lean)
+        strut.translate(
+          axis === 'x' ? sign * (top.r + bot.r) / 2 : 0,
+          (top.y + bot.y) / 2,
+          axis === 'z' ? sign * (top.r + bot.r) / 2 : 0,
+        )
+        timber.push(strut)
+      }
+
+      // Bearer: the through-timber the arm actually rests on. About 0.8
+      // post-widths across, poking out a little behind the post and reaching
+      // 55% of the arm's length in front; the arm seats flat on its top face.
+      const armH = bar * 1.5
+      const armW = bar * 0.9
+      const bearerW = w * 0.8
+      const bearerH = w * 0.68
+      const bearerTop = armY - armH / 2 + 0.004
+      const bearerY = bearerTop - bearerH / 2
+      const backZ = -w * 0.9
+      // Just short of the inner chain: at 0.55 reach the bearer's end swallowed
+      // the inner chain's top link.
+      const frontZ = config.reach * 0.47
+      const bearer = chamferedBoxGeometry(
+        [bearerW, bearerH],
+        [bearerW * 0.96, bearerH * 0.96],
+        frontZ - backZ,
+        w * 0.05,
+        [0, 0, 0],
+        oak(-0.02),
+      )
+      bearer.rotateX(Math.PI / 2) // stand it on its side: length now along +Z
+      bearer.translate(0, bearerY, (frontZ + backZ) / 2)
+      timber.push(bearer)
+      // The knee brace: a quarter arc from the post face out to the bearer's
+      // underside. One end cap inside the post, the other rises into the
+      // bearer; nothing terminates in the open.
+      const braceR = Math.max(w * 0.9, Math.min(w * 2.1, frontZ - w * 0.3))
       const brace = arcBarGeometry(
-        braceRadius, bar * 1.2, -Math.PI / 2, 0, 7, [0, 0, 0],
-        tint('iron', -0.02, 0.7),
+        braceR, w * 0.32, -Math.PI / 2, 0, 6, [0, 0, 0],
+        oak(0.02, 0.5),
       )
       // Built in XY; -90 degrees about Y carries +X into +Z, standing the arc
       // in the plane the bracket occupies.
       brace.rotateY(-Math.PI / 2)
-      brace.translate(0, armY + bar * 0.5, bar)
-      iron.push(brace)
-      // The curl at the end of the arm: the signature of forged iron.
-      const curlRadius = config.reach * 0.11
-      const curl = arcBarGeometry(
-        curlRadius, bar * 0.9, -2.6, 1.9, 9, [0, 0, 0],
-        tint('iron', 0.06, 0.7),
+      brace.translate(0, bearerY - bearerH / 2 + 0.02, 0)
+      timber.push(brace)
+
+      // --- Ironwork ----------------------------------------------------------
+      const iron: BufferGeometry[] = []
+      // The arm: a flat strap seated on the bearer's top face, its back end
+      // buried in the post (it stops short of the post's back face).
+      iron.push(boxGeometry(
+        [armW, armH, config.reach + w * 0.4],
+        [0, armY, (config.reach - w * 0.4) / 2],
+        tint('iron', 0.02, 0.7),
+      ))
+      // Forged diamond finial at the tip, slightly proud of the bar the way a
+      // hammered spear-end spreads.
+      const tipL = w * 0.5
+      const tip = taperedBoxGeometry(
+        [armW * 1.2, armH * 1.35],
+        [armW * 0.12, armH * 0.12],
+        tipL,
+        [0, 0, 0],
+        tint('iron', 0.04, 0.7),
       )
-      curl.rotateY(-Math.PI / 2)
-      // Hung under the end of the arm, where a smith finishes the bar.
-      curl.translate(0, armY + bar * 0.5 - curlRadius, config.reach - bar)
-      iron.push(curl)
+      tip.rotateX(Math.PI / 2) // point it along +Z
+      tip.translate(0, armY, config.reach - 0.01 + tipL / 2)
+      iron.push(tip)
+      // Two thin straps around the post — about an eighth of a post-width
+      // tall, projecting a few percent past the faces. One clamps the arm
+      // where it enters the post, one up top anchors the tie rod.
+      const bandH = bar * 0.65
+      const rodTopY = postTop - w * 0.35
+      iron.push(boxGeometry([w, bandH, w], [0, rodTopY, 0], tint('iron', -0.04, 0.7)))
+      iron.push(boxGeometry([w, bandH * 1.1, w], [0, armY, 0], tint('iron', -0.06, 0.7)))
+      // The shallow diagonal tie rod, from the upper strap down into the arm
+      // at the scroll junction.
+      const scrollZ = config.reach * 0.8
+      {
+        const t = { y: rodTopY, z: w * 0.28 }
+        const b = { y: armY + armH * 0.2, z: scrollZ }
+        const len = Math.hypot(t.y - b.y, b.z - t.z)
+        const rod = boxGeometry([bar * 0.55, len, bar * 0.55], [0, 0, 0], tint('iron', 0, 0.7))
+        // atan2 of (dz, dy) ALONG the rod, top to bottom: getting the y term
+        // backwards mirrors the slope and the rod climbs into free air past
+        // the arm instead of dropping from the post top onto it.
+        rod.rotateX(Math.atan2(b.z - t.z, b.y - t.y))
+        rod.translate(0, (t.y + b.y) / 2, (t.z + b.z) / 2)
+        iron.push(rod)
+      }
+      // The C-scroll volute where the rod meets the arm: a 255-degree arc
+      // rising off the arm and curling back over itself. Its lower end is
+      // buried in the arm; its free end is closed by a forged ball, so neither
+      // end terminates in the open. The old closed hexagonal ring read as a
+      // washer, not a scroll.
+      const rS = w * 0.32
+      const scroll = arcBarGeometry(
+        rS, bar * 0.6, -Math.PI * 0.44, Math.PI * 0.97, 8, [0, 0, 0],
+        tint('iron', 0.05, 0.7),
+      )
+      scroll.rotateY(-Math.PI / 2)
+      scroll.translate(0, armY + rS * 0.9, scrollZ)
+      iron.push(scroll)
+      iron.push(boxGeometry(
+        [bar * 1.1, bar * 1.1, bar * 1.1],
+        [0, armY + rS * 0.99, scrollZ - rS],
+        tint('iron', 0.02, 0.7),
+      ))
 
-      // No cross-bar. The chains hang from the ARM.
-      //
-      // The board used to hang across the arm rather than along it -- its width
-      // ran in X while the arm projected in Z -- so the sign stuck out sideways
-      // from the end of the bracket. That is not how an inn sign hangs: the arm
-      // comes out from the post and the board hangs UNDER it, in line with it,
-      // so it faces the road on both sides and can be read walking past.
-      //
-      // Once the board is turned the right way its two chains hang from two
-      // points along the arm, and the arm is the cross-bar. The extra piece
-      // that used to be needed to reach chains set either side of a
-      // centre-line bar is not needed at all.
-
-      // --- Chains ----------------------------------------------------------------
+      // --- Chains ------------------------------------------------------------
       // They have to swing TOGETHER with the board, hence the board's `extras`
       // body. Were they a separate part, the chain would stay bolt upright
       // while the board swung.
       //
-      // The link COUNT is derived from the drop, not fixed. It used to be three
-      // links whose radius scaled with `config.drop`, which is scale-invariant
-      // in the worst way: the spacing between links was always 0.5·drop while
-      // their diameter was always 0.32·drop, so the chain never actually
-      // interlocked at any setting. At the default drop the gap was small
-      // enough that nothing caught it; at the top of the slider the board came
-      // off the bracket completely.
-      //
-      // Now the link is sized from the iron stock and enough of them are made
-      // to overlap across whatever drop is asked for.
       // The COUNT is fixed and the RADIUS is derived, not the other way round.
       // Deriving the count from `drop` guaranteed the links overlap, but it also
       // made the triangle count depend on a continuous slider — which meant the
@@ -212,68 +361,123 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
       // both properties: always interlocked, always the same topology.
       const linkCount = 5
       const linkRadius = Math.max(bar * 0.9, (config.drop / (linkCount - 1)) * 0.62)
+      const eyeR = linkRadius * 0.9
+      // The chain stops ABOVE the board's top edge; the eye ring bridges the
+      // last link to the board. Letting the last link reach the edge itself
+      // put its lower arc through the board's face from both sides.
+      const chainSpan = Math.max(0.01, config.drop - eyeR * 1.2)
       const links: BufferGeometry[] = []
       for (const side of [-1, 1]) {
-        const count = linkCount
-        for (let i = 0; i < count; i += 1) {
-          // The first link sits INSIDE the arm and the last inside the board's
-          // ear, so the chain is a real connection rather than two things at
-          // roughly the same height. Spacing the links evenly across the drop
-          // (the old `(i + 0.5) / count`) left the top link short of the arm by
-          // drop/6, which detached the entire board.
-          const y = -config.drop * (i / Math.max(1, count - 1))
-          const ring = bandGeometry(linkRadius, 0, bar * 0.6, bar * 0.35, 6,
+        const hangZ = side < 0 ? hangA - zc : hangB - zc
+        for (let i = 0; i < linkCount; i += 1) {
+          // The first link wraps the arm and the last threads the board's eye,
+          // so the chain is a real connection rather than two things at
+          // roughly the same height.
+          const y = -chainSpan * (i / (linkCount - 1))
+          const ring2 = bandGeometry(linkRadius, 0, bar * 0.6, bar * 0.35, 6,
             tint('iron', jitter(random, 0.05), 0.7), { inner: true })
-          // Each link is indexed a little differently about its own axis.
-          //
-          // The links are six-sided and they interlock, so consecutive ones
-          // share space; with every link built at the same phase their facets
-          // came out parallel and, where they overlapped, coplanar. Lengthening
-          // the drop made this visible because the links grew with it -- radius
-          // 0.0195 to 0.0434 -- and began to overlap in earnest. The offset is
-          // deterministic rather than random so the seeded stream is untouched,
-          // and a real chain does not index its links either.
-          ring.rotateY(i * 0.37 + side * 0.19)
+          // Each link is indexed a little differently about its own axis, so
+          // consecutive interlocking links never leave coplanar facets. The
+          // offset is deterministic so the seeded stream is untouched.
+          ring2.rotateY(i * 0.37 + side * 0.19)
           // Successive links must pass through at right angles — that is what a
           // chain is.
-          ring.rotateX(i % 2 === 0 ? Math.PI / 2 : 0)
-          ring.rotateZ(i % 2 === 0 ? 0 : Math.PI / 2)
-          ring.translate(0, y, side < 0 ? hangA - config.reach * 0.62 : hangB - config.reach * 0.62)
-          links.push(ring)
+          ring2.rotateX(i % 2 === 0 ? Math.PI / 2 : 0)
+          ring2.rotateZ(i % 2 === 0 ? 0 : Math.PI / 2)
+          ring2.translate(0, y, hangZ)
+          links.push(ring2)
         }
+        // The eye: a ring standing in the board's own plane, its lower half
+        // buried in the board's top edge, its upper half threading the last
+        // chain link. This replaces the old lugs, which were thicker than the
+        // board and ran down its face.
+        const eye = bandGeometry(eyeR, 0, bar * 0.55, bar * 0.35, 6,
+          tint('iron', 0.03, 0.7), { inner: true })
+        eye.rotateZ(Math.PI / 2)
+        eye.translate(0, -config.drop + eyeR * 0.35, hangZ)
+        links.push(eye)
       }
 
-      // --- Board -------------------------------------------------------------------
-      const planks = Math.max(1, Math.round(config.plankCount))
-      const plankHeight = config.height / planks
+      // --- Board -------------------------------------------------------------
+      // Two planks (by default) touching at a chamfer-groove seam, with the
+      // hanging-sign cusp cut into all four corners: the outer edges step in a
+      // tenth of the board width before the corner, and a diagonal tab pokes
+      // back out to the corner point, leaving a concave notch either side.
+      const W = config.width
+      const H = config.height
+      const t = Math.max(0.02, H * 0.05)
+      const planks = Math.max(1, Math.round(config.plankCount) + 1)
+      const plankH = H / planks
+      const n = Math.min(W * 0.09, plankH * 0.42)
+      const boardTop = -config.drop
+      // Half-width of the shadow gap either side of a plank seam. The seam is
+      // an actual groove: the planks pull back a hair and a darker strip sits
+      // recessed behind the gap, bridging them. Tint jitter alone was not
+      // enough — one seed put the two planks at the same value and the board
+      // read as a single slab.
+      const g = 0.002
       const board: BufferGeometry[] = []
       for (let i = 0; i < planks; i += 1) {
-        const y = -config.drop - config.height + plankHeight * (i + 0.5)
-        board.push(chamferedBoxGeometry(
-          [config.height * 0.055, config.width],
-          [config.height * 0.05, config.width * 0.997],
-          plankHeight * 0.94,
-          config.height * 0.012,
-          [0, y, 0],
-          tint('oak', jitter(random, 0.05)),
-        ))
-      }
-      // The two battens on the back: what holds the planks together. They go
-      // INTO the planks so that no two faces end up coplanar.
-      for (const side of [-1, 1]) {
-        board.push(boxGeometry(
-          [config.height * 0.045, config.height * 0.94, config.width * 0.07],
-          [-config.height * 0.045, -config.drop - config.height / 2, side * config.width * 0.36],
-          tint('oak', -0.09),
-        ))
-      }
-      // The two iron lugs joining the board to the chain.
-      for (const side of [-1, 1]) {
-        links.push(boxGeometry(
-          [bar * 1.4, config.drop * 0.4, bar * 1.2],
-          [0, -config.drop - config.drop * 0.06, side < 0 ? hangA - config.reach * 0.62 : hangB - config.reach * 0.62],
-          tint('iron', 0.04, 0.7),
-        ))
+        const y0 = boardTop - H + i * plankH
+        const y1 = y0 + plankH
+        const cutTop = i === planks - 1
+        const cutBottom = i === 0
+        // Alternate the planks light/dark on purpose so the seam always
+        // separates two visibly different boards, whatever the seed does.
+        const c = oak((i % 2 === 0 ? -0.055 : 0.05) + jitter(random, 0.012))
+        // Two boards cut from two trees: the light plank is warmer as well as
+        // lighter, so the seam separates two visibly different timbers.
+        if (i % 2 === 1) c.offsetHSL(0.012, 0.05, 0)
+        // A hair of per-plank thickness difference: it marks the single real
+        // seam with a faint step without cutting a groove that could be
+        // miscounted as another plank.
+        const tp = t * (1 - i * 0.012)
+        const yLo = cutBottom ? y0 : y0 + g
+        const yHi = cutTop ? y1 : y1 - g
+        const aLow = yLo + (cutBottom ? n : 0)
+        const aHigh = yHi - (cutTop ? n : 0)
+        if (i > 0) {
+          // The seam strip: darker, recessed behind both plank faces, and
+          // overlapping both planks so the board stays one connected body.
+          // Sitting only 1.3 mm behind the faces: any deeper and the lower
+          // plank's lit top face fills the slit and the seam reads LIGHT.
+          board.push(boxGeometry([t * 0.91, 0.02, W * 0.985], [0, y0, 0], oak(-0.2)))
+        }
+        // The plank body. Plain and straight through its thickness: the old
+        // wedge taper made the front faces splay and the board read as two
+        // non-coplanar slabs, and a chamfered body left a groove where the
+        // corner-cut strip joins it, which read as a third plank seam.
+        board.push(boxGeometry([tp, aHigh - aLow, W], [0, (aLow + aHigh) / 2, 0], c))
+        for (const [edge, cut] of [[1, cutTop], [-1, cutBottom]] as const) {
+          if (!cut) continue
+          const yEdge = edge > 0 ? y1 : y0
+          // The outer-edge strip: its inner cross-section matches the body
+          // exactly (flush, invisible joint) and it tapers to W - 2n at the
+          // outer edge, so each corner is cut by a 45-degree facet.
+          board.push(taperedBoxGeometry(
+            edge > 0 ? [tp, W] : [tp * 0.99, W - 2 * n],
+            edge > 0 ? [tp * 0.99, W - 2 * n] : [tp, W],
+            n,
+            [0, yEdge - edge * n / 2, 0], c,
+          ))
+          for (const side of [-1, 1] as const) {
+            // The cusp point: a small pointed diamond on the corner diagonal,
+            // base buried in the strip, tip reaching exactly the original
+            // corner. It stays inside the board's rectangle instead of
+            // poking past it.
+            const theta = edge > 0 ? side * Math.PI / 4 : Math.PI - side * Math.PI / 4
+            const tipTab = taperedBoxGeometry(
+              [tp * 0.92, n * 0.95], [tp * 0.45, n * 0.12], n, [0, 0, 0], c,
+            )
+            tipTab.rotateX(theta)
+            tipTab.translate(
+              0,
+              yEdge - Math.cos(theta) * n * 0.5,
+              side * W / 2 - Math.sin(theta) * n * 0.5,
+            )
+            board.push(tipTab)
+          }
+        }
       }
 
       return {
@@ -282,21 +486,11 @@ export function createModel(overrides: Partial<TavernSignConfig> = {}) {
         board: {
           slot: 'oak' as const,
           geometry: mergeColoured(board),
-          // The origin is the CROSS-BAR, not the post.
-          //
-          // Everything in this part is authored hanging from the bar at
-          // z = reach * 0.86, but the origin sat at z = 0 on the post's centre
-          // line -- half a metre away. At rest that is invisible; the moment
-          // the swing action runs, the whole assembly rotates about a point it
-          // does not hang from, and the tops of the chains sweep off the bar
-          // they are supposed to be looped through. The support audit caught it
-          // as a detached board the instant the sheared curl stopped
-          // accidentally filling the gap.
-          //
-          // Moving the origin means the geometry above is written relative to
-          // the bar, which is why every `config.reach * 0.86` in this part is
-          // now zero. Same place in the world, correct axis to turn about.
-          origin: [0, pivotY, config.reach * 0.62] as const,
+          // The origin is the point on the ARM the chains hang from, not the
+          // post's centre line: the swing action rotates about this origin,
+          // and rotating about anywhere else sweeps the chain tops off the
+          // bar they are looped through.
+          origin: [0, pivotY, zc] as const,
           extras: [{ slot: 'iron' as const, geometry: mergeColoured(links) }],
         },
       }

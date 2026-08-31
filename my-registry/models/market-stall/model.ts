@@ -79,9 +79,20 @@ export function createModel(overrides: Partial<MarketStallConfig> = {}) {
       const planks = Math.max(2, Math.round(config.planks))
       const timberSize = D * 0.075
 
-      /** Weathered, like the grindstone's frame: a stall lives outdoors. */
+      /**
+       * Weathered, like the grindstone's frame: a stall lives outdoors.
+       *
+       * The weathering is now almost entirely in the saturation, because the
+       * palette does the rest. This carried a -0.08 lift from when `oak` sat at
+       * linear lightness 0.153; the constant was measured against its references
+       * and moved to 0.067, and -0.08 is more than the whole colour. Every part
+       * went negative, every part clamped to the tinter floor, and the counter,
+       * the trestle and the posts came out the same flat value with the
+       * variation between them gone. Measured against the reference the stall
+       * was then 0.13 too dark.
+       */
       const timber = (lift = 0): Color => {
-        const c = tint('oak', -0.08 + lift, 0.85)
+        const c = tint('oak', lift * 0.3, 0.85)
         c.offsetHSL(0, -0.09, 0)
         return c
       }

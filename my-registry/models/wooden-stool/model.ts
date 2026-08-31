@@ -29,10 +29,10 @@ export interface WoodenStoolConfig {
 }
 
 export const woodenStoolDefaults: WoodenStoolConfig = {
-  height: 0.46,
+  height: 0.32,
   seatRadius: 0.17,
   legCount: 3,
-  splay: 0.22,
+  splay: 0.32,
   seed: 17,
 }
 
@@ -54,7 +54,7 @@ export function createModel(overrides: Partial<WoodenStoolConfig> = {}) {
       tint.offsetHSL(jitter(random, 0.01), jitter(random, 0.04), jitter(random, 0.04))
       const seatTop = half
       const seat = prismGeometry(
-        config.seatRadius * 0.94,
+        config.seatRadius * 0.97,
         config.seatRadius,
         seatThickness,
         12,
@@ -69,16 +69,23 @@ export function createModel(overrides: Partial<WoodenStoolConfig> = {}) {
         const angle = (i / count) * Math.PI * 2 + jitter(random, 0.06)
         tint.copy(MEDIEVAL_PALETTE.oak)
         tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), jitter(random, 0.06))
-        const thick = config.seatRadius * 0.2
+        // 12 percent of the seat DIAMETER, not 7. The reference legs are
+        // chunky turned posts and these were sticks; the critic and a ruler
+        // agreed to within a percent.
+        const thick = config.seatRadius * 0.24
 
         // Leg: a stick hanging below the origin, tapering downwards. Order is
         // critical: lean first, then MOVE OUT TO THE RADIUS, then rotate. Without
         // the move-to-radius step all three legs stack on the axis when splay=0.
         const leg = chamferedBoxGeometry(
-        [thick * 0.72, thick * 0.72],
+        // Wider at the FOOT than at the seat, which is the way round a stool
+        // leg is turned: the mass belongs low. It was tapering the other way.
         [thick, thick],
+        [thick * 0.82, thick * 0.82],
         legLength,
-        thick * 0.16,
+        // A heavy chamfer, because the reference feet are domed rather than cut
+        // off square, and at this scale a big chamfer is a dome.
+        thick * 0.34,
         [0, -legLength / 2, 0],
         tint,
       )

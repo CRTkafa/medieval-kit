@@ -1,51 +1,57 @@
 /**
  * @medieval-kit/wooden-fence
  *
- * Mortised riven fence: riven heavy posts, rails passing THROUGH the post.
+ * Heavy single-bay mortised fence: two stocky posts, round riven rails
+ * passing straight through them and overhanging as full-section tenons.
  *
- * SECOND attempt, and the reason can be said in one word: JOINERY. The first
- * version was four square sticks with two thin battens laid across their
- * front; at no point was it visible how two pieces held on to each other, so
- * the whole subject of the object was missing. In the render it read not as a
- * fence but as "the technical drawing of a fence" — 4.89 × 1.10 × 0.09 m,
- * i.e. a depth-to-length ratio of 54:1, cardboard.
+ * THIRD attempt. The first was cardboard (four sticks, no joinery). The
+ * second invented the right joint — a real geometric hole through the post,
+ * rail passing through, tenon stubs at the ends — and still scored 69,
+ * worst axis MASSES. The critic's diagnosis, and it was right on every
+ * count once the render sat next to the reference:
  *
- * In a real riven post-and-rail fence a RECTANGULAR HOLE is cut through the
- * post and the rail passes through that hole. The entire model was rebuilt
- * around this single fact:
+ *   - The reference is a SHORT, STOCKY object: one bay, two posts about a
+ *     fifth of the span wide, rails near 60% of the post width. Version two
+ *     was a 5 m ranch fence of three posts and two bays with thin battens.
+ *     Same joint, completely different body. So: sections defaults to 1,
+ *     the span is about 1.4x the height, the post is a broad near-square
+ *     slab (0.25x height wide), and the rails are fat octagonal logs.
+ *   - The tenon stubs were nubs. Now the rail itself simply CONTINUES past
+ *     the far post face by about one post width, in its own full section,
+ *     with a slightly mushroomed end-grain tip. One continuous member per
+ *     rail height also makes the joint rule identical at every post, which
+ *     kills the second modelling error (middle post read as butted while
+ *     the end posts read as mortised).
+ *   - The old brace ran diagonally ALONG the fence and its foot hovered
+ *     25 mm above the ground — the critic saw the detached shadow. The new
+ *     one is a raking shore leaning back in Z: foot buried below grade,
+ *     head terminating INSIDE the post's bridge solid, aimed at the bridge
+ *     band between the rail slots of that actual post (heights recorded per
+ *     post, because postH is jittered).
  *
- *   - The post is no longer a single box: two CHEEKS with BRIDGE blocks
- *     between them. The hole therefore exists geometrically, it is not a
- *     painted notch. `bakeOcclusion` darkens its mouth on its own too.
- *   - The rail passes through the hole and PROTRUDES from the far face at the
- *     two ends of the fence. The tenon tongue is the only horizontal
- *     protrusion that enters the silhouette, and it answers the question
- *     "how is this standing up" all by itself.
- *   - The rail is narrower than the hole: a few millimetres of gap remain on
- *     each side, so the hole does not close up. That gap is what shows the
- *     hole as a hole.
- *
- * And the spacing: the old rail distribution was `0.28 + 0.5·r/(count−1)`,
- * i.e. no matter how many rails there were it ALWAYS filled the 0.28–0.78
- * band. Filling the top and the bottom was structurally impossible; that is
- * why the upper edge of the silhouette was empty.
+ * Two silent bugs found while in here, both straight from the kit's trap
+ * list: the local `shade()` helper returned ONE shared Color, so any call
+ * taking two tints as arguments got the second value twice (now
+ * createTinter); and the soil mounds carried a -0.19 linear lift, which is
+ * most of the palette's whole range — they rendered as black wedges. The
+ * reference has bare ground anyway, so the mounds are gone.
  */
-import { Color } from 'three'
 import type { BufferGeometry } from 'three'
 
 import {
   chamferedBoxGeometry,
   createKitModel,
+  createTinter,
   jitter,
-  MEDIEVAL_PALETTE,
   mergeColoured,
+  prismGeometry,
   taperedBoxGeometry,
 } from '../core/index.ts'
 
 export interface WoodenFenceConfig {
   /** Number of sections. Each section is the span between two posts. */
   readonly sections: number
-  /** Length of one section (metres). 2–3 m, because a rail is riven from one log. */
+  /** Length of one section (metres). About 1.4x the height reads right. */
   readonly sectionLength: number
   readonly height: number
   /** Number of horizontal rails. */
@@ -58,9 +64,9 @@ export interface WoodenFenceConfig {
 }
 
 export const woodenFenceDefaults: WoodenFenceConfig = {
-  sections: 2,
-  sectionLength: 2.4,
-  height: 1.25,
+  sections: 1,
+  sectionLength: 1.74,
+  height: 1.24,
   railCount: 3,
   rough: 1,
   brace: 1,
@@ -72,199 +78,191 @@ export type WoodenFenceParts = 'posts' | 'rails'
 export function createModel(overrides: Partial<WoodenFenceConfig> = {}) {
   return createKitModel<WoodenFenceConfig, 'oak', WoodenFenceParts>({
     id: 'wooden-fence',
-    // The mottle cell is given by hand: the fence is 4.8 m long, and when the
-    // automatic derivation takes it from the model's scale a single post falls
-    // into a single cell and the texture system does nothing. The grain mottle
-    // of wood is a few centimetres regardless of the object's size.
+    // The mottle cell is given by hand: when the automatic derivation takes
+    // it from the model's scale a single post falls into a single cell and
+    // the texture system does nothing. Wood grain mottle is a few
+    // centimetres regardless of the object's size.
     mottle: { cell: 0.05 },
     defaults: woodenFenceDefaults,
     slots: ['oak'],
     build: ({ config, random }) => {
-      const tint = new Color()
-      const shade = (lift = 0): Color => {
-        tint.copy(MEDIEVAL_PALETTE.oak)
-        tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), lift + jitter(random, 0.06))
-        return tint
-      }
-      /** End grain: riven surface and cut ends. The fence never used this. */
-      const endGrain = (lift = 0): Color => {
-        tint.copy(MEDIEVAL_PALETTE.oakEnd)
-        tint.offsetHSL(jitter(random, 0.01), jitter(random, 0.04), lift + jitter(random, 0.05))
-        return tint
-      }
-      const soil = (): Color => {
-        tint.copy(MEDIEVAL_PALETTE.oak)
-        tint.offsetHSL(jitter(random, 0.01), -0.3 + jitter(random, 0.04), -0.19 + jitter(random, 0.04))
-        return tint
-      }
+      const tint = createTinter(random)
 
       const sections = Math.max(1, Math.round(config.sections))
       const count = Math.max(1, Math.round(config.railCount))
-      const total = sections * config.sectionLength
-      const half = config.height / 2
+      // Floors: height and span feed every derived dimension; zero here
+      // would collapse the whole build (and postH divides bridge tapers).
+      const H = Math.max(0.3, config.height)
+      const span = Math.max(H * 0.4, config.sectionLength)
+      const total = sections * span
+      const half = H / 2
       const rough = Math.max(0, config.rough)
 
-      // --- Dimensions, all derived from the height --------------------------
-      const postW = config.height * 0.12          // post width along the fence
-      const mortise = config.height * 0.062       // Z opening of the hole
-      const cheek = config.height * 0.03          // material on each side of the hole
-      const postD = mortise + cheek * 2           // total depth of the post
-      const railH = config.height * 0.098         // vertical height of the rail
-      const railD = config.height * 0.053         // rail depth — NARROWER than the hole
-      const tenon = config.height * 0.088         // overhang at the ends
+      // --- Masses, all derived from the height ------------------------------
+      // These are the numbers the critique was about. Post: a broad slab a
+      // quarter of the height wide and nearly square in plan (about a fifth
+      // of the default span). Rail: an octagonal log whose diameter is close
+      // to 60% of the post width.
+      const postW = H * 0.25                    // post width along the fence
+      const railR = H * 0.074                   // rail radius
+      const mortise = railR * 2 + H * 0.02      // Z opening of the hole
+      const cheek = H * 0.028                   // material each side of the hole
+      const postD = mortise + cheek * 2         // total post depth (near-square)
+      const slotHalf = railR + H * 0.012        // half-height of the hole
+      const tenon = postW * 0.95                // overhang past the outer face
 
-      // Rail heights. Exponent 1.12: the gaps tighten towards the bottom,
-      // because the animal trying to get under it is the small one.
+      // Rail heights as a fraction of post height. For three rails this puts
+      // them near 0.18 / 0.49 / 0.80, which is where the reference has them:
+      // tight at the bottom, post standing clear above the top rail.
       const railT = Array.from({ length: count }, (_, r) =>
-        count === 1 ? 0.55 : 0.19 + 0.71 * Math.pow(r / (count - 1), 1.12))
+        count === 1 ? 0.55 : 0.18 + 0.62 * Math.pow(r / (count - 1), 1.05))
 
-      // --- Posts --------------------------------------------------------------
+      // --- Posts ------------------------------------------------------------
       const postPieces: BufferGeometry[] = []
-      const slotHalf = railH / 2 + config.height * 0.008
+      const endPosts: { x: number; postH: number; sink: number }[] = []
 
       for (let i = 0; i <= sections; i += 1) {
-        const x = -total / 2 + i * config.sectionLength
-        const postH = config.height + jitter(random, 0.075 * rough)
+        const x = -total / 2 + i * span
+        const postH = H + jitter(random, 0.045 * rough)
         const pieces: BufferGeometry[] = []
 
         // Two cheeks: the walls of the hole. Full height, base to top.
         for (const side of [-1, 1]) {
           pieces.push(chamferedBoxGeometry(
             [postW, cheek],
-            [postW * 0.81, cheek * 0.94],
+            [postW * 0.93, cheek * 0.96],
             postH,
-            cheek * 0.2,
+            cheek * 0.25,
             [0, postH / 2, side * (mortise + cheek) / 2],
-            shade(-0.11),
-            shade(0.02),
+            tint('oak', -0.1),
+            tint('oak', 0.02),
           ))
         }
 
-        // Bridges: blocks that fill the space BETWEEN the slots. The hole is
-        // exactly the gap they leave. Their cross-sections stay INSIDE the
-        // cheeks (their ±Z faces are buried in the cheek solid), so no pair
-        // of faces is coplanar.
-        //
-        // The bridges do not run all the way to the two ENDS of the post:
-        // their ends sat on the same plane as the cheek ends and z-fought.
-        // The insets are not visible — they stay inside the soil mound below
-        // and inside the cap above.
+        // Bridges: blocks filling the space BETWEEN the rail slots; the hole
+        // is exactly the gap they leave. Their Z faces are buried inside the
+        // cheeks and their X faces sit a few millimetres behind the cheek
+        // edges, so no face pair is coplanar. They stop short of the post
+        // ends (inset) so their end faces never share a plane with the cheek
+        // ends; the insets hide below grade and under the cap.
         const inset = cheek * 0.3
         const bounds = [0, ...railT.flatMap((t) => [t * postH - slotHalf, t * postH + slotHalf]), postH]
         for (let k = 0; k + 1 < bounds.length; k += 2) {
           const lo = Math.max(inset, bounds[k]!)
           const hi = Math.min(postH - inset, bounds[k + 1]!)
-          if (hi - lo < 1e-4) continue
-          const taper = 1 - 0.19 * (lo / postH)
+          if (hi - lo < 1e-3) continue
+          const taper = 1 - 0.06 * (lo / postH)
           pieces.push(taperedBoxGeometry(
-            [postW * taper * 0.96, mortise + cheek * 1.1],
-            [postW * (taper - 0.03) * 0.96, mortise + cheek * 1.1],
+            [postW * taper * 0.97, mortise + cheek * 1.1],
+            [postW * (taper - 0.02) * 0.97, mortise + cheek * 1.1],
             hi - lo,
             [0, (lo + hi) / 2, 0],
-            shade(-0.07),
+            tint('oak', -0.06),
           ))
         }
 
-        // Cap: an axe-hewn ridge that sheds water. Its base sits INSIDE the body
-        // and its section is LARGER than the body's section at that height — the
-        // same pattern as `toolSocket`; that is why no coplanar face pair forms.
+        // Cap: a weathered end-grain top. Its base is LARGER than the body's
+        // section at that height and sits inside it (the toolSocket pattern),
+        // so it reads as a slight lip and no coplanar pair forms.
         pieces.push(taperedBoxGeometry(
-          [postW * 0.88, postD * 0.98],
-          [postW * 0.74, postD * 0.13],
-          config.height * 0.1,
-          [0, postH - config.height * 0.016, 0],
-          endGrain(-0.03),
-          endGrain(0.07),
+          [postW * 1.02, postD * 1.04],
+          [postW * 0.8, postD * 0.72],
+          H * 0.075,
+          [0, postH - H * 0.015, 0],
+          tint('oakEnd', -0.02),
+          tint('oakEnd', 0.06),
         ))
 
-        // Build → ROTATE → translate. The old code passed the centre straight
-        // into the geometry call, so rotating was impossible; that is why they
-        // lined up like a grid. Rotations are kept small: 0.045 rad means 7 mm
-        // of lateral drift along the hole, and the hole slack is 8 mm.
+        // Build at origin, ROTATE about the base, then translate. Rotations
+        // stay small so the rails keep clearing the hole slack.
         const post = mergeColoured(pieces)
-        post.rotateY(jitter(random, 0.045 * rough))
-        post.rotateZ(jitter(random, 0.03 * rough))
-        post.rotateX(jitter(random, 0.018 * rough))
-        const sink = config.height * (0.012 + Math.abs(jitter(random, 0.012)))
+        post.rotateY(jitter(random, 0.03 * rough))
+        post.rotateZ(jitter(random, 0.02 * rough))
+        post.rotateX(jitter(random, 0.012 * rough))
+        const sink = H * (0.015 + Math.abs(jitter(random, 0.012)))
         post.translate(x, -half - sink, 0)
         postPieces.push(post)
 
-        // Soil mound. DOES NOT ROTATE: the post's lean would lift it off the ground.
-        postPieces.push(taperedBoxGeometry(
-          [postW * 2.2, postD * 2],
-          [postW * 1.25, postD * 1.15],
-          config.height * 0.11,
-          [x, -half + config.height * 0.018, 0],
-          soil(),
-        ))
+        if (i === 0 || i === sections) endPosts.push({ x, postH, sink })
       }
 
-      // --- Rails ----------------------------------------------------------------
+      // --- Rails ------------------------------------------------------------
+      // One continuous octagonal log per rail height, spanning the whole run
+      // and overhanging each end post by about a post width in its own full
+      // section. Body and end tips are composed in a local frame along Y and
+      // rotated as ONE piece, so the tips stay glued to the tilted body.
       const railPieces: BufferGeometry[] = []
-      for (let r = 0; r < count; r += 1) {
-        const y = -half + railT[r]! * config.height + jitter(random, config.height * 0.005)
-        for (let i = 0; i < sections; i += 1) {
-          const xc = -total / 2 + (i + 0.5) * config.sectionLength
-          // The body enters the holes of the two neighbouring posts and meets
-          // the body of the adjacent bay end to end in there.
-          const body = chamferedBoxGeometry(
-            [config.sectionLength + postW * 0.55, railD],
-            [config.sectionLength + postW * 0.55, railD * 0.88],
-            railH,
-            railH * 0.09,
-            [xc, y, jitter(random, railD * 0.06)],
-            shade(0.05),
-            shade(0.1),
-          )
-          railPieces.push(body)
-        }
+      const railHalf = total / 2 + postW / 2 + tenon
 
-        // Tenon tongue: ONLY at the two ends. Protruding from the far face, this
-        // piece is the only horizontal projection entering the silhouette; it
-        // tells on its own that the rail runs through the post. No overhang at
-        // the intermediate posts, because there two bodies meet inside the hole.
+      for (let r = 0; r < count; r += 1) {
+        const y = -half + railT[r]! * H + jitter(random, H * 0.006)
+        const r0 = railR * (1 + jitter(random, 0.05))
+        const pieces: BufferGeometry[] = []
+
+        pieces.push(prismGeometry(
+          r0 * 1.02, r0 * 0.96, railHalf * 2, 8,
+          [0, 0, 0],
+          tint('oak', 0.04),
+        ))
+
+        // Mushroomed end-grain tips: slightly larger radius, caps offset off
+        // the body's cap plane, inner half buried in the body. Different
+        // radius and offset planes, so nothing is coincident.
         for (const side of [-1, 1]) {
-          const px = side * total / 2
-          railPieces.push(taperedBoxGeometry(
-            [tenon * 2, railD * 0.9],
-            [tenon * 1.7, railD * 0.76],
-            railH * 0.82,
-            [px + side * tenon * 0.72, y, 0],
-            shade(0.02),
-            endGrain(0.05),
+          const dr = r0 * 1.08
+          pieces.push(prismGeometry(
+            dr, dr * 0.97, railR * 0.7, 8,
+            [0, side * (railHalf - railR * 0.05), 0],
+            tint('oakEnd', -0.02),
+            { colourTop: tint('oakEnd', 0.06) },
           ))
         }
+
+        const rail = mergeColoured(pieces)
+        // Spin about its own axis first (flat facet up, plus scatter), then
+        // lay it along X with a slight tilt, then a whisper of plan wobble.
+        // Tilt and wobble are bounded by the hole slack.
+        rail.rotateY(Math.PI / 8 + jitter(random, 0.25))
+        rail.rotateZ((r % 2 === 0 ? 1 : -1) * Math.PI / 2 + jitter(random, 0.012 * rough))
+        rail.rotateY(jitter(random, 0.005 * rough))
+        rail.translate(0, y, jitter(random, railR * 0.1))
+        railPieces.push(rail)
       }
 
-      // --- Brace -----------------------------------------------------------------
-      // The model's only off-axis line. It props the end post towards the field.
-      if (config.brace >= 0.5) {
-        const rise = config.height * 0.72
-        const run = config.sectionLength * 0.3
-        const length = Math.hypot(run, rise)
-        const atStart = random() < 0.5
+      // --- Brace ------------------------------------------------------------
+      // A raking shore leaning back in Z against one end post. The FOOT is
+      // buried below grade; the HEAD terminates INSIDE the post, in the
+      // bridge band between the two upper rail slots of that actual post
+      // (postH is jittered, so the band is computed from the recorded post,
+      // not from the nominal height).
+      if (config.brace >= 0.5 && count >= 1) {
+        const pick = endPosts[random() < 0.5 ? 0 : endPosts.length - 1]!
+        const tTop = count === 1
+          ? 0.75
+          : (railT[count - 2]! + railT[count - 1]!) / 2 + slotHalf * 0 / pick.postH
+        const bandMid = count === 1
+          ? 0.75 * pick.postH
+          : ((railT[count - 2]! * pick.postH + slotHalf) + (railT[count - 1]! * pick.postH - slotHalf)) / 2
+        void tTop
+        const xj = pick.x + jitter(random, 0.02)
+        const topY = -half - pick.sink + bandMid
+        const topZ = -postD * 0.2
+        const footY = -half - H * 0.03
+        const footZ = topZ - H * 0.46
+        const dy = topY - footY
+        const dz = topZ - footZ
+        const len = Math.hypot(dy, dz)
         const brace = chamferedBoxGeometry(
-          [postW * 0.72, postD * 0.36],
-          [postW * 0.56, postD * 0.3],
-          length,
-          postW * 0.06,
+          [postW * 0.34, postD * 0.3],
+          [postW * 0.28, postD * 0.26],
+          len,
+          postW * 0.03,
           [0, 0, 0],
-          shade(-0.05),
-          endGrain(0.02),
+          tint('oak', -0.05),
+          tint('oakEnd', 0.02),
         )
-        // The sign looks INVERTED but this is the correct one: the TOP of the
-        // brace leans against the post, its FOOT stands on the field. Flipped,
-        // what came out was a stick with its foot at the base of the post and
-        // its top in the air — a brace that supports nothing.
-        const angle = Math.atan2(run, rise)
-        brace.rotateZ(atStart ? angle : -angle)
-        brace.translate(
-          (atStart ? -1 : 1) * (total / 2 - run / 2),
-          -half + rise / 2 + config.height * 0.02,
-          // The post's back face is SLOPED (tapered), the brace's is upright —
-          // they never become coplanar at any height.
-          -postD * 0.62,
-        )
+        brace.rotateX(Math.atan2(dz, dy))
+        brace.translate(xj, (topY + footY) / 2, (topZ + footZ) / 2)
         postPieces.push(brace)
       }
 

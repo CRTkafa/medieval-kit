@@ -95,7 +95,12 @@ export function createModel(overrides: Partial<LogPileConfig> = {}) {
       const tint = new Color()
       const barkTint = (): Color => {
         tint.copy(MEDIEVAL_PALETTE.oak)
-        tint.offsetHSL(jitter(random, 0.016), jitter(random, 0.07), -0.06 + jitter(random, 0.07))
+        // Lifted well above the palette oak. That constant is weathered structural
+        // timber, grey and dropped in value, which is right for a fence or a
+        // ladder and wrong for this: a woodpile is freshly split, and the split
+        // faces have never been outside long enough to go grey. Measured against
+        // the reference the pile wants about 0.13 more than the kit default.
+        tint.offsetHSL(jitter(random, 0.016), jitter(random, 0.07), 0.07 + jitter(random, 0.07))
         return tint
       }
       const endTint = (): Color => {
@@ -104,7 +109,7 @@ export function createModel(overrides: Partial<LogPileConfig> = {}) {
         // dramatically paler than bark -- in a reference photograph the pale
         // discs are the first thing the eye lands on -- and at this offset the
         // ends were merely a slightly different brown.
-        tint.offsetHSL(jitter(random, 0.012), -0.06 + jitter(random, 0.04), 0.19 + jitter(random, 0.05))
+        tint.offsetHSL(jitter(random, 0.012), -0.06 + jitter(random, 0.04), 0.3 + jitter(random, 0.05))
         return tint
       }
 

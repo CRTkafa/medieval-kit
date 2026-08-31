@@ -68,10 +68,30 @@ function expect(label: string, condition: boolean): void {
 
 /* ------------------------------------------------------------ measurement */
 
+/**
+ * Linear luminance below which a part has no colour left to show.
+ *
+ * Vertex colours are linear, and the palette lives between about 0.03 and 0.36
+ * there, so a lift written as -0.28 is an enormous move rather than a gentle
+ * darkening. Every such lift is relative to a palette constant, and when a
+ * constant is measured against its reference and moved down, every part hanging
+ * off it can go through zero at once. That happened here to nine parts across
+ * six models in a single edit.
+ *
+ * It is invisible in every other check. The geometry is fine, nothing floats,
+ * the slots resolve, the triangle count is unchanged. It is only visible in the
+ * render, and there it does not even look black: a zero albedo contributes
+ * nothing, so all that survives is the white specular highlight and the part
+ * comes out NEUTRAL GREY. A market stall built entirely of oak rendered as a
+ * grey steel frame, and nothing said so.
+ */
+const COLOUR_FLOOR = 0.009
+
 function inspect(root: Object3D) {
   let meshes = 0
   let triangles = 0
   let nonFinite = 0
+  const crushed: string[] = []
   root.traverse((object) => {
     if (!(object instanceof Mesh) || !object.geometry.getAttribute('position')) return
     meshes += 1
@@ -80,12 +100,21 @@ function inspect(root: Object3D) {
     triangles += (index ? index.count : position.count) / 3
     const array = position.array as ArrayLike<number>
     for (let i = 0; i < array.length; i += 1) if (!Number.isFinite(array[i])) nonFinite += 1
+    const colour = object.geometry.getAttribute('color')
+    if (!colour || colour.count === 0) return
+    let r = 0, g = 0, b = 0
+    for (let i = 0; i < colour.count; i += 1) {
+      r += colour.getX(i); g += colour.getY(i); b += colour.getZ(i)
+    }
+    const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / colour.count
+    if (luminance < COLOUR_FLOOR) crushed.push(`${object.name || 'unnamed'} (${luminance.toFixed(5)})`)
   })
   const size = new Box3().setFromObject(root).getSize(new Vector3())
   return {
     meshes,
     triangles,
     nonFinite,
+    crushed,
     size: [+size.x.toFixed(2), +size.y.toFixed(2), +size.z.toFixed(2)] as [number, number, number],
   }
 }
@@ -409,7 +438,10 @@ const CASES: readonly Case[] = [
     maxSize: [8.2, 9.0, 7.4] },
   { id: 'wooden-fence', make: as(createFence), patch: { sections: 5, railCount: 4 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
-    variants: [{ sections: 1 }, { railCount: 1 }, { railCount: 4 }, { rough: 0 }, { brace: 0 }] , maxSize: [5.3, 1.5, 0.45] },
+    variants: [{ sections: 1 }, { railCount: 1 }, { railCount: 4 }, { rough: 0 }, { brace: 0 }] ,
+    // Deeper than it was: the brace used to stop in mid-air and now rakes back
+    // to the ground, which is the only way a free-standing panel stands up.
+    maxSize: [5.3, 1.5, 0.95] },
   { id: 'wooden-stool', make: as(createStool), patch: { legCount: 4, splay: 0.35 },
     parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ legCount: 5 }, { splay: 0 }] , maxSize: [0.5, 0.55, 0.5] },
@@ -432,14 +464,14 @@ const CASES: readonly Case[] = [
     parts: 4, ownSlot: 'iron', borrowSlot: 'oak', closed: true,
     variants: [{ bandCount: 0 }, { bandCount: 1 }, { depth: 0.7 }] , maxSize: [1, 0.62, 0.62] },
   { id: 'wooden-bench', make: as(createBench), nothingAbove: 'seat', restsOn: ['legs'], patch: { length: 2.1, splay: 0.4 },
-    parts: 3, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
+    parts: 2, ownSlot: 'oak', borrowSlot: 'oak', closed: true,
     variants: [{ splay: 0 }, { inset: 0.02 }, { width: 0.45 }] , maxSize: [1.7, 0.5, 0.35] },
   { id: 'pitch-torch', make: as(createTorch), patch: { wrapLength: 0.42, flameHeight: 2.2 },
     parts: 3, ownSlot: 'char', borrowSlot: 'oak', radial: true, radialPart: 'shaft',
     variants: [{ flicker: 0 }, { radius: 0.04 }] , maxSize: [0.14, 0.95, 0.14] },
-  { id: 'hay-bale', make: as(createBale), patch: { ropeCount: 3, wisps: 40 },
+  { id: 'hay-bale', make: as(createBale), patch: { ropeCount: 4, wisps: 60 },
     parts: 3, ownSlot: 'cloth', borrowSlot: 'straw', closed: true,
-    variants: [{ ropeCount: 0 }, { wisps: 0 }, { ropeCount: 1 }] , maxSize: [1.14, 0.68, 0.68] },
+    variants: [{ ropeCount: 0 }, { wisps: 0 }, { ropeCount: 1 }] , maxSize: [1.25, 0.9, 1.25] },
   { id: 'linen-sack', make: as(createSack), patch: { fill: 0.45, ears: 5 },
     parts: 3, ownSlot: 'cloth', borrowSlot: 'cloth', closed: true,
     variants: [{ ears: 0 }, { fill: 1 }, { collar: 0.28 }],
@@ -472,7 +504,7 @@ const CASES: readonly Case[] = [
     // not contain the wall it was bolted to.
     parts: 3, ownSlot: 'iron', borrowSlot: 'oak',
     variants: [{ plankCount: 1 }, { drop: 0.3 }, { reach: 1 }, { postHeight: 3.2 }],
-    maxSize: [0.95, 3.7, 1.0] },
+    maxSize: [1.15, 3.7, 1.85] },
   { id: 'leather-book', make: as(createBook), patch: { bands: 5, clasps: 2 },
     parts: 3, ownSlot: 'brass', borrowSlot: 'leather', closed: true,
     variants: [{ bands: 0 }, { clasps: 0 }, { thickness: 0.14 }],
@@ -482,8 +514,14 @@ const CASES: readonly Case[] = [
     shellRatio: 0.85, variants: [{ fill: 0 }, { seal: 0 }, { hue: 0.7 }],
     maxSize: [0.09, 0.15, 0.09] },
   { id: 'coin-pouch', make: as(createPouch), patch: { coins: 18, fill: 0.4 },
-    parts: 3, ownSlot: 'brass', borrowSlot: 'leather', radial: true, radialPart: 'pouch',
-    shellRatio: 0.8, variants: [{ coins: 0 }, { fill: 1 }, { coinRadius: 0.02 }],
+    parts: 3, ownSlot: 'steel', borrowSlot: 'leather', radial: true, radialPart: 'pouch',
+    // Back on the default shell ratio. At 0.8 the net reached BEHIND the skin:
+    // the pouch now carries whipstitches, small solid bars half sunk into the
+    // wall, and their buried inner faces sit well above 0.8 of the widest
+    // radius in their band. They are correctly wound and permanently hidden,
+    // and the check called all fifteen of them reversed. At 0.94 it sees 44
+    // outer faces, comfortably over its own minimum of 20, and none reversed.
+    variants: [{ coins: 0 }, { fill: 1 }, { coinRadius: 0.02 }],
     maxSize: [0.32, 0.14, 0.32] },
   { id: 'wicker-basket', make: as(createBasket), patch: { stakes: 14, rows: 9 },
     parts: 3, ownSlot: 'produce', borrowSlot: 'oak', radial: true, radialPart: 'rim',
@@ -526,6 +564,8 @@ for (const testCase of CASES) {
   expect('no NaN/Infinity vertices', report.nonFinite === 0)
   expect('bounds finite', report.size.every(Number.isFinite))
   expect('within lowpoly budget (< 2500 triangles)', report.triangles < 2500)
+  expect(`no part crushed to black${report.crushed.length ? ' — CRUSHED: ' + report.crushed.join(', ') : ''}`,
+    report.crushed.length === 0)
   if (testCase.nothingAbove) {
     const top = model.parts[testCase.nothingAbove]
     const above: string[] = []

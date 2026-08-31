@@ -17,7 +17,7 @@ turn it over, pull its sliders, press play. No install, no sign-in.
 
 ![The whole kit in one scene](media/kit.png)
 
-37 models and one shared library, **30,390 triangles** for the whole kit. That
+37 models and one shared library, **39,518 triangles** for the whole kit. That
 is less than a single medium-detail character. Every one of them is procedural
 source that lands in your project for you to edit.
 

@@ -5,25 +5,30 @@
  * withy tie. The period's broom really was this simple, and that is exactly why
  * it turns up in every interior scene.
  *
- * THIRD attempt. In the first, the bristles were individual rods and the bundle
- * looked like a whisk; in the second I moved to flat sheaves, which brought
- * mass, but what came out in render still was not a broom: "a lampshade pushed
- * onto a handle", "a closed umbrella". The cause was single and structural —
- * all the sheaves sat on ONE SINGLE RING, i.e. the bundle was a hollow cone
- * SHELL. On top of that, since it gathered at a single point up top and opened
- * downwards, its silhouette was a cone, whereas a besom is a slightly flared
- * CYLINDER.
+ * FOURTH attempt. In the first, the bristles were individual rods and the
+ * bundle looked like a whisk; in the second, flat sheaves on one ring made a
+ * hollow cone shell ("a lampshade pushed onto a handle"). The third fixed the
+ * shell with concentric rings, but the critique still read it as "a decorative
+ * whisk or wheat sheaf", and the causes were mass and proportion, not
+ * structure:
  *
- * Three changes fix this:
- *
- *   - The bundle is built from three CONCENTRIC rings (6 / 10 / 16). The inner
- *     rings have less slope, so the middle fills in. The shell becomes mass.
- *   - The flare is no longer a hand-tuned angle: the tie radius and the tip
- *     radius are given, and the slope is DERIVED from the two. What determines
- *     the silhouette is two directly measurable numbers.
- *   - The radius of the bindings comes from the same source as the bundle's
- *     radius AT THAT HEIGHT. There used to be a separate guessed formula, and
- *     the binding hung in the air around the bundle.
+ *   - Shaft and bundle were nearly 1:1 and the shaft was a fat dowel. A besom
+ *     is a LONG THIN stick with a SHORT dense head: the shaft above the tie is
+ *     now about 1.6x the bundle and its radius dropped by 40 percent, tapering
+ *     towards the free end like a cut sapling.
+ *   - The bundle was bright gold and you could see the background through it.
+ *     Birch twigs are grey-brown, near the value of the handle itself, so the
+ *     twig colour is straw pulled towards oak. The count nearly tripled, a
+ *     fourth ring was added, and a cheap lathe FILLER CONE sits inside the
+ *     bundle so no sight line passes through it. Fill the middle with a solid,
+ *     not with more twigs: twigs in the core are invisible anyway.
+ *   - The flare splayed into a teepee. The tip radius is now about a third of
+ *     the bundle length rather than half, which also gathers the twig ends so
+ *     the contact shadow reads as one patch instead of scattered fragments.
+ *   - Three thin near-black rings floated at the very top. A real withy tie is
+ *     several adjacent turns forming ONE WRAP BAND over about a quarter of the
+ *     bundle, in pale withy, not black cord: `bindings` now means turns WITHIN
+ *     that band, stacked contiguously below the throat.
  */
 import type { BufferGeometry } from 'three'
 
@@ -54,26 +59,30 @@ export interface StrawBroomConfig {
   readonly tipRadius: number
   /** Total number of twigs. */
   readonly bristles: number
-  /** How many turns of binding. */
+  /** Turns of withy within the single wrap band. */
   readonly bindings: number
   readonly seed: number
 }
 
 export const strawBroomDefaults: StrawBroomConfig = {
   length: 1.2,
-  shaftRadius: 0.018,
-  // Measured from the binding down, the old default left only 36% of the
-  // broom as bundle against roughly half in the reference -- the head looked
-  // stuck on the end of an over-long stick.
-  headLength: 0.52,
-  tieRadius: 0.058,
-  // A 20-degree spray, not a 5-degree one. Derived rather than guessed:
-  // atan((tip - tie) / span), which at the old 0.102 came to five degrees and
-  // gave a narrow cone. The reference fans out until the spread at the sweeping
-  // end is comparable to the length of the bundle itself.
-  tipRadius: 0.17,
-  bristles: 46,
-  bindings: 3,
+  // Was 0.018: a dowel. A cut hazel rod carrying a twig head runs nearer 22 mm
+  // across, and the thin shaft is half of what makes the head read as dense.
+  shaftRadius: 0.011,
+  // Was 0.52, which made shaft and head nearly equal. The reference carries
+  // roughly 1.6x as much shaft above the tie as bundle below it, and 0.38
+  // gives 0.74 m of shaft over a 0.46 m head.
+  headLength: 0.38,
+  tieRadius: 0.042,
+  // About a third of the bundle length. The old 0.17 against a 0.62 m bundle
+  // splayed the skirt into a teepee; the reference fans out gently and stays
+  // gathered, and the tighter skirt also pools the ground shadow into one
+  // patch under the head.
+  tipRadius: 0.14,
+  // Tripled from 46. At 46 the gaps between sheaves were wider than the
+  // sheaves and the background showed straight through the cone.
+  bristles: 130,
+  bindings: 5,
   seed: 59,
 }
 
@@ -84,13 +93,21 @@ export function createModel(overrides: Partial<StrawBroomConfig> = {}) {
     id: 'straw-broom',
     // The auto-derived values stay too coarse for a 1.2 m object: the ambient
     // occlusion darkens the bundle like a blanket, and the mottle cell drops to
-    // a couple of samples per sheaf. Both are tied to the scale of a twig.
-    occlusion: { radius: 0.055 },
-    mottle: { cell: 0.022 },
+    // a couple of samples per twig. Both are tied to the scale of a twig.
+    occlusion: { radius: 0.05 },
+    mottle: { cell: 0.016 },
     defaults: strawBroomDefaults,
     slots: ['oak', 'straw', 'cloth'],
     build: ({ config, random }) => {
       const tint = createTinter(random)
+      /**
+       * Birch-twig grey-brown: straw pulled towards oak. The palette's straw is
+       * bright gold, and a bundle of it read as a wheat sheaf; real besom twigs
+       * sit near the value of the handle itself. Both tints are fresh Colors,
+       * so the lerp cannot alias (the shared-Color trap).
+       */
+      const twigTint = (lift: number, spread = 1.2) =>
+        tint('straw', lift, spread).lerp(tint('oak', lift * 0.5, spread * 0.7), 0.45)
       const half = config.length / 2
       const headLength = config.length * config.headLength
       const headTop = -half + headLength
@@ -103,7 +120,7 @@ export function createModel(overrides: Partial<StrawBroomConfig> = {}) {
       const tipRadius = Math.max(tieRadius * 1.05, config.tipRadius)
       // `tieRadius` and `tipRadius` are the bundle's OUTER radius — what the
       // user would measure looking at a broom. The rings are back-computed from
-      // it: outer surface = ring radius + half the sheaf's width.
+      // it: outer surface = ring radius + half the twig's width.
       const halfWidth = config.shaftRadius * 0.95
       /** The bundle's OUTER radius at height `y`. The bindings use this too. */
       const bundleRadius = (y: number): number =>
@@ -114,16 +131,16 @@ export function createModel(overrides: Partial<StrawBroomConfig> = {}) {
       // driven by the seed.
       const faceAngle = random() * Math.PI * 2
 
-      // --- Twigs: three concentric rings -----------------------------------------
+      // --- Twigs: four concentric rings, and a filler --------------------------
       // The inner rings have little slope, the outer one has the full slope.
-      // That is why the inside of the bundle fills in; had I left a single ring
-      // it would be a shell again.
-      const total = Math.max(6, Math.round(config.bristles))
+      // That is why the inside of the bundle fills in; a single ring is a shell.
+      const total = Math.max(8, Math.round(config.bristles))
       const core = Math.max(config.shaftRadius, tieRadius - halfWidth)
       const rings = [
-        { share: 0.19, radius: core * 0.34, slope: 0.3, offset: 0 },
-        { share: 0.31, radius: core * 0.62, slope: 0.68, offset: Math.PI / 7 },
-        { share: 0.5, radius: core * 0.92, slope: 1, offset: Math.PI / 14 },
+        { share: 0.13, radius: core * 0.28, slope: 0.22, offset: 0 },
+        { share: 0.2, radius: core * 0.52, slope: 0.5, offset: Math.PI / 9 },
+        { share: 0.28, radius: core * 0.76, slope: 0.78, offset: Math.PI / 5 },
+        { share: 0.39, radius: core, slope: 1, offset: Math.PI / 13 },
       ]
       const fullFlare = Math.atan((tipRadius - tieRadius) / span)
 
@@ -136,52 +153,31 @@ export function createModel(overrides: Partial<StrawBroomConfig> = {}) {
           // The worn face is shorter: the asymmetry comes from here, not from
           // flattening the bundle. (The flat fan broom is a 19th-century Shaker
           // invention, an anachronism here.)
-          const wear = 1 + 0.1 * Math.cos(angle - faceAngle)
-          // Lengths vary by nearly a third, not by three percent.
-          //
-          // At +-0.03 every twig finished within a few millimetres of its
-          // neighbours and the bundle ended in a straight cut across the
-          // bottom. That single edge is what made the head read as a lampshade
-          // pushed onto a stick: no bundle of cut birch ends level, and the
-          // ragged, feathered tip is most of what identifies a besom in a
-          // photograph. Nothing is left floating by this -- every twig is held
-          // at the tie, and it is only the free end that varies.
-          // The spread runs DOWN from 1.0, never above it. Centring it on 1.0
-          // let the longest twigs overshoot the sweeping end and the model came
-          // out 1.32 m for a declared length of 1.2 -- caught by the size
-          // guard, and a real inconsistency, since `length` is supposed to mean
-          // the whole broom. The span is the longest twig; the rest fall short
-          // of it by up to a third.
-          const length = (span / Math.cos(flare)) * wear * (0.68 + random() * 0.32)
+          const wear = 1 + 0.07 * Math.cos(angle - faceAngle)
+          // The spread runs DOWN from 1.0, never above it: the span is the
+          // longest twig and `length` means the whole broom. The tips still
+          // feather — a level cut across the bottom is what made version two
+          // read as a lampshade — but the variation tightened from a third to
+          // a fifth, because at a third the skirt scattered and the critique
+          // saw the stray tips' shadows as loose fragments on the ground.
+          const length = (span / Math.cos(flare)) * wear * (0.85 + random() * 0.15)
 
-          // Narrower, and more of them. At 1.7 shaft radii each sheaf was a
-          // 31 mm slat, and thirty-two slats read as a fan of laths rather
-          // than as a bundle of twigs. Trading width for count keeps roughly
-          // the same mass in the bundle while making the individual pieces
-          // read at the right scale.
           const width = config.shaftRadius * (1.05 + random() * 0.24)
           const depth = config.shaftRadius * (0.6 + random() * 0.14)
-          // The cross-section TAPERS DOWNWARDS. Previously it was exactly the
-          // reverse — the lower end was both wider and thicker, i.e. the bundle
-          // swelled towards the bottom; whereas the sweeping end wears thin
-          // over the years.
+          // The cross-section TAPERS DOWNWARDS: the sweeping end wears thin.
           const sheaf = taperedBoxGeometry(
             [width * 1.12, depth * 0.62],
             [width, depth],
             length,
             [0, -length / 2, 0],   // top end AT THE ORIGIN: the bundle hangs from the tie
-            tint('straw', 0.02, 1.5),
-            tint('strawPale', 0.12, 1.5),
+            twigTint(-0.03, 1.3),
+            twigTint(-0.09, 1.3),
           )
           roughenGeometry(sheaf, config.shaftRadius * 0.09, { salt: i, scaleY: 0.4 })
 
           // THE SIGN: the sheaf extends along -Y. `rotateX(+f)` throws its end
           // towards -Z, and the following `rotateY(angle)` turns -Z TOWARDS THE
-          // AXIS — so a positive sign flares the bundle INWARDS, not outwards.
-          // This was the case in the previous two versions too: the sheaves
-          // crossed the axis and were flung to the far side, which is why the
-          // bundle came out a hollow shell. Caught by measurement, not by eye —
-          // the bundle's width came out 0.13 m where 0.23 m was expected.
+          // AXIS — so a NEGATIVE flare is what spreads the bundle outwards.
           sheaf.rotateZ(jitter(random, 0.09))
           sheaf.rotateX(-flare)
           sheaf.rotateY(angle)
@@ -194,79 +190,108 @@ export function createModel(overrides: Partial<StrawBroomConfig> = {}) {
         }
       }
 
+      // The filler: a dark lathe cone INSIDE the bundle, following the bundle's
+      // own profile at 85 percent. Twigs in the core are invisible, so the
+      // cheap way to kill every see-through sight line is a solid, not more
+      // twigs. It hangs from the tie like everything else and its lower end
+      // stops inside the thick of the bundle, hidden by the outer rings.
+      const fillLength = span * 0.6
+      const filler = latheGeometry(
+        [
+          { y: 0, radius: tieRadius * 0.85 },
+          { y: -fillLength * 0.5, radius: bundleRadius(tieY - fillLength * 0.5) * 0.85 },
+          { y: -fillLength, radius: bundleRadius(tieY - fillLength) * 0.8 },
+        ],
+        8, [0, tieY, 0], twigTint(-0.13, 0.7),
+      )
+      bristles.push(filler)
+
       // --- Collar: the cut butts left above the tie ------------------------------
       // It both covers where the shaft enters the bundle and is the cheapest way
       // of saying "this is a bundle": short stubs tipped upwards.
-      for (let i = 0; i < 9; i += 1) {
+      for (let i = 0; i < 11; i += 1) {
         const angle = i * 2.399963   // golden angle: no rows form anywhere
-        const stub = config.shaftRadius * (1.6 + random() * 1.2)
+        const stub = config.shaftRadius * (2.0 + random() * 1.5)
         const piece = taperedBoxGeometry(
           [config.shaftRadius * 0.62, config.shaftRadius * 0.4],
           [config.shaftRadius * 0.5, config.shaftRadius * 0.34],
           stub,
           [0, stub / 2, 0],   // centre at the LOWER end: this piece juts upwards
-          tint('strawPale', 0.16, 1.4),
-          tint('straw', 0.04, 1.4),
+          twigTint(0.03, 1.2),
+          twigTint(-0.02, 1.2),
         )
         // This piece extends along +Y, so the sign is the OPPOSITE of the
         // sheaves': a positive value throws its end towards +Z and `rotateY`
         // turns it outwards.
         piece.rotateZ(jitter(random, 0.08))
-        piece.rotateX(0.28 + random() * 0.24)
+        piece.rotateX(0.24 + random() * 0.22)
         piece.rotateY(angle)
         piece.translate(
-          Math.sin(angle) * tieRadius * 0.8,
+          Math.sin(angle) * tieRadius * 0.72,
           tieY + config.length * 0.008,
-          Math.cos(angle) * tieRadius * 0.8,
+          Math.cos(angle) * tieRadius * 0.72,
         )
         bristles.push(piece)
       }
 
-      // --- Bindings --------------------------------------------------------------
+      // --- Binding: one wrap band of several turns -------------------------------
+      // Not three thin cords at the throat: a withy tie is wound turn against
+      // turn until the wrap covers about a quarter of the bundle, and it is
+      // pale peeled withy, lighter than the twigs, not near-black cord (the old
+      // -0.28 lift bottomed out on the tinter's floor).
       const turns = Math.max(0, Math.round(config.bindings))
+      const wrapLength = span * 0.19
+      const turnHeight = wrapLength / Math.max(1, turns)
       const bindings: BufferGeometry[] = []
       for (let i = 0; i < turns; i += 1) {
-        const y = tieY - config.length * (0.01 + i * 0.042)
-        // The binding sits on the bundle's OUTER surface and bites into it a
-        // little. Originally the radius was computed from the ring radius, so
-        // the binding stayed INSIDE the sheaves and was never visible at all.
-        const radius = bundleRadius(y) - config.shaftRadius * 0.16
+        const y = tieY - config.length * 0.004 - turnHeight * (i + 0.5)
+        // Each turn sits JUST proud of the bundle's OUTER surface at ITS OWN
+        // height and bites into it, so the stack follows the flare. When the
+        // turns stood a fifth of a shaft radius proud in pale withy the wrap
+        // stepped outwards like a beehive skep and dominated the whole head; a
+        // tie is a thin skin over the twigs, not a basket around them.
+        const radius = bundleRadius(y) + config.shaftRadius * (0.08 + jitter(random, 0.04))
         bindings.push(bandGeometry(
-          radius, y, config.shaftRadius * 1.15, config.shaftRadius * 0.42, 12,
-          tint('cloth', -0.28, 0.9), { inner: true },
+          radius, y, turnHeight * 0.96, config.shaftRadius * 0.9, 12,
+          tint('cloth', -0.04, 0.8).lerp(tint('straw', -0.05, 0.8), 0.5),
+          { inner: true },
         ))
       }
       if (turns > 0) {
         // The tucked withy end: the one piece that shows how the tie itself is
         // fastened. Offset so it does not stay parallel to the band's 30° facet.
+        const withyY = tieY - config.length * 0.004 - wrapLength * 0.4
         const withy = arcBarGeometry(
-          bundleRadius(tieY) + config.shaftRadius * 0.24, config.shaftRadius * 0.32,
-          -0.5, 0.9, 3, [0, 0, 0], tint('cloth', -0.34, 0.7),
+          bundleRadius(withyY) + config.shaftRadius * 0.35, config.shaftRadius * 0.5,
+          -0.5, 0.9, 3, [0, 0, 0],
+          tint('cloth', -0.07, 0.7).lerp(tint('straw', -0.08, 0.7), 0.5),
         )
         withy.rotateX(Math.PI / 2)
         withy.rotateY(0.26 + Math.PI / 12)
-        withy.translate(0, tieY - config.length * 0.006, 0)
+        withy.translate(0, withyY, 0)
         bindings.push(withy)
       }
 
       // --- Shaft -------------------------------------------------------------------
       // Not a turned spindle but a hazel rod cut in the forest: the radius
-      // wavers along its length, there is a grip swell where the hand holds it,
-      // and the top end is whittled. And it is slightly bent — a straight rod
-      // always reads as manufactured.
+      // wavers along its length and the rod TAPERS TOWARDS THE FREE END, the
+      // way a cut sapling does — the old version swelled at the top like a
+      // turned grip and read as a dowel. The whittled thin end is the one
+      // buried in the bundle. And it is slightly bent — a straight rod always
+      // reads as manufactured.
       //
       // Built AT THE ORIGIN and bent, THEN translated: bending it at its final
       // coordinates would fling the whole stick away.
-      const shaftBottom = headTop - config.length * 0.1
+      const shaftBottom = headTop - config.length * 0.12
       const shaftLength = half - shaftBottom
       const r = config.shaftRadius
       const shaftLevels: Level[] = [
-        { y: -shaftLength / 2, radius: r * 0.26 },
-        { y: -shaftLength / 2 + shaftLength * 0.07, radius: r * 0.82 },
-        { y: -shaftLength / 2 + shaftLength * 0.16, radius: r * 1.02 },
-        { y: shaftLength * 0.06, radius: r * 0.93 },
-        { y: shaftLength / 2 - shaftLength * 0.07, radius: r * 1.14 },   // grip
-        { y: shaftLength / 2, radius: r * 0.84 },
+        { y: -shaftLength / 2, radius: r * 0.55 },
+        { y: -shaftLength / 2 + shaftLength * 0.06, radius: r * 1.1 },
+        { y: -shaftLength / 2 + shaftLength * 0.2, radius: r * 1.04 },
+        { y: shaftLength * 0.05, radius: r * 0.97 },
+        { y: shaftLength / 2 - shaftLength * 0.12, radius: r * 0.88 },
+        { y: shaftLength / 2, radius: r * 0.7 },
       ].map((level) => ({ y: level.y, radius: level.radius * (1 + jitter(random, 0.05)) }))
 
       const shaft = latheGeometry(shaftLevels, 6, [0, 0, 0], tint('oak', -0.05), {

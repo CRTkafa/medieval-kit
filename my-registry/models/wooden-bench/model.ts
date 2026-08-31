@@ -5,12 +5,20 @@
  * a status object; what people actually sat on was a bench, so a hall scene
  * needs one even more than it needs the table.
  *
- * Its structure is a simplified version of the table's: two thick end boards, a
- * stretcher between them, the seat on top. But one thing differs from the
- * table — the seat IS fixed to the legs. The table's top could be lifted away,
- * a bench's seat cannot; so the legs are joined by tenons that run into the
- * seat, and those tenons show through the top of it. That is the signature of
- * medieval joinery.
+ * Two thick end boards and a seat, and NOTHING BETWEEN THEM. This bench carried
+ * a lengthwise stretcher, copied across from the trestle table, and the
+ * reference has none: each board runs uninterrupted from the floor to the seat,
+ * and the clear open span underneath is a large part of what separates a bench
+ * from a table at a glance. Removing it drops a part from the model, which is a
+ * breaking change and worth one, because what it buys is the silhouette.
+ *
+ * The seat IS fixed to the legs, which is the other thing that separates the
+ * two: a table top can be lifted off, a bench seat cannot. The legs are tenoned
+ * into it and pegged through, and the peg is the joint anyone can actually see.
+ * The tenon is cut off flush with the seat in the reference and reads there as
+ * a faint rectangle of end grain, which is a texture rather than a shape, so it
+ * stays housed inside the slab where an earlier pass put it after two separate
+ * complaints about a block of oak standing proud of the surface you sit on.
  */
 import {
   boxGeometry,
@@ -45,7 +53,7 @@ export const woodenBenchDefaults: WoodenBenchConfig = {
   seed: 31,
 }
 
-export type WoodenBenchParts = 'seat' | 'legs' | 'stretcher'
+export type WoodenBenchParts = 'seat' | 'legs'
 
 export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
   return createKitModel<WoodenBenchConfig, 'oak', WoodenBenchParts>({
@@ -197,22 +205,37 @@ export function createModel(overrides: Partial<WoodenBenchConfig> = {}) {
           ],
           tint('oak', 0.09),
         ))
-      }
 
-      // --- Stretcher -----------------------------------------------------
-      // The batten tying the two legs together. It runs INTO the legs: its
-      // ends stay inside solid material so that no face ends up coplanar.
-      const stretcherY = -half + legHeight * 0.34
-      const stretcher = mergeColoured([boxGeometry(
-        [legX * 2 + legWidth * 0.4, timber * 1.5, timber * 0.95],
-        [0, stretcherY, 0],
-        tint('oak', -0.06),
-      )])
+        /**
+         * Wedge peg: driven through the leg board just under the seat, showing
+         * on both broad faces.
+         *
+         * The reference has it and this model did not, and it is the one joint
+         * detail a viewer can actually see. The tenon into the seat cannot be
+         * seen at all -- in the reference its end grain is cut off flush with
+         * the seat and reads as a faint rectangle, which is a texture and not a
+         * shape, so there is nothing for geometry to do there. The peg is the
+         * opposite: a small solid standing out of a flat board, which is
+         * exactly what lowpoly geometry is good at.
+         *
+         * It goes right through and out the far side, because a peg that stops
+         * inside the board is a peg that is doing nothing.
+         */
+        const pegOut = timber * 0.62
+        const boardThickness = timber * 1.35
+        legPieces.push(chamferedBoxGeometry(
+          [legWidth * 0.16, boardThickness + pegOut * 2],
+          [legWidth * 0.13, boardThickness + pegOut * 2],
+          timber * 0.72,
+          timber * 0.12,
+          [side * legX, seatBottom - timber * 1.15, 0],
+          tint('oak', 0.07),
+        ))
+      }
 
       return {
         seat: { slot: 'oak' as const, geometry: mergeColoured(seatPieces) },
         legs: { slot: 'oak' as const, geometry: mergeColoured(legPieces) },
-        stretcher: { slot: 'oak' as const, geometry: stretcher },
       }
     },
   }, overrides)

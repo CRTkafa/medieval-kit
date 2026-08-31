@@ -393,7 +393,7 @@ on the first model you add, and in fact it had gone stale once.
 | `market-stall` | Structure | 384 | 4 | 1.83×2.03×0.97 | oak, cloth |  |
 | `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron | ✔ |
 
-**30,390 triangles** in total. The whole kit in one scene has a budget smaller
+**39,518 triangles** in total. The whole kit in one scene has a budget smaller
 than a single medium-complexity character model.
 
 ### 5.1 One source: `my-registry/meta.ts`

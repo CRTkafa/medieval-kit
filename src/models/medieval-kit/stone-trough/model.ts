@@ -63,9 +63,13 @@ export interface StoneTroughConfig {
 }
 
 export const stoneTroughDefaults: StoneTroughConfig = {
-  length: 1.5,
+  // 1.35 by 0.50, not 1.5 by 0.44. The block ran 3.4 long to 1 high and the
+  // reference is nearer 2.6, which is the difference between a hewn stone
+  // trough and a long low planter. Split between the two dimensions so neither
+  // ends up an implausible size on its own.
+  length: 1.35,
   width: 0.58,
-  height: 0.44,
+  height: 0.5,
   // Heavy, but not as heavy as I first made it. A trough is a block with a
   // dish taken out of it rather than a vessel, and at 0.27 the two walls came
   // to more than half the width and the basin shut so far that a three-quarter
@@ -144,11 +148,27 @@ export function createModel(overrides: Partial<StoneTroughConfig> = {}) {
        * block from the ground to the basin, and the walls stand on top of it.
        * One piece on the ground, one bottom face, nothing to pair with.
        */
-      const foot = wall * 0.5
+      /*
+       * Tucked in by less than the roughening displaces, which is the only
+       * inset that does not show.
+       *
+       * At `wall * 0.5` the block sat 35 mm inside the walls on every side, and
+       * on a trough 450 mm tall that put a hard horizontal step across the
+       * bottom fifth of both long faces. Measured band by band the silhouette
+       * ran 0.265 wide over the bottom 90 mm and 0.30 above it. The comment
+       * that used to sit here said the base was invisible from above, and it
+       * was: what it was not was invisible from the side, which is where a
+       * trough is looked at.
+       *
+       * Now the inset is under the roughening amplitude, so the two surfaces
+       * interleave into one weathered face instead of meeting at a ledge, and
+       * the tint follows the walls rather than sitting a step darker.
+       */
+      const foot = wall * 0.16
       stone.push(boxGeometry(
         [L - foot, floor, W - foot],
         [0, floor / 2, 0],
-        new Color(tint('limestone', -0.05, 0.7)),
+        new Color(tint('limestone', -0.02, 0.85)),
       ))
 
       /**

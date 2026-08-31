@@ -186,30 +186,45 @@ export interface MedievalPalette {
  * is the difference between weathered oak and new pine, and it was making the
  * whole kit read as plastic.
  *
- * Straw and linen are deliberately NOT adjusted, although the same measurement
- * said they were too yellow and too washed out. Following it made them visibly
- * worse. A photograph of a bale reads as desaturated because it is thousands of
- * individual straws each casting a shadow on its neighbour; pushing a flat
- * lowpoly surface up to that number does not reproduce the texture, it just
- * makes the surface garish. The statistic was real and the inference from it
- * was wrong -- which is worth leaving written down, because the same trap is
- * there for any material whose reference gets its character from fine detail.
+ * Straw was left alone for a long time on an argument that was half right, and
+ * the half that was wrong cost four models. The original measurement said straw
+ * was both too yellow and too washed out. The saturation half was rejected for a
+ * good reason, still true: a photograph of a bale reads as desaturated because
+ * it is thousands of individual straws each shading its neighbour, and pushing a
+ * flat lowpoly surface to that number does not reproduce the texture, it only
+ * makes the surface garish. Saturation now measures within 0.03 of the
+ * references, so that call was correct.
  *
- * Two follow-up measurements ruled out the other colour explanations: our
- * saturation spread is 93% of the references', so it is not a lack of
- * variation, and the hue was never off. What remains between these models and
- * their references is geometry, not colour.
+ * The hue half was thrown out with it, and nothing checked lightness at all.
+ * Measured against the references, straw sat 11 degrees too yellow and a median
+ * 0.18 too light, worst on the broom and the stall awning at 0.30 and 0.29. A
+ * bale came out the colour of butter. Rejecting the inference from one axis is
+ * not a reason to discard the others that were measured beside it.
+ *
+ * That saturation pass was right and it was not the whole story. It closed the
+ * gap it measured: the render now sits within 0.03 of the references on
+ * saturation. Then it concluded from two axes that colour was finished. The
+ * axis it never measured was lightness, and across nine timber models the
+ * render is a median 0.13 lighter than its reference, worst on the chest at
+ * 0.21 and the trestle table at 0.17. Hue is four degrees short as well,
+ * sitting at 25 where the references sit at 29.
+ *
+ * A light, red-shifted brown is pink, which is the word eleven separate critics
+ * reached for. The earlier note that what remained was geometry rather than
+ * colour came from a measurement that could not have seen the problem. The
+ * lesson is not that the numbers lied. It is that a clean result on the axes
+ * you chose says nothing about the axis you did not.
  */
 export const MEDIEVAL_PALETTE: MedievalPalette = {
-  oak: new Color(0x8a6141),
-  oakEnd: new Color(0x9a7a5e),
+  oak: new Color(0x5c442e),
+  oakEnd: new Color(0x705942),
   iron: new Color(0x40464d),
   steel: new Color(0x8d979f),
   brass: new Color(0xa9843f),
   bronze: new Color(0x63523e),
-  straw: new Color(0xc2a049),
-  strawPale: new Color(0xdcc182),
-  cloth: new Color(0xb9a888),
+  straw: new Color(0x7f592e),
+  strawPale: new Color(0xb5834a),
+  cloth: new Color(0xa48965),
   leather: new Color(0x6b452c),
   glass: new Color(0xbcd4cb),
   produce: new Color(0xa8452f),

@@ -42,7 +42,10 @@ export const woodenCrateDefaults: WoodenCrateConfig = {
   width: 0.66,
   height: 0.52,
   depth: 0.52,
-  plankRows: 3,
+  // Four rows, not three. The reference reads as a stack of boards and at
+  // three courses each one is deep enough to look like a panel with a line
+  // scored across it.
+  plankRows: 4,
   strapCount: 2,
   seed: 3,
 }
@@ -123,7 +126,7 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
           // at a DIFFERENT height than the ends of the posts.
           const wallTop = half - board * 0.65
           const rows = Math.max(1, config.plankRows)
-          const gap = config.height * 0.012
+          const gap = config.height * 0.015
           const rowHeight = (wallTop * 2 - gap * (rows - 1)) / rows
 
           for (let row = 0; row < rows; row += 1) {
@@ -143,6 +146,31 @@ export function createModel(overrides: Partial<WoodenCrateConfig> = {}) {
                   board * 0.16, [side * faceX, y, 0], tint,
               ))
             }
+          }
+
+          /**
+           * The diagonal brace, which is the thing the reference leads with.
+           *
+           * One board corner post to corner post across each long face, standing
+           * proud of the courses by half its own thickness so it crosses them
+           * instead of joining them. Without it the long face is a field of
+           * parallel horizontals and the crate reads as a panelled box; with it
+           * the face reads as framed boarding, which is what it is.
+           */
+          const diagLen = Math.hypot(spanX, wallTop * 2) * 0.99
+          const diagAngle = Math.atan2(spanX, wallTop * 2)
+          for (const side of [-1, 1] as const) {
+            tint.copy(MEDIEVAL_PALETTE.oak)
+            tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), 0.03 + jitter(random, 0.04))
+            const brace = chamferedBoxGeometry(
+              [board * 0.95, board * 0.8], [board * 0.95, board * 0.8],
+              diagLen, board * 0.14, [0, 0, 0], tint,
+            )
+            // Built standing; laid over onto the diagonal. rotateZ sends +Y to
+            // (-sin, cos), so the angle is negated to send it toward +X.
+            brace.rotateZ(-side * diagAngle)
+            brace.translate(0, 0, side * (faceZ + board * 0.45))
+            pieces.push(brace)
           }
 
           // Lid and floor: board sheets that sit on top of and under the frame and

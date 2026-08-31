@@ -44,9 +44,15 @@ export function createModel(overrides: Partial<WoodenLadderConfig> = {}) {
     slots: ['oak'],
     build: ({ config, random }) => {
       const tint = new Color()
+      // A ladder is bare sapwood that spends its life being gripped and leaned,
+      // so it wears pale rather than grey. Every reference photograph of one is
+      // markedly lighter than the weathered oak the rest of the kit is cut from,
+      // by about this much, and the palette constant is set for the rest of the
+      // kit.
+      const bleach = 0.13
       const shade = (lift = 0): Color => {
         tint.copy(MEDIEVAL_PALETTE.oak)
-        tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), lift + jitter(random, 0.055))
+        tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), bleach + lift + jitter(random, 0.055))
         return tint
       }
 

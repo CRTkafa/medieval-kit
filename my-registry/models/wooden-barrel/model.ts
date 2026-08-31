@@ -51,13 +51,26 @@ export interface WoodenBarrelConfig {
 export const woodenBarrelDefaults: WoodenBarrelConfig = {
   height: 1.04,
   radius: 0.41,
-  taper: 0.17,
+  // 0.22, not 0.17. A cask is noticeably bellied and this one was close to a
+  // drum; at 0.22 the belly is 1.28 times the ends, which is what the reference
+  // measures.
+  taper: 0.22,
   // Stave and hoop counts come from a reference photograph of a real cask,
-  // not from taste. Thirteen staves left a visibly polygonal silhouette and
-  // four hoops read as too few for the height.
+  // not from taste. Thirteen staves left a visibly polygonal silhouette, so
+  // seventeen it is.
+  //
+  // Six hoops was wrong, and the note that used to sit here saying four read as
+  // too few was written against a different photograph. Our reference carries
+  // four wide bands, and six put them in doubled pairs at each end. Worse, the
+  // chime hoops stand proud of the staves they wrap, so a pair of them at each
+  // end fills in the very taper the belly is supposed to show: measured off the
+  // silhouette the cask read as 1.14 wide at the belly against its ends where
+  // the staves alone are 1.20, and a critic looking at the render called it a
+  // straight drum. Cutting to four both matches the reference and lets the
+  // profile be seen.
   staveCount: 17,
-  hoopCount: 6,
-  rivets: 6,
+  hoopCount: 4,
+  rivets: 4,
   seed: 7,
 }
 
@@ -201,8 +214,13 @@ export function createModel(overrides: Partial<WoodenBarrelConfig> = {}) {
             // and by every hand that has ever moved the cask, so they catch
             // light the flat band does not. Without this they were the right
             // shape in the right place and still invisible against the hoop.
+            // DARKER than the band, not lighter. A rivet head is a small dome
+            // and the light that reaches its underside is what you see of it;
+            // lifting it turned four pale diamonds loose on every hoop, and at
+            // the silhouette they read as detached geometry rather than as part
+            // of the iron.
             const studTint = tint.clone()
-            studTint.offsetHSL(0, 0, 0.09)
+            studTint.offsetHSL(0, 0, -0.05)
             for (let i = 0; i < config.rivets; i += 1) {
               const angle = phase + (i / config.rivets) * Math.PI * 2
               // The head FLARES outward, it does not taper. That is what a

@@ -227,14 +227,24 @@ export function createModel(overrides: Partial<WoodenChestConfig> = {}) {
         lidIron.push(pin)
       }
 
-      // A vertical strap on each end board as well — the chest should be ironed
-      // from every side.
+      /*
+       * Two narrow brackets on each end board, matching the front straps.
+       *
+       * This was ONE strap `depth * 0.16` wide, which is about three times the
+       * section of the straps on the front, and `wallHeight * 0.78` tall centred
+       * on the panel, so it stopped a ninth of the wall short at the top and the
+       * same at the bottom. A broad slab finishing in mid-panel above the foot
+       * does not read as ironwork; it reads as an unfinished cut. Same section
+       * and same run as the front now, which is what the reference has.
+       */
       for (const side of [-1, 1]) {
-        bandPieces.push(boxGeometry(
-          [strap, wallHeight * 0.78, config.depth * 0.16],
-          [side * (config.width / 2 + strap * 0.2), bodyFloor + wallHeight / 2, 0],
-          ironTint(random, -0.04),
-        ))
+        for (const z of [-config.depth * 0.28, config.depth * 0.28]) {
+          bandPieces.push(boxGeometry(
+            [strap, wallHeight - board * 0.9, strapWidth],
+            [side * (config.width / 2 + strap * 0.2), bodyFloor + wallHeight / 2, z],
+            ironTint(random, -0.04),
+          ))
+        }
       }
 
       // --- LOCK ----------------------------------------------------------

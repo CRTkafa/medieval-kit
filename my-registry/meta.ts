@@ -136,7 +136,7 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
     materialSlots: ['oak'],
-    parts: ['seat', 'legs', 'stretcher'],
+    parts: ['seat', 'legs'],
   },
   'wooden-stool': {
     title: 'Wooden Stool',
@@ -412,7 +412,7 @@ export const MODEL_META: Readonly<Record<string, ModelMeta>> = {
       coinRadius: { type: 'number', label: 'Coin radius', min: 0.005, max: 0.025, step: 0.001, unit: 'm' },
       seed: { type: 'number', label: 'Variation seed', min: 1, max: 64, step: 1 },
     },
-    materialSlots: ['leather', 'cloth', 'brass'],
+    materialSlots: ['leather', 'cloth', 'steel'],
     parts: ['pouch', 'cord', 'coins'],
   },
   'wicker-basket': {

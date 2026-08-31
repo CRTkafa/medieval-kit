@@ -118,7 +118,7 @@ did once.
 | `market-stall` | Structure | 384 | 4 | 1.83×2.03×0.97 | oak, cloth |  |
 | `post-mill` | Structure | 1672 | 4 | 6.60×7.23×6.98 | oak, iron | ✔ |
 
-**30 390 triangles** in total. The whole kit in one scene costs less than a
+**39 518 triangles** in total. The whole kit in one scene costs less than a
 single mid-complexity character model.
 
 Every model depends on `@medieval-kit/core`, a shared support item holding the

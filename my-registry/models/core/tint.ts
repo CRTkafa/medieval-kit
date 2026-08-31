@@ -31,6 +31,27 @@ import { jitter } from './random.ts'
  * A few hundred Color allocations at build time is not a cost worth one class
  * of silent, invisible bug.
  */
+/**
+ * Lightness a tinted colour is never taken below.
+ *
+ * These lightnesses are LINEAR, not sRGB, so the whole palette lives between
+ * about 0.03 and 0.36 and a lift of -0.28 is an enormous move rather than a
+ * gentle darkening. That is survivable while the palette sits high and fatal
+ * once it drops. When `cloth` was measured against its references and taken
+ * from linear lightness 0.364 to 0.252, every part carrying a -0.28 lift went
+ * straight through zero: nine parts across six models -- the market stall's
+ * whole trestle, two stretchers, three cords and a set of bindings -- came out
+ * pure black. In the render they then read as neutral GREY, because a black
+ * albedo contributes nothing and the only thing left is the white specular.
+ *
+ * The lifts were not wrong. They are relative offsets and the thing they were
+ * relative to moved. So the floor lives here rather than in nine call sites,
+ * because otherwise the next palette measurement re-breaks all of them, and
+ * because a part that keeps its hue at the bottom of its range is always a
+ * better answer than one that loses it.
+ */
+const FLOOR = 0.045
+
 export function createTinter(random: () => number) {
   return (
     key: keyof MedievalPalette,
@@ -40,10 +61,16 @@ export function createTinter(random: () => number) {
     spread = 1,
   ): Color => {
     const scratch = new Color(MEDIEVAL_PALETTE[key])
-    scratch.offsetHSL(
-      jitter(random, 0.012 * spread),
-      jitter(random, 0.05 * spread),
-      lift + jitter(random, 0.05 * spread),
+    // `offsetHSL` is get-add-set, and this is the same thing with the lightness
+    // clamped before the set rather than after. Clamping afterwards is not the
+    // same: a colour that has already reached zero has no hue or saturation
+    // left to read back, so lifting it returns grey instead of dark timber.
+    const hsl = { h: 0, s: 0, l: 0 }
+    scratch.getHSL(hsl)
+    scratch.setHSL(
+      hsl.h + jitter(random, 0.012 * spread),
+      hsl.s + jitter(random, 0.05 * spread),
+      Math.max(FLOOR, hsl.l + lift + jitter(random, 0.05 * spread)),
     )
     return scratch
   }

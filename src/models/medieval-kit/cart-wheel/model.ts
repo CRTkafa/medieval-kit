@@ -15,10 +15,10 @@
 import { Color, type BufferGeometry } from 'three'
 
 import {
-  MEDIEVAL_PALETTE,
   bandGeometry,
   chamferedBoxGeometry,
   createKitModel,
+  createTinter,
   jitter,
   latheGeometry,
   mergeColoured,
@@ -60,35 +60,62 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
     defaults: cartWheelDefaults,
     slots: ['oak', 'iron'],
     build: ({ config, random }) => {
-      const tint = new Color()
-      const oak = (lift = 0): Color => {
-        tint.copy(MEDIEVAL_PALETTE.oak)
-        tint.offsetHSL(jitter(random, 0.012), jitter(random, 0.05), lift + jitter(random, 0.05))
-        return tint
-      }
-      const iron = (lift = 0): Color => {
-        tint.copy(MEDIEVAL_PALETTE.iron)
-        tint.offsetHSL(0, jitter(random, 0.02), lift + jitter(random, 0.05))
-        return tint
-      }
+      // Through the shared tinter. The two helpers this replaces copied a
+      // palette entry into ONE shared Color and handed it back, so two tints in
+      // the same call resolved to the same value -- and the hub was doing
+      // exactly that, asking for a body colour and a lighter end colour in one
+      // expression and getting the second one twice. The tinter returns a new
+      // Color every time, and it floors lightness so a lift cannot take a part
+      // through black.
+      const tinter = createTinter(random)
+      const oak = (lift = 0): Color => tinter('oak', lift)
+      const iron = (lift = 0): Color => tinter('iron', lift, 0.6)
 
       const spokes = Math.max(4, config.spokeCount)
       const tyreThickness = config.radius * config.tyre
       const felloeOuter = config.radius - tyreThickness
       const felloeInner = felloeOuter * 0.82
-      const hubRadius = config.radius * 0.17
+      // 0.20 of the wheel RADIUS, so the nave is 0.20 of the wheel diameter
+      // across. It is the landmark that names the object and at 0.17 it was a
+      // flat disc lost in the spoke plane.
+      const hubRadius = config.radius * 0.2
+      // A nave is bored for the axle, and the bore is the reason it reads as a
+      // nave rather than as a knob.
+      const boreRadius = hubRadius * 0.3
       const hubLength = config.width * config.hubLength
 
-      // --- hub: turned log, chamfered at both ends, swollen in the middle ---
-      const hubProfile: Level[] = [
-        { y: -hubLength / 2, radius: hubRadius * 0.68 },
-        { y: -hubLength / 2 + hubLength * 0.1, radius: hubRadius * 0.92 },
-        { y: -hubLength * 0.16, radius: hubRadius },
-        { y: hubLength * 0.16, radius: hubRadius },
-        { y: hubLength / 2 - hubLength * 0.1, radius: hubRadius * 0.92 },
-        { y: hubLength / 2, radius: hubRadius * 0.68 },
+      // --- nave: a stepped, bored hub standing proud of the spoke plane ---
+      //
+      // It used to be a turned log: one lathe, symmetric, sitting flush in the
+      // plane of the spokes with no hole through it. That is a bobbin, not a
+      // nave. A nave projects well forward of the wheel so the linchpin clears
+      // the spokes, carries a shorter step behind, and is bored end to end.
+      //
+      // Built from bands rather than lathes because a band with `inner` set is
+      // already a closed tube: outer wall, two end annuli and a bore. Three of
+      // them stacked give the steps for nothing.
+      const bodyLen = hubLength * 0.45
+      const frontLen = hubLength * 0.33
+      const rearLen = hubLength * 0.22
+      const frontRadius = hubRadius * 0.72
+      const rearRadius = hubRadius * 0.78
+      // Each step sinks a quarter of its length into the body. Butted end to
+      // end their annuli would be coplanar, and two faces in one plane are a
+      // flicker whichever way they point.
+      const frontY = bodyLen / 2 + frontLen / 2 - frontLen * 0.25
+      const rearY = -bodyLen / 2 - rearLen / 2 + rearLen * 0.25
+      // The steps are bored slightly wider than the body, which is true of a
+      // real nave and, here, keeps their bore walls off the body's own.
+      const hubPieces: BufferGeometry[] = [
+        bandGeometry(hubRadius, 0, bodyLen, hubRadius - boreRadius, 10, oak(-0.05), { inner: true }),
+        bandGeometry(frontRadius, frontY, frontLen, frontRadius - boreRadius * 1.1, 10, oak(-0.01), { inner: true }),
+        bandGeometry(rearRadius, rearY, rearLen, rearRadius - boreRadius * 1.06, 10, oak(-0.03), { inner: true }),
+        // Two narrow iron rings girdling the steps, the way a nave is hooped to
+        // stop the timber splitting along the grain from the bore outward.
+        bandGeometry(frontRadius * 1.05, frontY + frontLen * 0.18, frontLen * 0.26, frontRadius * 0.16, 10, iron()),
+        bandGeometry(rearRadius * 1.05, rearY - rearLen * 0.16, rearLen * 0.3, rearRadius * 0.16, 10, iron(-0.03)),
       ]
-      const hub = latheGeometry(hubProfile, 8, [0, 0, 0], oak(-0.05), { colourTop: oak(-0.03) })
+      const hub = mergeColoured(hubPieces)
       // The hub's axis has to be Z: the wheel stands upright.
       hub.rotateX(Math.PI / 2)
 
@@ -123,7 +150,18 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
       // Chord length: the distance between two neighbouring corners. A little
       // too long so the pieces BITE into one another, not just meet end to end.
       const chord = 2 * felloeOuter * Math.sin(step / 2) * 1.03
-      const midRadius = (felloeOuter + felloeInner) / 2
+      // The flat outer face sits at the INSCRIBED radius, not at `felloeOuter`.
+      //
+      // A felloe piece is a straight box, so its outer face is a chord. Put
+      // that chord at `felloeOuter` and its two corners are further out than
+      // its middle: at ten segments they reached 0.5338 on a wheel whose iron
+      // tyre finishes at 0.52, so the corners came through the tyre and the rim
+      // rendered as alternating bands of tan wood and dark iron. Pulling the
+      // face in by cos(step/2) lands the CORNERS on `felloeOuter`, which is
+      // where the tyre's inner face is, so every piece bites into the iron and
+      // none of it breaks the outside.
+      const felloeFace = felloeOuter * Math.cos(step / 2)
+      const midRadius = (felloeFace + felloeInner) / 2
       for (let i = 0; i < segments; i += 1) {
         const angle = (i + 0.5) * step
         // Every piece has its own thickness. That is both correct (hand-cut
@@ -134,7 +172,7 @@ export function createModel(overrides: Partial<CartWheelConfig> = {}) {
         const piece = chamferedBoxGeometry(
           [chord, thickness],
           [chord, thickness],
-          felloeOuter - felloeInner,
+          felloeFace - felloeInner,
           config.width * 0.09,
           [0, 0, 0],
           oak(0.03),

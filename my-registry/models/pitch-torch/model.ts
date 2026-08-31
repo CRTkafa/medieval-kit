@@ -1,26 +1,41 @@
 /**
  * @medieval-kit/pitch-torch
  *
- * Pitch torch: a knotty stick, pitch-soaked cloth wound onto its end, a flame
- * above. This was exactly the period's lighting — candles were expensive,
- * torches were free.
+ * Pitch torch: a stout stick, pitch-soaked cloth bound onto its end with cord,
+ * a flame above. This was exactly the period's lighting — candles were
+ * expensive, torches were free.
  *
- * The kit's first ANIMATED model. The flame flickers via `update()` and the
- * source of that flicker is NOT randomness but a sum of sines of elapsed time.
- * There are three reasons for that:
+ * THIRD VERSION. What the earlier ones got wrong, so it is not tried again:
  *
- *   - Randomness breaks determinism. `Math.random()` is banned everywhere in
- *     the kit; the flame can be no exception, otherwise two torches with the
- *     same seed diverge.
- *   - Two sines at incommensurate frequencies give an oscillation that reads as
- *     "non-repeating" to the eye. A single sine would tick like a metronome.
- *   - If the consumer never calls `update()`, the model stops completely.
- *     Setting up a self-driving timer would violate the protocol's principle
- *     that "the consumer owns the loop".
+ *   - v1 flame tapered base-to-tip on one curve and rendered as a ROCKET NOSE.
+ *     A flame has a swollen base, a waist, and a torn tip. The waist stays.
+ *   - v2 head was a barrel widest at mid-height with a FLAT OPEN RIM, and its
+ *     colourTop was charHot. In render that hot-coloured flat cap read as a
+ *     stray detached flame-coloured quad lying across the rim. The head is now
+ *     a teardrop widest in its upper third closing to a faceted dome, and the
+ *     head carries char colours only. Nothing on the head is flame-coloured.
+ *   - v2 flame ended its lathe at radius 0.22r with a capped fan, then
+ *     roughened at 0.30r amplitude. The cap centre and its ring hash
+ *     differently, which split the tip into a V notch, and the amplitude was
+ *     enough to fold the waist into a self-intersection. The profile now ends
+ *     at radius 0 (all tip triangles share one vertex position, so the
+ *     position hash moves them together and no notch can open) and the
+ *     amplitude is halved.
+ *   - v2 had NO BINDING, so the bulb met the shaft as a bare cone point and
+ *     the object read as a moulded club. The binding band of cord turns is the
+ *     landmark that names a pitch torch, and it gets a zone about as long as
+ *     the head, exactly as the reference gives it.
  *
- * The flame also EMITS NO LIGHT. If the torch is meant to light the scene, the
- * consumer attaches a PointLight to `parts.flame.anchor` — the model has no
- * right to make assumptions about the scene's light budget.
+ * The flame flickers via `update()` and the source of that flicker is NOT
+ * randomness but a sum of sines of elapsed time: randomness would break
+ * determinism, a single sine ticks like a metronome, and a self-driving timer
+ * would violate "the consumer owns the loop". The flame also EMITS NO LIGHT;
+ * a consumer who wants the torch to light the scene attaches a PointLight to
+ * `parts.flame.anchor`.
+ *
+ * The binding turn count is DERIVED (zone length over cord pitch), not a
+ * config integer: the zone fraction is the config surface, and any change to
+ * it moves the geometry continuously.
  */
 import {
   createKitModel,
@@ -34,13 +49,15 @@ import {
 } from '../core/index.ts'
 
 export interface PitchTorchConfig {
-  /** Total shaft length (metres). */
+  /** Total wood-plus-head length, butt to dome top, excluding flame (metres). */
   readonly length: number
-  /** Shaft radius (metres). */
+  /** Shaft radius (metres). Near-constant along the shaft; a torch stick is not tapered. */
   readonly radius: number
-  /** Length of the cloth wrap, as a fraction of the shaft. */
+  /** Length of the pitched head bulb, as a fraction of `length`. */
   readonly wrapLength: number
-  /** Flame height, as a fraction of the wrap length. */
+  /** Length of the cord binding zone, as a fraction of the head length. */
+  readonly binding: number
+  /** Flame height, as a fraction of the head length. */
   readonly flameHeight: number
   /** Amplitude of the flicker. 0 = steady flame. */
   readonly flicker: number
@@ -48,11 +65,15 @@ export interface PitchTorchConfig {
 }
 
 export const pitchTorchDefaults: PitchTorchConfig = {
-  length: 0.58,
-  radius: 0.019,
-  wrapLength: 0.3,
-  // The flame was taller than the head that feeds it. A pitch torch burns
-  // with a low, fat, smoky flame, not a candle's spire.
+  // Longer and thicker than v2: the critique measured the shaft at a fifth of
+  // the head's width where the reference is nearer a third, and short. The
+  // exposed shaft below the binding now comes to about 60% of the total.
+  length: 0.72,
+  radius: 0.024,
+  wrapLength: 0.22,
+  binding: 0.8,
+  // The flame stays LOWER than the head is long. A pitch torch burns with a
+  // low, fat, smoky flame, not a candle's spire.
   flameHeight: 0.78,
   flicker: 1,
   seed: 37,
@@ -78,81 +99,137 @@ export function createModel(overrides: Partial<PitchTorchConfig> = {}) {
 
     build: ({ config, random }) => {
       const tint = createTinter(random)
+      const r = Math.max(config.radius, 0.004) // floored: derived divisions below
       const half = config.length / 2
-      const wrapLength = config.length * config.wrapLength
-      const wrapBase = half - wrapLength
+      // Head bulb zone, then the cord binding zone immediately below it.
+      const headLength = Math.max(config.length * config.wrapLength, r * 3)
+      const headBase = half - headLength
+      const bindingLength = Math.max(headLength * config.binding, r * 2)
+      const bindingBase = headBase - bindingLength
 
       // --- Shaft -----------------------------------------------------------
-      // A knotty branch: its radius wavers along its length. A straight
-      // cylinder would look manufactured, whereas a torch is a stick cut in
-      // the forest.
-      const knots = 6
-      const shaftProfile: Level[] = Array.from({ length: knots + 1 }, (_, i) => {
-        const t = i / knots
-        return {
-          y: -half + config.length * (1 - config.wrapLength) * t,
-          radius: config.radius * (1 + jitter(random, 0.16)) * (i === 0 ? 0.82 : 1),
-        }
-      })
+      // Near-constant diameter with only a whisper of waver: a torch stick is
+      // a straight-cut stave, not a tapering tool handle. The butt closes with
+      // a short chamfer so the end reads slightly rounded, and the top ends
+      // INSIDE the bulb.
+      const shaftTop = headBase + headLength * 0.35
+      const shaftLevels: Level[] = [
+        { y: -half, radius: r * 0.58 },
+        { y: -half + 0.016, radius: r * (0.96 + jitter(random, 0.03)) },
+      ]
+      const waverSteps = 4
+      for (let i = 1; i <= waverSteps; i += 1) {
+        const t = i / waverSteps
+        shaftLevels.push({
+          y: (-half + 0.016) + (shaftTop - (-half + 0.016)) * t,
+          radius: r * (1 + jitter(random, 0.05)) * (i === waverSteps ? 0.92 : 1),
+        })
+      }
       const shaft = mergeColoured([latheGeometry(
-        shaftProfile, 6, [0, 0, 0], tint('oak', -0.08),
-        { colourTop: tint('oak', -0.02) },
+        shaftLevels, 7, [0, 0, 0], tint('oak', -0.06),
+        { colourTop: tint('oak', 0.02) },
       )])
 
-      // --- Wrap ------------------------------------------------------------
-      // Pitch-soaked cloth: thick relative to the shaft, swollen towards the
-      // end, flat on top. The char slot is used because pitch gets coated in
-      // soot — an oak colour would be a lie here.
-      const wrapProfile: Level[] = [
-        { y: wrapBase - wrapLength * 0.12, radius: config.radius * 1.15 },
-        // Fatter. A torch head is a fist of tow and rags soaked in pitch,
-        // bound on; at 2.5 shaft radii it was a spindle, and the head is the
-        // whole reason the object is not a stick.
-        { y: wrapBase + wrapLength * 0.22, radius: config.radius * 3.3 },
-        { y: wrapBase + wrapLength * 0.62, radius: config.radius * 3.5 },
-        { y: half, radius: config.radius * 2.9 },
+      // --- Binding + head --------------------------------------------------
+      // The binding: a stack of cord turns proud of the shaft by about a third
+      // of its radius. One wavy lathe rather than stacked rings, so no pair of
+      // coincident faces forms where turns touch. Turn count is derived from
+      // the zone length over a cord pitch tied to the shaft radius; the
+      // defaults give seven turns.
+      const pitch = r * 0.75
+      const turns = Math.min(12, Math.max(3, Math.round(bindingLength / pitch)))
+      const turnPitch = bindingLength / turns
+      const grooveR = r * 1.14
+      const bindingLevels: Level[] = [{ y: bindingBase, radius: grooveR }]
+      for (let k = 0; k < turns; k += 1) {
+        bindingLevels.push({
+          y: bindingBase + (k + 0.5) * turnPitch,
+          radius: r * (1.4 + jitter(random, 0.03)),
+        })
+        bindingLevels.push({
+          y: bindingBase + (k + 1) * turnPitch,
+          radius: grooveR * (1 + jitter(random, 0.015)),
+        })
+      }
+      // Soot creeps down the cord from the head, so the top of the binding
+      // lerps darker. Both tints are separate Colors (createTinter allocates).
+      const binding = latheGeometry(
+        bindingLevels, 8, [0, 0, 0], tint('leather', 0.02),
+        { colourTop: tint('leather', -0.13) },
+      )
+
+      // Two loose cord ends angling off the binding: fat end buried inside a
+      // crest of the binding solid, thin tip dangling free like a lashing's
+      // cut end. Built at the origin along Y, rotated, then translated; the
+      // final rotateY swings each around the torch axis so they are not both
+      // on the same side.
+      const cordEnds = [
+        { tilt: Math.PI + 0.22, len: bindingLength * 0.42, crest: turns - 2.5, swing: 0.6 },
+        { tilt: Math.PI + 0.35, len: bindingLength * 0.34, crest: 2.5, swing: 3.9 },
+      ].map(({ tilt, len, crest, swing }) => {
+        const cord = prismGeometry(r * 0.17, r * 0.06, len, 5, [0, 0, 0], tint('leather', -0.04))
+        cord.rotateZ(tilt)
+        // Where the fat (local bottom) end lands after the rotation, so it can
+        // be pinned to a crest of the binding.
+        const fatX = (len / 2) * Math.sin(tilt)
+        const fatY = -(len / 2) * Math.cos(tilt)
+        const anchorY = bindingBase + Math.min(Math.max(crest, 0.5), turns - 0.5) * turnPitch
+        cord.translate(r * 1.18 - fatX, anchorY - fatY, 0)
+        cord.rotateY(swing)
+        return cord
+      })
+
+      // The head: pitch-soaked rags bound into a teardrop, widest in its
+      // upper third, closing to a faceted dome. Its lowest level hides inside
+      // the binding's top turn, so the taper terminates in cord, not on bare
+      // shaft. The char slot is used because pitch gets coated in soot — an
+      // oak colour would be a lie here. No flame colour anywhere on the head.
+      const lump = () => 1 + jitter(random, 0.04)
+      const bulbLevels: Level[] = [
+        { y: headBase - turnPitch * 0.6, radius: r * 1.1 },
+        { y: headBase + headLength * 0.1, radius: r * 1.9 * lump() },
+        { y: headBase + headLength * 0.3, radius: r * 2.5 * lump() },
+        { y: headBase + headLength * 0.55, radius: r * 2.9 * lump() },
+        { y: headBase + headLength * 0.7, radius: r * 3.0 },
+        { y: headBase + headLength * 0.82, radius: r * 2.75 * lump() },
+        { y: headBase + headLength * 0.92, radius: r * 2.15 * lump() },
+        { y: headBase + headLength * 0.985, radius: r * 1.15 },
+        { y: half, radius: r * 0.55 },
       ]
-      const wrap = mergeColoured([latheGeometry(
-        wrapProfile, 7, [0, 0, 0], tint('char', 0.06),
-        { colourTop: tint('charHot', -0.32) },
-      )])
+      const bulb = latheGeometry(
+        bulbLevels, 8, [0, 0, 0], tint('char', 0.05),
+        { colourTop: tint('char', 0.14) },
+      )
+      const wrap = mergeColoured([binding, ...cordEnds, bulb])
 
       // --- Flame -----------------------------------------------------------
-      // The flame geometry is built at ITS OWN origin and the anchor is moved
-      // to the end of the wrap. This is required because the flicker drives the
-      // anchor's scale: a flame whose origin is not at its base would sink into
-      // the wrap when scaled.
-      const flameHeight = wrapLength * config.flameHeight
-      // This is the flame profile's second version. The first tapered from base
-      // to tip on a single curve and in render it looked like a ROCKET NOSE —
-      // smooth, symmetric, pointed. A flame is not like that: its base is wide
-      // and swollen, it has a waist in the middle, and its tip is not pointed
-      // but TORN. The profile below gives that waist, and `roughen` breaks the
-      // symmetry.
+      // Built at ITS OWN origin; the anchor sits just inside the dome. This is
+      // required because the flicker drives the anchor's scale: a flame whose
+      // origin is not at its base would sink into the wrap when scaled. The
+      // base ring is buried well inside the dome so the roughen displacement
+      // can never push it out into view.
+      const flameH = Math.max(headLength * config.flameHeight, 0.02)
       const flameProfile: Level[] = [
-        { y: 0, radius: config.radius * 2.05 },
-        { y: flameHeight * 0.14, radius: config.radius * 2.75 },
-        { y: flameHeight * 0.34, radius: config.radius * 2.15 },
-        { y: flameHeight * 0.5, radius: config.radius * 2.4 },
-        { y: flameHeight * 0.72, radius: config.radius * 1.35 },
-        { y: flameHeight * 0.9, radius: config.radius * 0.8 },
-        { y: flameHeight, radius: config.radius * 0.22 },
+        { y: 0, radius: r * 1.7 },
+        { y: flameH * 0.15, radius: r * 2.35 },
+        { y: flameH * 0.38, radius: r * 1.95 },
+        { y: flameH * 0.55, radius: r * 2.05 },
+        { y: flameH * 0.75, radius: r * 1.3 },
+        { y: flameH * 0.9, radius: r * 0.7 },
+        { y: flameH, radius: 0 }, // closes to a single shared point: no tip notch
       ]
-      const outer = latheGeometry(flameProfile, 6, [0, 0, 0], tint('ember', 0.04, 0.4),
+      const outer = latheGeometry(flameProfile, 7, [0, 0, 0], tint('ember', 0.04, 0.4),
         { colourTop: tint('emberTip', 0, 0.4), capBottom: true })
-      roughenGeometry(outer, config.radius * 0.3, { salt: 5, scaleY: 1.6 })
+      roughenGeometry(outer, r * 0.16, { salt: 7, scaleY: 1.25 })
 
       const flame = mergeColoured([
         outer,
-        // Inner core: smaller and whiter than the outer one. Two layers give
-        // the impression that the flame has depth — a single cone reads flat.
-        //
-        // Its base is NOT CAPPED: it was coplanar with the base of the outer
-        // cone and z-fought with it. It is invisible anyway, being inside the
-        // outer shell, so the cap was both unnecessary and harmful.
+        // Inner core: smaller and whiter. Two layers give the flame depth — a
+        // single cone reads flat. Its base is NOT CAPPED: a cap was coplanar
+        // with the outer base and z-fought, and it is invisible anyway.
         prismGeometry(
-          config.radius * 1.25, config.radius * 0.1, flameHeight * 0.48, 5,
-          [0, flameHeight * 0.3, 0], tint('ember', 0.22, 0.3),
+          r * 1.1, r * 0.1, flameH * 0.5, 5,
+          [0, flameH * 0.32, 0], tint('ember', 0.22, 0.3),
           { capBottom: false },
         ),
       ])
@@ -163,7 +240,7 @@ export function createModel(overrides: Partial<PitchTorchConfig> = {}) {
         flame: {
           slot: 'ember' as const,
           geometry: flame,
-          origin: [0, half - wrapLength * 0.12, 0] as const,
+          origin: [0, half - headLength * 0.1, 0] as const,
         },
       }
     },

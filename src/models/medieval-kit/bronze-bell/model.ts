@@ -283,13 +283,23 @@ export function createModel(overrides: Partial<BronzeBellConfig> = {}) {
         }
       }
 
-      // Bearings: the two iron ears carrying the rail. They carry it from ABOVE
-      // — that is how a real bearing works, and when their top faces were level
-      // with the rail's the two ended up coplanar and flickered.
+      /*
+       * Straps: the two iron ears that clamp the rail where the bell hangs
+       * from it. They carry it from ABOVE, which is how a real strap works, and
+       * when their top faces were level with the rail's the two ended up
+       * coplanar and flickered.
+       *
+       * They used to sit at `beamLength * 0.34`, which at the default yoke puts
+       * them all but directly over the uprights, at the far ends of the rail.
+       * The bell meets the rail at its centre. So the ironwork was at one end of
+       * the beam and the load at the other, and the straps held nothing: a
+       * critic reading the render said exactly that. They now straddle the
+       * hanger, which is the only place on a beam where a strap has a job.
+       */
       for (const side of [-1, 1]) {
         yokePieces.push(boxGeometry(
           [radius * 0.09, radius * 0.56, radius * 0.28],
-          [side * beamLength * 0.34, beamY - radius * 0.02, 0],
+          [side * radius * 0.3, beamY - radius * 0.02, 0],
           tint('iron', jitter(random, 0.04), 0.7),
         ))
       }

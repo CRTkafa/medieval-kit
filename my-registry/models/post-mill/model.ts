@@ -29,6 +29,28 @@
  * a solid blade the silhouette is wrong in the one place everybody looks, so
  * the bars are modelled and the budget is spent there rather than on the
  * boarding of the buck, which reads perfectly well as vertex colour.
+ *
+ * THIRD PASS. The critique before this one scored 66 and its worst axis was
+ * material, and the cause was arithmetic, not taste: oak's linear lightness is
+ * about 0.067 and the tinter's default jitter is +-0.05, so every default-
+ * spread tint call was rolling nearly the whole palette range, and lifts like
+ * -0.12 (roof) and -0.22 (door ledges) slammed into the tinter's 0.045 floor
+ * and came out near-black. Everything timber now goes through one local
+ * `wood()` helper: lifts within +-0.04, spread ~0.3, and saturation halved
+ * after tinting (safe to mutate -- the tinter returns a new Color) so the
+ * whole mill sits in one weathered silver-grey family, roof a step LIGHTER
+ * than the walls as weathered shingle is, and the only dark note is a new
+ * wrought-iron canister boss at the sail crossing where the old pale bands
+ * were. Also this pass: each sail gained a solid windboard along the leading
+ * edge and a wider lattice so it reads as a blade rather than a bare ladder;
+ * the hub came back to 0.70 of the body depth (perspective on the far-forward
+ * hub is what made the critic read the arms as unequal -- they never were);
+ * the quarter-bars got per-arm foot heights because two arms seat on the
+ * UPPER cross-tree and two on the LOWER, and one shared foot height left the
+ * lower pair hanging 6 cm above their tree; the buck walls now batter inwards
+ * toward the top and the plan is longer along the ridge; and the tail ladder
+ * steepened from 38 to about 51 degrees with its foot pulled in by a metre,
+ * so it stops competing with the sails for silhouette.
  */
 import { Color, type BufferGeometry } from 'three'
 
@@ -60,15 +82,20 @@ export interface PostMillConfig {
 
 export const postMillDefaults: PostMillConfig = {
   height: 6.2,
-  // The lowest sail tip has to clear the ground. At 7.4 against a 6.2 m mill
-  // it came down to within 0.27 m of it, which reads as a mill about to plough
-  // its own field; the reference leaves roughly a tenth of the height.
-  sailSpan: 6.6,
+  // The lowest sail tip has to clear the ground WHILE TURNING: the hard limit
+  // is a sail pointing straight down, hub height above ground minus half the
+  // span. At 7.4 against a 6.2 m mill that came to 0.27 m, a mill about to
+  // plough its own field. 7.0 with the hub at 0.80 of the buck leaves 0.59 m
+  // turning and over 1.5 m in the resting X pose the model is drawn in.
+  sailSpan: 7.0,
   // The lattice is what says "windmill" at any distance, and nine bars over a
   // 3.3 m sail spaces them like ladder rungs. The reference reads as a fine
   // grid.
   sailBars: 13,
-  sailWidth: 0.17,
+  // The lattice alone at 0.17 of the length read as a bare ladder; with the
+  // windboard alongside, 0.22 brings the whole blade to roughly a fifth of
+  // its length, which is the reference's proportion.
+  sailWidth: 0.22,
   ladderRungs: 13,
   spin: 0,
   seed: 43,
@@ -95,6 +122,26 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
 
     build: ({ config, random }) => {
       const tint = createTinter(random)
+      /**
+       * Every piece of timber on this mill, one weathered family.
+       *
+       * Two numbers in the tinter make raw `tint('oak', ...)` calls a trap for
+       * a model this size. Oak's LINEAR lightness is about 0.067, so the
+       * default-spread lightness jitter of +-0.05 spans most of the palette
+       * and painted sibling parts in unrelated tones; and any lift beyond
+       * about -0.04 lands on the tinter's floor and reads near-black. So:
+       * small spread, small lifts, and saturation halved after the fact --
+       * safe, because the tinter returns a NEW Color every call -- which is
+       * what turns brown sawn oak into the silver-grey of wood left out in
+       * the weather for a century.
+       */
+      const wood = (lift = 0, spread = 0.3): Color => {
+        const colour = tint('oak', lift, spread)
+        const hsl = { h: 0, s: 0, l: 0 }
+        colour.getHSL(hsl)
+        colour.setHSL(hsl.h, hsl.s * 0.5, hsl.l)
+        return colour
+      }
       const H = config.height
       const half = H / 2
       const floor = -half
@@ -105,9 +152,13 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
       const bodyHeight = H * 0.30
       const bodyBottom = postTop
       const bodyTop = bodyBottom + bodyHeight
-      const bodyWidth = H * 0.29      // across the sails' axis
-      const bodyDepth = H * 0.34      // along it
-      const ridge = bodyTop + H * 0.13
+      const bodyWidth = H * 0.27      // across the sails' axis
+      const bodyDepth = H * 0.36      // along it: the plan is longer along the ridge
+      // The walls batter: the reference buck is visibly wider at the sill than
+      // at the eaves, about 15 percent. Only the width tapers -- keeping the
+      // tail wall vertical keeps the door and the gallery flat against it.
+      const wallTopWidth = bodyWidth * 0.87
+      const ridge = bodyTop + H * 0.15
 
       // --- Trestle -------------------------------------------------------------
       const timber: BufferGeometry[] = []
@@ -129,7 +180,7 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
           treeSide,
           treeSide * 0.12,
           [0, floor + (lower ? treeSide * 0.5 : treeSide * 1.4), 0],
-          tint('oak', lower ? -0.1 : -0.05),
+          wood(lower ? -0.015 : -0.005),
         ))
       }
 
@@ -141,25 +192,36 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         [postSide * 0.92, postSide * 0.92],
         postHeight,
         [0, postBase + postHeight / 2, 0],
-        tint('oak', -0.02),
+        wood(-0.005),
       ))
 
       // Four quarter-bars, one to each arm of the cross-trees. Their feet sit
       // ON the cross-tree and their heads run INTO the post, so both joints are
       // overlaps rather than faces meeting.
+      //
+      // The foot height is PER ARM. The cross-trees are stacked, so the two
+      // arms that run along the upper tree seat a full timber higher than the
+      // two along the lower one; a single shared foot height put the lower
+      // pair's feet at the upper tree's level, 6 cm above the timber that was
+      // actually underneath them, and the critic saw the gap: a brace stopping
+      // in mid-air just short of its cross-tree.
       const barFoot = treeSpan * 0.36
       const barHead = postTop - H * 0.075
-      const barRise = barHead - (floor + treeSide * 1.6)
-      const barLength = Math.hypot(barFoot, barRise)
       for (let i = 0; i < 4; i += 1) {
         const a = (i / 4) * Math.PI * 2
+        // Arms at a = 0 and PI run along the upper (z) tree, the other two
+        // along the lower (x) tree: the same order the trees were laid in.
+        const onUpper = i % 2 === 0
+        const footY = floor + treeSide * (onUpper ? 1.45 : 0.62)
+        const barRise = barHead - footY
+        const barLength = Math.hypot(barFoot, barRise)
         const bar = chamferedBoxGeometry(
           [H * 0.036, H * 0.05],
           [H * 0.03, H * 0.042],
           barLength * 1.04,
           H * 0.006,
           [0, 0, 0],
-          tint('oak', -0.07 + jitter(random, 0.03)),
+          wood(-0.01 + jitter(random, 0.008)),
         )
         // Built upright, leaned outwards, then swung to its arm. Rotating about
         // X leans it in the YZ plane; rotating about Y carries that lean round.
@@ -178,71 +240,164 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         bar.rotateY(a)
         bar.translate(
           Math.sin(a) * barFoot * 0.5,
-          (floor + treeSide * 1.6 + barHead) / 2,
+          (footY + barHead) / 2,
           Math.cos(a) * barFoot * 0.5,
         )
         timber.push(bar)
       }
 
       // Crown: the beam the whole body turns on, laid across the post's head.
+      // Wide enough that it visibly projects past BOTH walls -- at 1.05 x the
+      // body width the projection was 4 cm a side, swallowed by perspective,
+      // and the critic read it as a block hanging off one side only.
       timber.push(chamferedBoxGeometry(
-        [bodyWidth * 1.05, H * 0.07],
-        [bodyWidth * 0.98, H * 0.06],
+        [bodyWidth * 1.14, H * 0.09],
+        [bodyWidth * 1.08, H * 0.08],
         H * 0.05,
         H * 0.006,
         [0, postTop - H * 0.012, 0],
-        tint('oak', 0.02),
+        wood(0.008),
       ))
 
       // --- Body ----------------------------------------------------------------
       const shell: BufferGeometry[] = []
       shell.push(chamferedBoxGeometry(
         [bodyWidth, bodyDepth],
-        [bodyWidth * 0.99, bodyDepth * 0.99],
+        [wallTopWidth, bodyDepth * 0.99],
         bodyHeight,
         H * 0.008,
         [0, bodyBottom + bodyHeight / 2, 0],
-        tint('oak', 0.04),
-        tint('oak', -0.03),
+        wood(0.012, 0.25),
+        wood(0, 0.25),
       ))
 
-      // Roof: two pitched sheets meeting at a ridge. Built as tapered boxes
-      // leaned in rather than as a prism, so the gable ends stay flat and the
-      // eaves can overhang the walls, which is what keeps rain off boarding.
-      const eave = bodyWidth * 0.62
+      // Plank language. The reference wall is mostly vertical board lines, and
+      // a bare box carries none of that, which the critique named second after
+      // the palette. Vertex colour cannot stripe a single box, so the language
+      // is battens: proud vertical strips on both side walls, leaned to the
+      // same batter as the wall face so they lie along it rather than pulling
+      // away from it towards the eave. Their outer faces are parallel to the
+      // wall's, never in its plane.
+      const wallLean = Math.atan2((bodyWidth - wallTopWidth) / 2, bodyHeight)
+      const wallMidX = (bodyWidth + wallTopWidth) / 4
+      for (const side of [-1, 1] as const) {
+        for (let b = 0; b < 5; b += 1) {
+          const z = ((b + 0.5) / 5 - 0.5) * bodyDepth * 0.88
+          const batten = chamferedBoxGeometry(
+            [H * 0.012, H * 0.046],
+            [H * 0.01, H * 0.04],
+            bodyHeight * 0.9,
+            H * 0.003,
+            [0, 0, 0],
+            wood(-0.007 + jitter(random, 0.006), 0.25),
+          )
+          batten.rotateZ(side * wallLean)
+          batten.translate(side * (wallMidX + H * 0.003), bodyBottom + bodyHeight / 2, z)
+          shell.push(batten)
+        }
+      }
+
+      // Roof: a solid gable wedge closing the top of the buck, two boarded
+      // pitch slabs lying on its slopes, and a ridge board over the apex.
+      //
+      // The wedge is this pass's fix. The roof used to be ONLY the two thin
+      // slabs, leaned over a flat-topped box: from anywhere above eave height
+      // the buck's bare top face showed between them, and the triangular
+      // gable under each end of the ridge was open sky. The critic read the
+      // result as two disjoint roof planes at different heights with a gap at
+      // the gable, and the critic was right. A pitched roof is a solid, not
+      // two planes; the wedge fills wall-top to ridge, so the gable ends are
+      // boarded and there is nothing to see between the pitches.
       const roofRise = ridge - bodyTop
-      const slope = Math.hypot(eave, roofRise)
+      // Sunk 3 cm into the buck so its bottom face hides inside that solid
+      // instead of sharing the plane of the buck's top face, and inset a
+      // little so its gable faces do not share the walls' planes either.
+      const wedgeSink = 0.03
+      const wedgeRise = roofRise + wedgeSink
+      // The wedge sits on the tapered wall top now, so its base matches the
+      // wall TOP width, not the sill width.
+      const wedgeBase = wallTopWidth * 0.995
+      const wedgeHalfRun = (wedgeBase - H * 0.02) / 2
+      shell.push(taperedBoxGeometry(
+        [wedgeBase, bodyDepth * 0.985],
+        [H * 0.02, bodyDepth * 0.985],
+        wedgeRise,
+        [0, bodyTop - wedgeSink + wedgeRise / 2, 0],
+        wood(0.012, 0.25),
+        wood(0.03, 0.25),
+      ))
+
+      // The slabs match the wedge's own pitch and are pushed out along the
+      // slope normal by a whisker LESS than half their thickness, so their
+      // undersides sit just inside the wedge -- interpenetrating, never
+      // coplanar -- and their tops are the shingled surface. Extra length is
+      // shoved downhill so it becomes eave overhang past the walls rather
+      // than a crossing at the ridge, and extra depth overhangs the gables.
+      const pitchAngle = Math.atan2(wedgeRise, wedgeHalfRun)
+      const slopeLength = Math.hypot(wedgeRise, wedgeHalfRun)
+      const slabT = H * 0.016
       for (const side of [-1, 1]) {
-        // `slope`, not `slope * 2`. Each pitch covers HALF the roof: the slope
-        // is already the hypotenuse from ridge to eave. Doubled, the two came
-        // out 2.79 m across a building 1.80 m wide, and the roof stopped being
-        // a roof and became the largest thing in the silhouette.
         const pitch = chamferedBoxGeometry(
-          [slope * 1.03, bodyDepth * 1.08],
-          [slope * 1.03, bodyDepth * 1.08],
-          H * 0.016,
+          [slopeLength * 1.28, bodyDepth * 1.06],
+          [slopeLength * 1.28, bodyDepth * 1.06],
+          slabT,
           H * 0.004,
           [0, 0, 0],
-          tint('oak', -0.12),
+          // LIGHTER than the walls, not darker. Weathered shingle bleaches
+          // ahead of the boarding under it, and this slab at -0.12 was the
+          // near-black roof the critique led with: on a palette whose oak
+          // lightness is 0.067 linear, -0.12 is the floor. Matching the
+          // wedge's top tone also stops the slab's edge reading as a black
+          // band where the two roof solids meet along the eave.
+          wood(0.035, 0.25),
         )
-        // The pitch starts as a slab lying FLAT -- `chamferedBoxGeometry` takes
-        // an X-Z footprint and a Y height -- so the tilt is the roof's angle
-        // measured from the horizontal, and it is negative on the +X side so
-        // the eave drops rather than rises. Both earlier attempts used the
-        // complement of this angle, which stood the pitches up like the covers
-        // of an open book.
-        pitch.rotateZ(-side * Math.atan2(roofRise, eave))
-        pitch.translate(side * eave * 0.5, bodyTop + roofRise * 0.5, 0)
+        // The slab starts lying FLAT -- `chamferedBoxGeometry` takes an X-Z
+        // footprint and a Y height -- so the tilt is the pitch angle from the
+        // horizontal, negative on the +X side so the eave drops rather than
+        // rises. Both earlier attempts used the complement of this angle,
+        // which stood the pitches up like the covers of an open book.
+        pitch.rotateZ(-side * pitchAngle)
+        const midX = (wedgeBase / 2 + H * 0.01) / 2
+        const midY = bodyTop - wedgeSink + wedgeRise / 2
+        const downhill = slopeLength * 0.11
+        const slabX = side * (midX + Math.sin(pitchAngle) * slabT * 0.35 + Math.cos(pitchAngle) * downhill)
+        const slabY = midY + Math.cos(pitchAngle) * slabT * 0.35 - Math.sin(pitchAngle) * downhill
+        pitch.translate(slabX, slabY, 0)
         shell.push(pitch)
+
+        // Shingle courses: three thin strips per pitch, parallel to the ridge
+        // and slightly proud of the slab, sunk a quarter of their thickness
+        // into it so they are joined solids rather than sheets lying on a
+        // face. Without some course lines the roof reads as painted card, and
+        // the critique called the missing shingle language out by name.
+        for (let course = 0; course < 3; course += 1) {
+          const strip = chamferedBoxGeometry(
+            [H * 0.028, bodyDepth * 1.02],
+            [H * 0.024, bodyDepth * 1.0],
+            slabT * 0.55,
+            H * 0.002,
+            [0, 0, 0],
+            wood(0.028 + jitter(random, 0.006), 0.25),
+          )
+          strip.rotateZ(-side * pitchAngle)
+          const along = (course - 1) * slopeLength * 0.32
+          const out = slabT * 0.5 + slabT * 0.55 * 0.5 - slabT * 0.25
+          strip.translate(
+            slabX + side * (Math.sin(pitchAngle) * out + Math.cos(pitchAngle) * along),
+            slabY + Math.cos(pitchAngle) * out - Math.sin(pitchAngle) * along,
+            0,
+          )
+          shell.push(strip)
+        }
       }
-      // Ridge board, capping the join so the two pitches do not meet in a seam.
+      // Ridge board, capping the line where the two slabs cross.
       shell.push(chamferedBoxGeometry(
         [H * 0.03, bodyDepth * 1.1],
         [H * 0.024, bodyDepth * 1.1],
         H * 0.022,
         H * 0.004,
-        [0, ridge - H * 0.008, 0],
-        tint('oak', -0.16),
+        [0, ridge + H * 0.002, 0],
+        wood(0.02, 0.25),
       ))
 
       // The door, in the tail wall above the gallery.
@@ -266,7 +421,9 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         doorHeight,
         H * 0.004,
         [0, doorY, doorZ - H * 0.004],
-        tint('oak', -0.14),
+        // A plank tone a shade darker than the wall, not the pure black slab
+        // the critique saw: -0.14 was through the tinter's floor.
+        wood(-0.022, 0.25),
       ))
       // Two iron-dark ledges across it, and the frame: what stops a plank door
       // being a rectangle drawn on a wall.
@@ -277,7 +434,7 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
           H * 0.022,
           H * 0.003,
           [0, doorY + doorHeight * at, doorZ - H * 0.012],
-          tint('oak', -0.22),
+          wood(-0.034, 0.25),
         ))
       }
 
@@ -288,7 +445,7 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         H * 0.018,
         H * 0.004,
         [0, bodyBottom + H * 0.02, -bodyDepth * 0.52],
-        tint('oak', -0.06),
+        wood(-0.008),
       ))
 
       // --- Sails ---------------------------------------------------------------
@@ -308,9 +465,17 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
       // sailLength * sin(tilt), about 0.26 m here; pushing the hub out to 0.86
       // of the body's depth left the sails hanging most of a metre off the
       // gable with nothing but the shaft between them, where the reference has
-      // them sweeping close past the boarding.
-      const hubZ = bodyDepth * 0.72
-      const hubY = bodyBottom + bodyHeight * 0.72
+      // them sweeping close past the boarding. Pulled in again from 0.74: the
+      // forward hub under a perspective camera is why the critic measured the
+      // near arm 25 percent longer than its opposite -- the four arms are
+      // identical -- and every centimetre back shrinks that distortion. At
+      // 0.68 the rear stock's sweep still clears the roof overhang by ~5 cm.
+      const hubZ = bodyDepth * 0.68
+      // High on the gable end, not at the gallery. At 0.72 the hub sat far
+      // enough below the eave line that from a corner view it read as bolted
+      // to the wall at gallery height; the reference carries it just under
+      // the eave, so the sails radiate from beneath the roof apex.
+      const hubY = bodyBottom + bodyHeight * 0.80
       const sailLength = config.sailSpan / 2
       const hubRadius = H * 0.035
       const barT = H * 0.014
@@ -334,70 +499,85 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         [hubRadius * 1.5, hubRadius * 1.5],
         shaftLength,
         [0, 0, 0],
-        tint('oak', -0.04),
+        wood(-0.008),
       )
       shaft.rotateX(Math.PI / 2)
       shaft.translate(0, 0, -shaftLength * 0.32)
       rig.push(shaft)
-      // The bands themselves, and they are not decoration. Four sails pull on
-      // one shaft from four directions; what holds the whips to it is iron
-      // strapping, and this model declared an `iron` slot while using it
-      // nowhere -- the shaft was described in the comment above as iron-banded
-      // and then painted oak like everything else.
-      for (const at of [-0.02, 0.03]) {
-        const band = taperedBoxGeometry(
-          [hubRadius * 2.4, hubRadius * 2.4],
-          [hubRadius * 2.3, hubRadius * 2.3],
-          H * 0.014,
+      // The canister boss: one dark iron block at the crossing, holding both
+      // stocks to the shaft. It replaces the two thin iron bands of the last
+      // pass, which at +0.02 lift with the iron material's low roughness came
+      // out PALE blue-grey -- a colour used nowhere else -- and, sitting at
+      // -0.02 and +0.03 along the shaft, read as a chip floating beside the
+      // cross rather than the thing joining it. This block is centred on the
+      // crossing, deep enough along the shaft to swallow both whips where
+      // they pass (they interpenetrate it on purpose), and it is the darkest
+      // value on the whole model: everything else moved up into one pale
+      // weathered family, and the boss is the single iron note the reference
+      // keeps dark.
+      ironWork.push(boxGeometry(
+        [bodyWidth * 0.155, bodyWidth * 0.155, barT * 6.0],
+        [0, 0, 0],
+        tint('iron', -0.02, 0.4),
+      ))
+
+      // The stocks: TWO continuous timbers, each passing right through the
+      // crossing and carrying a sail at both ends, one behind the other along
+      // the shaft. Last pass built four separate whips instead, each STARTING
+      // at the hub radius, and the critic measured the arms as unequal --
+      // they were equal, but four inner ends loitering near a perspective-
+      // distorted hub gave it four slightly different crossings to guess at.
+      // A through stock cannot have that problem: both of its arms are the
+      // same timber.
+      for (const [index, off] of ([-1, 1] as const).entries()) {
+        const stock = boxGeometry(
+          [barT * 1.3, config.sailSpan * 0.995, barT * 1.6],
           [0, 0, 0],
-          tint('iron', 0.02, 0.7),
+          wood(-0.008 + jitter(random, 0.008)),
         )
-        band.rotateX(Math.PI / 2)
-        band.translate(0, 0, H * at)
-        ironWork.push(band)
+        if (index === 1) stock.rotateZ(Math.PI / 2)
+        stock.translate(0, 0, off * barT * 2.1)
+        rig.push(stock)
       }
 
       for (let i = 0; i < 4; i += 1) {
         const a = (i / 4) * Math.PI * 2
         const sail: BufferGeometry[] = []
-        const tone = tint('oak', -0.05 + jitter(random, 0.04))
 
-        // Whip: the spar the whole sail hangs on, running out from the hub.
-        sail.push(boxGeometry(
-          [barT * 1.3, sailLength - hubRadius, barT * 1.6],
-          [0, hubRadius + (sailLength - hubRadius) / 2, 0],
-          new Color(tone),
-        ))
-        // The outer rail of the frame, parallel to the whip.
+        // The outer rail of the frame, parallel to the stock.
         sail.push(boxGeometry(
           [barT * 0.9, (sailLength - hubRadius) * 0.9, barT * 1.1],
           [latticeWidth, hubRadius + (sailLength - hubRadius) * 0.5, 0],
-          new Color(tint('oak', -0.1)),
+          wood(-0.012),
         ))
-        // And the bars across. These are the sail: a solid blade would read as
-        // a propeller, and the lattice is what says "windmill" at any distance.
+        // The bars across. A solid blade would read as a propeller; the
+        // lattice is what says "windmill" at any distance.
         for (let b = 0; b < bars; b += 1) {
           const t = (b + 0.6) / bars
           sail.push(boxGeometry(
             [latticeWidth * 1.12, barT * 0.7, barT * 0.9],
             [latticeWidth * 0.5, hubRadius + (sailLength - hubRadius) * t, 0],
-            new Color(tint('oak', -0.02 + jitter(random, 0.05))),
+            wood(0.005 + jitter(random, 0.01)),
           ))
         }
+        // The windboard: the solid plank running the length of the leading
+        // edge, on the opposite side of the stock from the lattice. This is
+        // what makes a sail read as a BLADE rather than a bare ladder, and
+        // its absence was the critique's second fix. Thicker than both the
+        // bars and the stock's own plane so no face of it is coplanar with
+        // either where they interpenetrate.
+        sail.push(boxGeometry(
+          [latticeWidth * 0.48, (sailLength - hubRadius) * 0.94, barT * 1.15],
+          [-latticeWidth * 0.24 + barT * 0.5, hubRadius + (sailLength - hubRadius) * 0.5, 0],
+          wood(0.022, 0.25),
+        ))
 
         const merged = mergeColoured(sail)
         // Cant: each sail is twisted a few degrees about its own length so it
         // presents a face to the wind. Without it the four read as a flat cross.
         merged.rotateY(0.18)
         merged.rotateZ(a)
-        // Opposite pairs sit at different depths along the shaft.
-        //
-        // This is how the sails are actually carried: TWO stocks pass through
-        // the windshaft at right angles to each other, one behind the other,
-        // and each stock carries a sail at both of its ends. Built all in one
-        // plane the four converge on the hub in perfect symmetry, and the
-        // z-fight check found their faces meeting there -- correctly, because
-        // four timbers cannot occupy one crossing.
+        // Each lattice sits at its own stock's depth along the shaft.
         merged.translate(0, 0, (i % 2 === 0 ? -1 : 1) * barT * 2.1)
         rig.push(merged)
       }
@@ -405,17 +585,28 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
       const sails = mergeColoured(rig)
       const shaftBands = mergeColoured(ironWork)
       shaftBands.rotateX(-shaftTilt)
+      // The resting pose is an X, baked in BEFORE the tilt so `spin` stays a
+      // plain rotation about the shaft. Built as a "+" the mill parks with
+      // one sail hidden against the roofline and one dead horizontal, and the
+      // horizontal one reads as a railed walkway running off into space --
+      // which is exactly what the critique saw. The reference parks in an X,
+      // two sails up and two down, and so does every mill at rest: the X is
+      // the pose that keeps canvas, weight and lightning-conductor happy.
+      sails.rotateZ(Math.PI / 4)
       // The rig is authored around the hub and the part's origin goes there, so
       // `setTurning` spins it about the shaft instead of about the model.
       sails.rotateX(-shaftTilt)
 
       // --- Ladder --------------------------------------------------------------
-      // Long and shallow: it is the lever the mill is turned with, not a stair.
       const steps: BufferGeometry[] = []
-      // Long and shallow. The tail ladder is the lever the mill is turned by,
-      // so it reaches well behind: at 0.42 of the height it came down at 47
-      // degrees, which is a staircase. The reference lands much further back.
-      const footZ = -bodyDepth * 0.5 - H * 0.62
+      // Steeper than a lever wants, shallower than a stair. Every earlier pass
+      // reasoned from what a tail ladder DOES and reached 0.56 of the height,
+      // about 38 degrees -- and the critic, twice now, has read that reach as
+      // a gangplank competing with the sails for the silhouette. The reference
+      // has no ladder at all, so the ladder earns its keep only while it stays
+      // out of the way: 0.36 brings it to about 51 degrees with the foot a
+      // metre and a half closer in, clearly a way up the back of the buck.
+      const footZ = -bodyDepth * 0.5 - H * 0.36
       const headZ = -bodyDepth * 0.52
       const headY = bodyBottom + H * 0.02
       const run = headZ - footZ
@@ -451,7 +642,7 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
           railLength * 1.03,
           H * 0.004,
           [0, 0, 0],
-          tint('oak', -0.08),
+          wood(-0.012),
         )
         // +lean, not -lean. `run` is positive -- the ladder's head sits at a
         // LARGER z than its foot -- and rotateX(+t) carries +Y towards +Z, so
@@ -488,7 +679,7 @@ export function createModel(overrides: Partial<PostMillConfig> = {}) {
         const rung = boxGeometry(
           [railGap * 2 + H * 0.03, H * 0.02, H * 0.048],
           [0, 0, 0],
-          new Color(tint('oak', -0.03 + jitter(random, 0.04))),
+          wood(-0.005 + jitter(random, 0.008)),
         )
         rung.rotateX(lean)
         rung.translate(0, floor + rise * t + liftY, footZ + run * t + liftZ)

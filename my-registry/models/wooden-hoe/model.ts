@@ -1,41 +1,64 @@
 /**
  * @medieval-kit/wooden-hoe
  *
- * Gooseneck field hoe: an ash shaft, a forged iron neck curving forward and
- * down from the tip of the shaft, and a dished blade at the end of it.
+ * Field hoe after the reference photograph: a long ash shaft ending in a
+ * squared, chamfered block, a flat iron band wrapped tight around that block,
+ * a short flat strap running forward and down from the band, and a dark
+ * forged trapezoid blade hung off the strap at roughly 75 degrees to the
+ * shaft.
  *
- * THIRD attempt, and both of the earlier ones missed the same thing: the
- * GOOSENECK. What makes a hoe a hoe is not the blade, it is the curved neck
- * that carries the blade FORWARD off the axis of the shaft. Without it what
- * you get is a flat sheet balanced on top of a post — in the render it read
- * exactly as "lectern", "music stand", "road sign". The neck also adds negative
- * space to the silhouette: that gap between shaft and blade is what tells the
- * object apart from a distance.
+ * FIFTH pass. The fourth swept the old gooseneck past 180 degrees so the
+ * blade genuinely hung below the socket, which fixed "scythe" (45 -> 62) but
+ * not "hoe": the blade descended almost parallel to the shaft, so from the
+ * side the tool read as a paddle on a pole, and the free arc of the neck
+ * vaulted over the shaft end with air under it and read as a padlock
+ * shackle. The blind critique of that pass said to stop interpreting and
+ * model the reference literally. So the gooseneck, the bent lathe neck, the
+ * forged collar and the toolSocket ferrule (which covered the top tenth of
+ * the shaft and read as a long grey sleeve) are all gone.
  *
- * In the second attempt I tried to curve the blade with `bendGeometry` and
- * wrote in the comment "this single detail solves the real problem in the
- * silhouette". Measuring showed that was wrong: because the blade was built
- * CENTRED on y=0 the bend was symmetric, both ends went the same way and the
- * middle stayed where it was. On a 0.235 m blade the Z range DROPPED from
- * 0.0337 to 0.0327, i.e. the curve was not visible in the silhouette at all.
- * With the same blade built base-at-origin the run-out is 44 mm. Now both the
- * neck and the blade are started from the origin.
+ * Point by point against that critique:
+ *  - The blade sweeps FORWARD off the shaft axis. Its plane sits at about
+ *    75 degrees to the shaft and its root edge is about 2.3 shaft diameters
+ *    clear of the wood, so no side profile has the shaft overlapping the
+ *    blade, and no solid shares volume with the blade except the strap that
+ *    deliberately laps onto its back at the root.
+ *  - The blade holds full thickness over its upper two thirds and thins only
+ *    in the last third down to a lip, so its side faces actually exist and
+ *    the cutting edge catches light.
+ *  - The blade moved from the steel slot to the iron slot with a dark tint.
+ *    It was the palest element in the render and in the reference it is the
+ *    darkest; the value order was inverted. Only the cutting edge lightens.
+ *  - The arch is replaced by band + block + strap, and every iron piece
+ *    starts inside another solid: the strap begins inside the band slab, the
+ *    band wraps the block, the block swallows the shaft's top cap (which
+ *    used to poke out of the socket as a wood sliver).
+ *
+ * `neckSweep` stays in the config because other files reference the
+ * interface, but it is REINTERPRETED: it is now the forward pitch of the
+ * whole head in degrees from the shaft axis, clamped to 92..140. Larger
+ * folds the blade down toward the shaft, smaller lifts it toward square.
+ * There is no arc left for it to sweep.
+ *
+ * Earlier lessons, still load-bearing. The blade sheet is built with its
+ * base AT THE ORIGIN and rotated, then translated, in that order. `curve` in
+ * a sheet profile is an absolute rise in metres and must be scaled to the
+ * blade. Tints come from createTinter, which returns a new Color each call
+ * and floors lightness so a dark lift cannot fall through the palette.
+ *
+ * Still open: the shaft comes from the shared toolShaft helper, whose taper
+ * toward the head is real but slight; the reference tapers more. Core is
+ * shared, so that stays as it is.
  */
-import type { BufferGeometry } from 'three'
-
 import {
-  bendGeometry,
   chamferedBoxGeometry,
   createKitModel,
+  createTinter,
   dishedSheetGeometry,
-  ironTint,
-  steelTint,
   jitter,
-  latheGeometry,
   mergeColoured,
+  taperedBoxGeometry,
   toolShaft,
-  toolSocket,
-  type Level,
   type SheetLevel,
 } from '../core/index.ts'
 
@@ -43,11 +66,16 @@ export interface WoodenHoeConfig {
   /** Shaft length (metres). */
   readonly length: number
   readonly shaftRadius: number
-  /** Width of the blade (metres). */
+  /** Width of the cutting edge (metres). */
   readonly bladeWidth: number
-  /** Total sweep of the gooseneck (degrees). 0 = straight neck, no longer a hoe. */
+  /**
+   * Forward pitch of the head (degrees from the shaft axis), clamped to
+   * 92..140. At 92 the blade sticks out almost square to the shaft; at 140
+   * it folds well down toward it. The blade plane runs at 180 minus this to
+   * the shaft, so the default leaves it near 75 degrees, as the reference.
+   */
   readonly neckSweep: number
-  /** Dish of the blade. 0 = flat sheet. */
+  /** Dish of the blade. 0 = dead flat, which is close to the reference. */
   readonly dish: number
   readonly seed: number
 }
@@ -56,19 +84,8 @@ export const woodenHoeDefaults: WoodenHoeConfig = {
   length: 1.14,
   shaftRadius: 0.021,
   bladeWidth: 0.23,
-  // 112 stands. I lowered it to 95 after reading a render in which the blade
-  // happened to sit edge-on to the camera, and mistook foreshortening for the
-  // wrong angle.
-  //
-  // It is also worth recording that the reference generated for this model is
-  // a plain strap hoe, where this one is deliberately a GOOSENECK -- a curved
-  // forged neck carrying the blade ahead of the shaft axis, as the
-  // description says. Both are period-correct, and bending the model towards
-  // the photograph on that point would be changing the design rather than
-  // fixing a fault. The blade's depth and wedge are another matter: a hoe
-  // blade is the heavy end of the tool whichever neck it hangs from.
-  neckSweep: 112,
-  dish: 1,
+  neckSweep: 104,
+  dish: 0.8,
   seed: 23,
 }
 
@@ -80,109 +97,111 @@ export function createModel(overrides: Partial<WoodenHoeConfig> = {}) {
     defaults: woodenHoeDefaults,
     slots: ['oak', 'iron', 'steel'],
     build: ({ config, random }) => {
-      const shaft = toolShaft({ length: config.length, radius: config.shaftRadius, random })
-      const socketLength = config.length * 0.075
-      const socket = toolSocket({
-        y: shaft.top - socketLength * 0.42,
-        shaftRadius: shaft.topRadius,
-        length: socketLength,
-        random,
-      })
+      const tint = createTinter(random)
+      // Floored: radius and width divide nothing, but they scale everything,
+      // and a zero would collapse the head into degenerate triangles.
+      const radius = Math.max(0.008, config.shaftRadius)
+      const dia = radius * 2
+      const bladeW = Math.max(0.05, config.bladeWidth)
 
-      // --- Gooseneck ----------------------------------------------------------
-      // It is built with its base AT THE ORIGIN and bent from there; centred on
-      // y=0 it would bend symmetrically and nothing would happen.
-      //
-      // `latheGeometry` was chosen because it has intermediate levels: bending
-      // a two-level box gives you a warped box, not an arc.
-      const neckLength = config.length * 0.17
-      const bar = config.shaftRadius * 0.85
-      const sweep = (config.neckSweep * Math.PI) / 180
-      const curvature = sweep / neckLength
+      const shaft = toolShaft({ length: config.length, radius, random })
+      const top = shaft.top
 
-      const neckLevels: Level[] = Array.from({ length: 7 }, (_, i) => {
-        const t = i / 6
-        return { y: neckLength * t, radius: bar * (1.05 - 0.28 * t) }
-      })
-      const neck = latheGeometry(neckLevels, 5, [0, 0, 0], ironTint(random, -0.02), {
-        colourTop: ironTint(random, 0.04),
-      })
-      // A forged neck is not round but FLAT: it is hammered out crosswise. The
-      // scaling is BEFORE the bend and only in X — scaling in Z would ruin the
-      // plane of the arc.
-      neck.scale(1.75, 1, 0.62)
-      bendGeometry(neck, curvature)
-      neck.translate(0, shaft.top - neckLength * 0.12, 0)
+      // --- Squared end block --------------------------------------------------
+      // The wood continues past the band as a squared, chamfered block, as in
+      // the reference. It starts a diameter INSIDE the round shaft, so the
+      // shaft's top cap and its tapered tip are both swallowed whole: the
+      // block's half width just exceeds the shaft's top radius.
+      const blockHalf = radius * 1.02
+      const blockBottom = top - dia * 1.1
+      const blockTop = top + dia * 1.2
+      const block = chamferedBoxGeometry(
+        [blockHalf * 2, blockHalf * 2],
+        [blockHalf * 1.84, blockHalf * 1.84],
+        blockTop - blockBottom,
+        dia * 0.14,
+        [0, (blockBottom + blockTop) / 2, 0],
+        tint('oakEnd', 0),
+        tint('oakEnd', 0.04),
+      )
 
-      // The TIP of the neck and the tangent there come out of the arc mapping
-      // itself — computed instead of placed by eye, so that when `neckSweep`
-      // changes the blade follows on its own.
-      const tipY = shaft.top - neckLength * 0.12 + Math.sin(sweep) / curvature
-      const tipZ = (1 - Math.cos(sweep)) / curvature
+      // --- Iron band ----------------------------------------------------------
+      // A flat band about one shaft diameter tall, wrapped tight on the block.
+      // Modelled as a solid slab; the wood passing through it hides the
+      // interior, and from outside it reads as the wrapped hoop it stands for.
+      const bandHalf = blockHalf + 0.006
+      const bandY = top + dia * 0.25
+      const band = chamferedBoxGeometry(
+        [bandHalf * 2, bandHalf * 2],
+        [bandHalf * 2, bandHalf * 2],
+        dia * 0.95,
+        0.0025,
+        [0, bandY, 0],
+        tint('iron', 0.03),
+        tint('iron', 0.07),
+      )
 
-      // --- Blade ---------------------------------------------------------------
-      // Continues from the tip of the neck. Built base-at-origin so that the
-      // dish is actually visible.
-      // 0.17 of the tool, not 0.115. A field hoe's blade is the heavy end of
-      // it -- in the reference it is close to a fifth of the whole length --
-      // and at 131 mm ours read as a tab riveted to a stick.
-      const bladeLength = config.length * 0.15
-      const thick = config.length * 0.028
-      const thin = config.length * 0.006
-      // A dished sheet, not a bent box.
-      //
-      // The blade was a `chamferedBoxGeometry` put through `bendGeometry`.
-      // That has exactly four levels in Y, and once the blade was made deep
-      // enough to look right the bend had to work a 50-degree arc across those
-      // four -- the cutting edge came out visibly faceted, a row of steps
-      // instead of a curve. `dishedSheetGeometry` exists for this: it produces
-      // one seamless concave surface whose cross-section is curved at every
-      // level, which is what the shovel's blade is built from.
-      //
-      // The hoe is a wedge: narrow where the neck carries it, wide where it
-      // meets the ground. That taper is most of what identifies the
-      // silhouette, and it was nearly parallel-sided before.
-      const halfEdge = config.bladeWidth / 2
-      // `curve` is an absolute rise in metres, not a ratio, so it has to be
-      // scaled to the blade. Written as `-0.34 * dish` it asked for a 340 mm
-      // rise across a 230 mm blade -- seven times its own half-width -- and
-      // the sheet came out as a pair of wings. The shovel gets this right:
-      // `bladeWidth * dish`, with its own dish slider running 0 to 0.22. This
-      // one's runs 0 to 2, so the coefficient differs; the quantity does not.
-      const curve = config.bladeWidth * 0.13 * config.dish
+      // --- Strap (the neck) ---------------------------------------------------
+      // A short tapered bar running forward and down from the band; the blade
+      // hangs off its end. Direction comes from the head pitch so the whole
+      // head follows `neckSweep` as one piece.
+      const pitch = (Math.min(140, Math.max(92, config.neckSweep)) * Math.PI) / 180
+      const dirY = Math.cos(pitch)
+      const dirZ = Math.sin(pitch) // 92..140 degrees keeps this well above 0.6
+
+      const startY = bandY - dia * 0.1
+      const startZ = radius * 0.6            // buried inside the band slab
+      const rootZ = dia * 2.3                // blade root, clear of the wood
+      const lenToRoot = (rootZ - startZ) / dirZ
+      const lap = dia * 0.5                  // how far the strap laps onto the blade
+      const strapLen = lenToRoot + lap
+      const strap = taperedBoxGeometry(
+        [dia * 0.52, dia * 0.3],
+        [dia * 0.62, dia * 0.32],
+        strapLen,
+        [0, strapLen / 2, 0],
+        tint('iron', -0.04),
+        tint('iron', -0.06),
+      )
+      strap.rotateX(pitch)
+      strap.translate(0, startY, startZ)
+
+      const rootY = startY + dirY * lenToRoot
+
+      // --- Blade --------------------------------------------------------------
+      // A trapezoid widening from a narrow root to the cutting edge, the two
+      // edge corners taken off. Thickness is a twenty-fifth of the width, held
+      // over the top two thirds and thinned only in the last third to a lip,
+      // so the plate shows a side face instead of reading as a sheet. Root
+      // dark forged iron, edge worn lighter.
+      const bladeLength = bladeW * 0.9
+      const halfEdge = bladeW / 2
+      const thick = bladeW * 0.04
+      const curve = bladeW * 0.045 * config.dish
       const profile: SheetLevel[] = [
-        { y: 0, halfWidth: halfEdge * 0.34, thickness: thick, curve: curve * 0.15 },
-        { y: bladeLength * 0.18, halfWidth: halfEdge * 0.6, thickness: thick * 0.9, curve: curve * 0.5 },
-        { y: bladeLength * 0.52, halfWidth: halfEdge * 0.86, thickness: thick * 0.6, curve: curve * 0.9 },
-        { y: bladeLength * 0.86, halfWidth: halfEdge, thickness: thin * 1.6, curve },
-        { y: bladeLength, halfWidth: halfEdge * 0.99, thickness: thin, curve: curve * 0.95 },
+        { y: 0, halfWidth: halfEdge * 0.55, thickness: thick, curve: curve * 0.2 },
+        { y: bladeLength * 0.3, halfWidth: halfEdge * 0.72, thickness: thick, curve: curve * 0.5 },
+        { y: bladeLength * 0.66, halfWidth: halfEdge * 0.88, thickness: thick * 0.94, curve: curve * 0.85 },
+        { y: bladeLength * 0.92, halfWidth: halfEdge, thickness: thick * 0.38, curve },
+        { y: bladeLength, halfWidth: halfEdge * 0.93, thickness: thick * 0.2, curve: curve * 0.97 },
       ]
+      // The lift looks heavy written down, but the blade's face points at the
+      // sky in every standing view and direct sky light lifts it a band or
+      // two: at -0.05 it still rendered as the palest part of the tool.
       const blade = dishedSheetGeometry(
-        profile, 7, steelTint(random, -0.04), steelTint(random, 0.05),
+        profile, 7, tint('iron', -0.16, 0.4), tint('iron', -0.02, 0.4),
       )
       // A forged blade is not perfectly symmetric.
-      blade.rotateY(jitter(random, 0.04))
-      // Align to the tangent at the neck tip, then move it there — order is critical.
-      blade.rotateX(sweep)
-      blade.translate(0, tipY, tipZ)
-
-      // Collar: the forged thickening where the neck meets the blade. The only
-      // detail that answers how the two pieces hold on to each other.
-      const collar = latheGeometry([
-        { y: -bar * 0.9, radius: bar * 1.05 },
-        { y: 0, radius: bar * 1.5 },
-        { y: bar * 1.1, radius: bar * 1.15 },
-      ], 6, [0, 0, 0], ironTint(random, 0.06))
-      collar.scale(1.7, 1, 0.7)
-      collar.rotateX(sweep)
-      collar.translate(0, tipY, tipZ)
-
-      const ironwork: BufferGeometry = mergeColoured([socket, neck, collar])
+      blade.rotateY(jitter(random, 0.03))
+      // Align to the strap direction, then move to its end. Order matters:
+      // rotating after the move would swing the blade around the model origin.
+      blade.rotateX(pitch)
+      blade.translate(0, rootY, rootZ)
 
       return {
-        shaft: { slot: 'oak', geometry: shaft.geometry },
-        socket: { slot: 'iron', geometry: ironwork },
-        blade: { slot: 'steel', geometry: mergeColoured([blade]) },
+        shaft: { slot: 'oak', geometry: mergeColoured([shaft.geometry, block]) },
+        socket: { slot: 'iron', geometry: mergeColoured([band, strap]) },
+        blade: { slot: 'iron', geometry: mergeColoured([blade]) },
       }
     },
   }, overrides)

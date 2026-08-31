@@ -92,10 +92,10 @@ for (const [label, patch] of CASES) {
   const seatTris = triangles(model.parts.seat.anchor)
   const seatTop = Math.max(...seatTris.flatMap((t) => [t[1]!, t[4]!, t[7]!]))
   const legTris = triangles(model.parts.legs.anchor)
-  const other = [
-    ...legTris,
-    ...(model.parts.stretcher ? triangles(model.parts.stretcher.anchor) : []),
-  ]
+  // The bench used to carry a stretcher and no longer does: the reference has
+  // none, and the open span under the seat is most of what separates a bench
+  // from a table. Only the legs can stand proud of the seat now.
+  const other = legTris
   const peak = Math.max(...other.flatMap((t) => [t[1]!, t[4]!, t[7]!]))
   const proud = peak - seatTop
   worstProud = Math.max(worstProud, proud)

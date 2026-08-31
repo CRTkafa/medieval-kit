@@ -110,7 +110,19 @@ export function createModel(overrides: Partial<RoundShieldConfig> = {}) {
         // The plank is a chord of the circle, so its length is set by how far
         // out it sits. Squaring off every plank at full width would give a
         // square with a rim drawn on it.
-        const halfSpan = Math.sqrt(Math.max(0, R * R - Math.pow(Math.abs(x) + step * 0.5, 2)))
+        //
+        // The chord is measured an eighth of the way out, not at the plank's
+        // outer edge, and the plank NARROWS to that quarter width at the rim so
+        // its far corners sit just inside the rim rather than outside it.
+        //
+        // Measured at the outer edge, which is what this did, the outermost
+        // plank of nine came out exactly zero long and was dropped by the guard
+        // below. Both edge planks vanished, the board field ended a full plank
+        // short of the rim on each side, and the shield rendered with the
+        // background showing through it. The ones that survived stepped in and
+        // out against the rim in a sawtooth, because every one of them stopped
+        // where its own outer corner met the circle.
+        const halfSpan = Math.sqrt(Math.max(0, R * R - Math.pow(Math.abs(x) + step * 0.12, 2)))
         if (halfSpan <= step * 0.2) continue
         for (const half of [-1, 1]) {
           // The two halves of one plank are quartered on the DIAGONAL: the
@@ -121,7 +133,7 @@ export function createModel(overrides: Partial<RoundShieldConfig> = {}) {
           const colour = (half < 0) === left ? upper : lower
           boards.push(taperedBoxGeometry(
             [step * 0.97, T],
-            [step * 0.94, T * 0.92],
+            [step * 0.86, T * 0.92],
             halfSpan,
             [x, half * halfSpan * 0.5, 0],
             new Color(colour),

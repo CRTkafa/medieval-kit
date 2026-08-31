@@ -7,8 +7,8 @@ mistakes that shaped both.
 
 ## The two kits
 
-**`@medieval-kit`** is finished and published. 37 models, 30,390 triangles, 13
-material slots, MIT. On npm as `@medieval-kit/registry`, currently `0.1.2`. The
+**`@medieval-kit`** is finished and published. 37 models, 39,518 triangles, 13
+material slots, MIT. On npm as `@medieval-kit/registry`, currently `0.2.0`. The
 viewer is live at <https://medieval.crt.fyi/> and rebuilds on every push. The
 GitHub repository is private, which is deliberate, and which is why the npm
 page's Repository and Issues links 404 until that changes.
@@ -35,12 +35,16 @@ run the checks".
 
 ### For a single model
 
-    edit contemporary-props/models/<id>/model.ts
-    bun contemporary-props/check.ts <id>          # measures, and draws it
+    edit <registry>/models/<id>/model.ts
+    bun scripts/check-model.ts <registry> <id>    # measures, and draws it
     LOOK AT THE PNG
-    bun contemporary-props/check.ts <id> --angles 6
+    bun scripts/check-model.ts <registry> <id> --angles 6
 
-`check.ts` deliberately does NOT rebuild the registry or install anything. The
+One script serves both kits. `contemporary-props/check.ts <id>` still works and
+is now a two-line wrapper over it; the two copies had begun to drift, and a
+checker that differs between kits says different things about the same fault.
+
+`check-model.ts` deliberately does NOT rebuild the registry or install anything. The
 kit-wide gate does both, and both write files the whole repository shares, so
 several workers running it at once overwrite each other and every one of them
 then verifies somebody else's code. That has already happened here once: a cart
@@ -84,7 +88,8 @@ Its own warning is worth repeating, because it is exactly the gap the local
 checks fill: a resemblance score is blind to parts seated on the wrong plane,
 geometry floating in front of a face, and coincident faces tearing. Ask for
 modelling errors listed separately from resemblance gaps, each with a location.
-`check.ts` and `scripts/audit.ts` exist to catch what the critic cannot see.
+`scripts/check-model.ts` and `scripts/audit.ts` exist to catch what the critic
+cannot see.
 
 `references/modeling-rules.md` carries 17 hard rules. The ones that cost real
 time here: bevels budgeted by perceptual role, physical features sized in world
@@ -104,6 +109,35 @@ detail that is the entire point of having one.
 The script currently reads `MODEL_META` from `my-registry` and needs
 generalising before it can serve `contemporary-props`, whose metadata lives in
 `models/<id>/meta.json` sidecars instead.
+
+## Where the scores stand
+
+Every model has been scored by a blind critic against its reference photograph:
+brief, reference and a four-angle render, never the code. 85 is acceptance.
+
+The kit sits around 71 on average and one model, the ladder, has reached 85.
+That is the honest number and it did not move as fast as the work did. Three
+rounds of rebuilding produced mean gains of +3.1, +4.1 and +1.7, so the returns
+are falling, and several models have now plateaued or gone backwards on a pass.
+
+What moved things most was not the rebuilding. The largest single gain in the
+kit belongs to a model nobody touched: the hand cart went from 68 to 79 on the
+palette corrections alone. The colour work is measured against the references
+with `woodcmp` (decode both PNGs, filter to warm pixels, compare median hue,
+saturation and lightness) and it is cheap, kit-wide and verifiable, where a
+rebuild is expensive and moves one model.
+
+Two rules came out of the scoring worth keeping:
+
+- **The score is not the object.** Deltas of one or two points are critic noise.
+  Read the "would you name it blind" answer first; it is binary and it is the
+  only question the kit exists to pass. One model currently fails it.
+- **A critic finding is a report, not a fact.** Checked against the geometry,
+  four separate findings this session were misreadings: a bell's "floating black
+  disc" was its own mouth ring, a barrel's "missing head" was present and lit
+  from any angle that could see it, a pitchfork's "tines pinched to a point"
+  were already spaced, and a shovel's "flattened slab grip" was a round bar.
+  Each cost a measurement to disprove and would have cost a wrong rebuild.
 
 ## Traps, each one paid for
 
@@ -158,6 +192,91 @@ the centre of the PROJECTION took the frame from 7.4% full to 23.6%.
 **Include the contact shadow in the camera fit.** It is drawn from geometry
 flattened onto the floor, which projects somewhere else entirely, and fourteen
 of thirty-seven models had a shadow running off the edge of its own cell.
+
+**A clean result on the axes you chose says nothing about the axis you did
+not.** Eleven separate critics called the kit's timber pink. The palette comment
+said colour had already been measured and settled: hue was right to one degree,
+saturation had been corrected and the remaining spread was 93% of the
+references'. Both were true. Nobody had measured LIGHTNESS, and across nine
+timber models the render sat a median 0.13 above its reference, worst on the
+chest at 0.21. Light plus slightly red is pink. The measurement was sound and
+its conclusion, written into the source as "what remains is geometry, not
+colour", was false.
+
+**A large offset on a dark palette rides the clip, and then the dice decide.**
+The anvil block darkened `oak` by a further 0.26, tuned when `oak` was a lighter
+colour. After the palette moved it landed within one jitter of black, and
+`createTinter` jitters lightness by up to 0.05 either way. Two renders that
+differed only in how many geometry calls ran before it came out brown and then
+black, because the tint reads from the same seeded stream the geometry does.
+Adding a part to a model reshuffles every colour downstream of it.
+
+**"We chose differently" is a defence. "It does not read as the thing" is not.**
+The hoe's own header argued that the reference was a strap hoe while the model
+was deliberately a gooseneck, that both are period-correct, and that bending
+toward the photograph would be changing the design. Every clause was true, and
+it was used to dismiss a critique whose actual content was that the object read
+as a scythe. It did: the neck bent 112 degrees, and a bar bent from tangent to
++Y rises before it falls, so the blade sat 69 mm above the top of the shaft.
+
+**Rejecting one axis is not a reason to discard the others measured beside it.**
+Straw was exempted from a colour correction on an argument that was half right.
+The measurement had said it was both too yellow and too washed out; the
+saturation half was rejected for a good reason that still holds, since a
+photograph of a bale reads desaturated because it is thousands of straws each
+shading its neighbour, and pushing a flat lowpoly surface to that number only
+makes it garish. The hue half was thrown out along with it and nothing checked
+lightness at all. Measured later, straw sat 11 degrees too yellow and a median
+0.18 too light. A bale rendered the colour of butter for months.
+
+**Moving a palette constant moves everything hanging off it, and some of it goes
+through the floor.** Lightness offsets are LINEAR, so the whole palette lives
+between about 0.03 and 0.36 and a lift written as -0.28 is enormous rather than
+gentle. Taking `cloth` from linear lightness 0.364 to 0.252 sent nine parts
+across six models straight through zero in one edit: a market stall's entire
+trestle, two stretchers, three cords and a set of bindings.
+
+The symptom is the part worth remembering. A crushed part does not look black.
+A zero albedo contributes nothing, so all that survives is the white specular
+highlight and the part renders NEUTRAL GREY: a market stall built entirely of
+oak came out looking like a grey steel frame. Nothing caught it. The geometry
+was fine, nothing floated, the slots resolved, the triangle count was unchanged.
+`createTinter` now floors lightness, and `verify-model.ts` fails any part whose
+mean linear luminance falls below 0.009.
+
+**Never divide by a config value whose slider reaches zero.** The shovel fitted
+two radii to its dish as halfWidth squared over twice the curve. At `dish: 0`
+that is a division by zero, the arc collapses, and `arcBarGeometry` returns
+non-finite vertices. The damage did not stay in the blade: the occlusion bake
+reads every vertex in the model, so one NaN position turned the colour attribute
+of the shaft and the socket to NaN as well. The only check that noticed was the
+z-fighting one, which reported 2278 overlapping faces on planes whose normals
+were NaN. Floor the input, not each value derived from it.
+
+**A default equal to the value the test patches it to is a silent failure.** The
+harness calls `configure()` with a patch and requires a rebuild. An agent read a
+critique asking for three ropes, set the default rope count to three, and the
+patch became a no-op. The model was correct and the protocol check failed.
+
+**`tsc` says nothing about the tree you just edited.** `tsconfig.json` includes
+`src`, `scripts` and `vite.config.ts`, and neither authoring tree is in that
+list. Editing `my-registry/models/**` and running `bunx tsc --noEmit` is a check
+that cannot fail, because the compiler never opens the file. It only sees the
+copy under `src/models/**`, so a type error appears one rebuild and one install
+later. Two models were written this session with a `Color` annotation and no
+import, and both reported a clean typecheck until the install carried them over.
+`bun` runs them either way: it strips types without checking them.
+
+**A correction applied twice is a new error.** After the palette entries were
+measured and moved, three models that had been carrying their own compensating
+offsets went wrong in the opposite direction. The basket took a third off oak's
+saturation to make willow, and oak had since been desaturated itself, so the
+basket landed 0.20 grey of its reference. The market stall subtracted 0.08 of
+lightness for weathering, and oak's whole linear lightness is 0.067, so its
+timber clamped to the floor and every part came out the same flat value. The
+rule that catches these: an offset is a statement about the DIFFERENCE between a
+model and the palette, so when the palette moves to meet the references, every
+offset that was standing in for the same correction has to shrink.
 
 **Shadow strength has to be per pixel.** Per triangle looks fine on a wall and
 tears a fan apart, because neighbouring triangles in a base cap have different
