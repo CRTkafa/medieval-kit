@@ -114,6 +114,15 @@ two of its three measurements were simply wrong — it reported the model at
 is 3.65 and 0.44. That is the same lesson the medieval kit already wrote down,
 reproduced exactly: **a critic finding is a report, not a fact.**
 
+Two more rounds sharpened what it is good for. It is RELIABLE ON PRESENCE:
+"no foot ring is visible", "no outlet hole across four views", "no knurl on the
+knob" were all true, all repeated until fixed, and all things a person had
+walked past. It is UNRELIABLE ON QUANTITY: in the gas cylinder's second round
+every one of its three measurements failed checking, and two inverted the real
+relationship — it called the foot ring 60% of the bottle's diameter against a
+reference's 35% where both are in fact 43%, and called the guard ring deeper
+than the reference's where it is shallower. Take the noun, check the number.
+
 So before acting on a number, falsify it. `bun scripts/check-model.ts <registry>
 <id>` prints the real extent in one line, and the source has the real
 fractions. Act on findings that repeat across rounds, because those are signal;
@@ -335,10 +344,10 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 7 of the core 100 modelled, and they are rows 1 to
+- **`contemporary-props`**: 8 of the core 100 modelled, and they are rows 1 to
   6 of the build order rather than six picked at random. The catalogue, the
   order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 8 is `gas-cylinder`. The number 119
+  `contemporary-props/CATALOGUE.md`; row 9 is `fire-extinguisher`. The number 119
   appeared here twice and was never anything: the catalogue is 100 core plus a
   further 150.
 

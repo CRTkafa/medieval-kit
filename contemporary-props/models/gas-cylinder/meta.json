@@ -1,0 +1,68 @@
+{
+  "title": "Gas Cylinder",
+  "description": "Steel gas bottle with a brass valve under a cage guard: one revolve for the shell, a radial array of posts carrying a hollow ring over the valve, and a handwheel that turns. The first model in the kit where a lathe carries an array.",
+  "category": "Tools",
+  "tags": [
+    "contemporary",
+    "tools",
+    "industrial",
+    "procedural"
+  ],
+  "controls": {
+    "height": {
+      "type": "number",
+      "label": "Height",
+      "min": 0.4,
+      "max": 1.3,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "radius": {
+      "type": "number",
+      "label": "Shell radius",
+      "min": 0.05,
+      "max": 0.2,
+      "step": 0.002,
+      "unit": "m"
+    },
+    "posts": {
+      "type": "number",
+      "label": "Guard posts",
+      "min": 3,
+      "max": 8,
+      "step": 1
+    },
+    "lobes": {
+      "type": "number",
+      "label": "Handwheel lobes",
+      "min": 5,
+      "max": 12,
+      "step": 1
+    },
+    "segments": {
+      "type": "number",
+      "label": "Sides",
+      "min": 12,
+      "max": 64,
+      "step": 1
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "steelPainted",
+    "aluminium",
+    "brass"
+  ],
+  "parts": [
+    "body",
+    "valve",
+    "wheel",
+    "cage"
+  ]
+}
