@@ -135,8 +135,15 @@ interface KitModel {
 
 const as = (make: () => unknown) => make as () => KitModel
 
-/** Registry name → factory. The first thing that cannot be derived from metadata. */
-const FACTORIES: Readonly<Record<string, () => KitModel>> = {
+/**
+ * Registry name → factory. The first thing that cannot be derived from metadata.
+ *
+ * Exported because the viewer's own `build()` hands back what a viewer needs,
+ * which is one primary action and a label for its button. A scene needs the
+ * model's own typed actions: nothing in the viewer's shape can tell a mill to
+ * turn.
+ */
+export const FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'wooden-barrel': as(createBarrel),
   'wooden-bucket': as(createBucket),
   'wooden-crate': as(createCrate),

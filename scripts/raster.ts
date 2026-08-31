@@ -615,6 +615,45 @@ export function renderObject(root: Object3D, options: RenderOptions): Frame {
   return frame
 }
 
+/** A scene's triangles, gathered once so a moving camera does not re-walk it. */
+export type Gathered = readonly Triangle[]
+
+/** Walks a transform tree into the flat triangle list the rasteriser draws. */
+export function gather(root: Object3D): Gathered {
+  return collect(root)
+}
+
+/**
+ * Draws from a camera somebody else placed.
+ *
+ * `renderObject` fits its own camera to the subject, which is what a catalogue
+ * picture wants and the one thing a moving camera cannot have: the framing has
+ * to be continuous between frames, and a fit recomputed every frame is not. It
+ * also takes the triangles rather than the tree, because gathering 45,000 of
+ * them for each of 1,800 frames is the whole cost of a flythrough.
+ */
+export function renderFrom(
+  triangles: Gathered,
+  camera: PerspectiveCamera,
+  options: {
+    readonly size: number
+    readonly tall?: number
+    readonly ground?: readonly number[]
+    /** Y the contact shadow is cast onto. A scene's is its ground plane. */
+    readonly floor?: number
+    /** Tallest thing in the scene, which is what the shadow falls off over. */
+    readonly height: number
+  },
+): Frame {
+  const { size, tall = size, ground, floor = 0, height } = options
+  const frame = newFrame(size, tall, ground)
+  camera.updateMatrixWorld(true)
+  camera.updateProjectionMatrix()
+  contactShadow(frame, camera, triangles, floor, height)
+  raster(frame, camera, triangles)
+  return frame
+}
+
 export function renderOne(id: string, options: RenderOptions): Frame {
   const entry = CATALOG[id]
   if (!entry) throw new Error(`not in catalog: ${id}`)

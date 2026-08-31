@@ -11,6 +11,11 @@ dist-viewer/
 renders/
 glb/
 
+# The flythrough's PNG sequence and the video cut from it. 720 frames of 1080p
+# is about two gigabytes, and both come back from one command.
+frames/
+*.mp4
+
 *.log
 *.tgz
 *.tsbuildinfo

@@ -175,6 +175,53 @@ parameters a viewer actually notices, and morphing cannot interpolate them,
 so before the split they were pinned for the whole beat and the tour looked
 static.
 
+## The market square
+
+The tour above shows the models one at a time. The other way to show a kit is
+to build the place it is for, and let a camera walk through it.
+
+```sh
+bun scripts/flythrough.ts --plan                  # the layout from above
+bun scripts/flythrough.ts --still 0.35            # one frame, to look at
+bun scripts/flythrough.ts --seconds 24 --fps 30   # the sequence, into frames/
+```
+
+`scripts/square.ts` is the layout: 47 placements covering every model in the
+kit, each one authored rather than packed. The anvil stands beside the forge,
+the tankards are on the tavern table, the tools lean where somebody left them
+and the mill is at the far end. Anything with an action is switched on first,
+so the sails turn, the forge burns and the sign swings while the camera moves.
+
+The camera runs on two splines, one for where it is and one for what it is
+looking at, because a camera that only looks along its own path can never show
+what it is passing. It comes in at standing height, crosses the square, then
+climbs and pulls back so the mill has room to be seven metres tall.
+
+Frames are drawn by the same software rasteriser as the contact sheets, which
+is the point: no browser, no GPU, no compositor, no dropped frames, exactly the
+resolution asked for, and the same command produces the same file next month.
+It renders about 1.5 frames a second at 1080p, so the work is split by frame
+range across as many processes as there are cores:
+
+```sh
+for k in $(seq 0 11); do
+  bun scripts/flythrough.ts --from $((k*60)) --to $((k*60+59)) --out frames &
+done; wait
+```
+
+Then cut it, at a bitrate high enough to survive being re-encoded by whatever
+it gets uploaded to:
+
+```sh
+ffmpeg -framerate 30 -i frames/%05d.png -f lavfi -i anullsrc=r=48000:cl=stereo \
+  -c:v libx264 -profile:v high -pix_fmt yuv420p \
+  -b:v 18M -maxrate 20M -bufsize 36M \
+  -c:a aac -b:a 96k -shortest -movflags +faststart square.mp4
+```
+
+The silent audio track is deliberate: several players handle an MP4 with no
+audio stream at all badly.
+
 ## Publish the viewer
 
 ```sh
