@@ -116,7 +116,7 @@ const HINT: Record<string, string> = {
   'ceramic-vase': 'a plain glazed ceramic vase, empty, with no flowers in it',
   'coffee-mug': 'a plain glazed stoneware coffee mug with a loop handle, empty, seen so the handle is to one side',
   'wine-glass': 'an empty stemmed wine glass in clear glass',
-  'pepper-mill': 'a contemporary table pepper mill of current design, stainless steel and wood, with a machined ribbed grip band around its waist, a steel knob on top and the grinder collar at its base',
+  'pepper-mill': 'a contemporary table pepper mill of current design: a straight cylindrical body, a flat top with a small knurled steel knob, a polished steel grinder collar at the base, and a band of VERTICAL machined flutes cut around the middle of the body for grip. The flutes run up and down, not around',
   'stockpot': 'a stainless steel lidded stockpot with two riveted side handles',
   'traffic-cone': 'an orange PVC traffic cone with a white reflective band, on its square base',
 

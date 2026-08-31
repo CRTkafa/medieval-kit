@@ -1,6 +1,6 @@
 {
   "title": "Pepper Mill",
-  "description": "Turned wooden pepper mill with a fluted waist grip and a stainless hex crown. The cap is its own part hinged on the mill's axis, so the twist action grinds. The waist and its height move it from a squat bistro mill to a tall waiter's mill.",
+  "description": "Table pepper mill: a straight tube with a polished steel collar at the base, a band of vertical flutes cut around the middle for grip, a flat top and a knurled steel knob that turns. The band is a recess with the ribs standing back out of it, so the flutes stop against a machined shoulder and the silhouette stays a clean cylinder.",
   "category": "Kitchen",
   "tags": [
     "contemporary",
@@ -25,25 +25,25 @@
       "step": 0.001,
       "unit": "m"
     },
-    "waist": {
+    "bandDepth": {
       "type": "number",
-      "label": "Waist",
-      "min": 0.45,
-      "max": 0.68,
-      "step": 0.01
+      "label": "Flute depth",
+      "min": 0.02,
+      "max": 0.12,
+      "step": 0.005
     },
-    "waistAt": {
+    "bandAt": {
       "type": "number",
-      "label": "Waist height",
-      "min": 0.42,
-      "max": 0.6,
+      "label": "Band height",
+      "min": 0.38,
+      "max": 0.72,
       "step": 0.01
     },
     "flutes": {
       "type": "number",
       "label": "Flutes",
-      "min": 8,
-      "max": 28,
+      "min": 12,
+      "max": 48,
       "step": 1
     },
     "segments": {
