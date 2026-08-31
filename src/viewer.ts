@@ -50,6 +50,29 @@ app.innerHTML = `
       <span class="brand-mark">vibe3d</span>
       <span class="brand-sub">source registry inspector</span>
     </header>
+    <!--
+      Where the kit actually is, and at the TOP of the rail.
+
+      The inspector shows each namespace's registry address as a LABEL: it is
+      what models.json resolves, not something anyone can click. Somebody who
+      has just spent a minute turning a barrel over has exactly one question
+      left, and putting the answer under a list of thirty-seven models means
+      scrolling past the whole kit to find it.
+    -->
+    <section class="block">
+      <p class="block-label">Get the kit</p>
+      <div class="actions">
+        <a class="action" href="https://www.npmjs.com/package/@medieval-kit/registry"
+           target="_blank" rel="noopener noreferrer">
+          <span>npm</span><span class="state">@medieval-kit/registry</span>
+        </a>
+        <a class="action" href="https://github.com/CRTkafa/medieval-kit"
+           target="_blank" rel="noopener noreferrer">
+          <span>source</span><span class="state">github</span>
+        </a>
+      </div>
+      <p class="install"><code>bunx vibe3d add @medieval-kit</code></p>
+    </section>
     ${REGISTRIES.map((registry) => `
       <section class="block">
         <div class="ns-head">

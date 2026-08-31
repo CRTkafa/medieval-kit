@@ -567,3 +567,25 @@ canvas { display: block; width: 100%; height: 100%; }
   color: var(--amber);
   text-shadow: 0 2px 14px rgba(5, 7, 10, 0.9);
 }
+
+/* An anchor styled as an action, and the install line under it. The state
+   column carries the address rather than a toggle, so it may run long: let it
+   shrink rather than push the label out of the rail. */
+a.action { text-decoration: none; }
+a.action .state { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.install {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px dashed var(--rule);
+  border-radius: 3px;
+  background: var(--graphite);
+  overflow-x: auto;
+}
+
+.install code {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--amber);
+  white-space: nowrap;
+}
