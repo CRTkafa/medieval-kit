@@ -193,13 +193,22 @@ and the mill is at the far end. Anything with an action is switched on first,
 so the sails turn, the forge burns and the sign swings while the camera moves.
 
 `scripts/scenery.ts` is the part the kit does not contain, and it is kept in
-its own file so the line stays visible: packed earth underfoot, and eight
-timber-framed houses making a frontage for the square to happen against. The
-first cut had neither, and it was the whole problem with it. Every object stood
-in its own patch of the same grey the sky was, so nothing was standing on
-anything, and the fences enclosed nothing because a single 2.7 m rail alone in
-the open encloses nothing. A floor and a wall are what turn a correct
-arrangement into a place.
+its own file so the line stays visible. The first cut had none of it, and that
+was the whole problem with it: every object stood in its own patch of the same
+grey the sky was, so nothing was standing on anything, and the fences enclosed
+nothing because a single 2.7 m rail alone in the open encloses nothing.
+
+The floor is the half of that worth keeping, and the released video uses only
+the floor. Nobody looks at ground and thinks it came out of the package, but
+they will think that about a house, and a video that ends in
+`bunx vibe3d add @medieval-kit` has to be a video of what that command
+installs. So the boundary is made of the kit's own fence instead, eighteen
+2.7 m modules run end to end down both sides and across the back, which costs
+some atmosphere and buys back the one claim the video is actually making.
+
+The frontage is still there, eight timber-framed houses behind
+`buildHouses()`, for anything that is not selling the kit. `--no-houses` is
+what leaves them out, and it is what the released cut passes.
 
 Two things that only show up once there is a floor. The ground has to be drawn
 BEFORE the contact shadows, or it paints straight over every one of them, and

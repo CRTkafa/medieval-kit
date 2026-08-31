@@ -92,7 +92,7 @@ function place(camera: PerspectiveCamera, t: number): void {
   camera.lookAt(AIM.getPoint(at))
 }
 
-const square = buildSquare()
+const square = buildSquare(undefined, { houses: !has('no-houses') })
 console.log(`square: ${square.root.children.length} models, ${square.height.toFixed(2)} m tall`)
 await mkdir(outDir, { recursive: true })
 

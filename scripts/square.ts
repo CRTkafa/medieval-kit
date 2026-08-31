@@ -50,15 +50,39 @@ export interface Placement {
  * Several appear more than once for the opposite reason: one barrel is a prop,
  * two barrels and a crate are a market.
  */
+/**
+ * The square's edges, tiled from one model.
+ *
+ * The rail is 2.70 m wide, so a run is that pitch with a few hundredths of a
+ * radian of wander on each post: a fence built by people is never straight, and
+ * a row of identical modules at exactly one angle reads as a repeated asset,
+ * which is the one thing it must not read as.
+ */
+const FENCE_RUNS: readonly Placement[] = [
+  ...[-8.6, -5.9, -3.2, -0.5, 2.2, 4.9].map((z, i): Placement => ({
+    id: 'wooden-fence',
+    at: [-10.5 + (i % 2) * 0.06, z],
+    yaw: Math.PI / 2 + (i % 3 - 1) * 0.018,
+  })),
+  ...[-8.6, -5.9, -3.2, -0.5, 2.2, 4.9].map((z, i): Placement => ({
+    id: 'wooden-fence',
+    at: [10.5 - (i % 2) * 0.06, z],
+    yaw: Math.PI / 2 - (i % 3 - 1) * 0.018,
+  })),
+  ...[-8.1, -5.4, -2.7, 0, 2.7, 5.4].map((x, i): Placement => ({
+    id: 'wooden-fence',
+    at: [x, -11.6 + (i % 2) * 0.05],
+    yaw: (i % 3 - 1) * 0.02,
+  })),
+]
+
 export const SQUARE: readonly Placement[] = [
   // --- The mill and the yard behind it ------------------------------------
   { id: 'post-mill', at: [-0.38, -7.02], yaw: 0.25 },
   { id: 'log-pile', at: [-3.75, -5.93], yaw: 0.3 },
   { id: 'hay-bale', at: [3.45, -6.08], yaw: -0.2 },
   { id: 'hay-bale', at: [4.28, -5.38], yaw: 0.4 },
-  { id: 'wooden-fence', at: [-3.8, -13.2], yaw: 0.06 },
-  { id: 'wooden-fence', at: [-1.0, -13.25] },
-  { id: 'wooden-fence', at: [1.8, -13.2], yaw: -0.05 },
+
 
   // --- The forge, on the left ----------------------------------------------
   { id: 'forge-hearth', at: [-4.8, -2.81], yaw: 0.42 },
@@ -108,10 +132,10 @@ export const SQUARE: readonly Placement[] = [
   { id: 'wooden-pitchfork', at: [5.4, 0.86], yaw: -0.1, lean: [0.16, -0.08] },
   { id: 'wooden-stool', at: [1.95, 1.17], yaw: 0.5 },
   { id: 'pitch-torch', at: [1.5, 0.16] },
-  { id: 'wooden-fence', at: [-13.0, 0.8], yaw: Math.PI / 2 },
-  { id: 'wooden-fence', at: [-13.0, -6.2], yaw: Math.PI / 2 + 0.05 },
-  { id: 'wooden-fence', at: [13.4, 1.4], yaw: Math.PI / 2 },
-  { id: 'wooden-fence', at: [13.4, -5.4], yaw: Math.PI / 2 - 0.05 },
+  // The boundary, and it is the kit's own fence rather than anything invented:
+  // 2.7 m modules run end to end down both sides and across the back. A kit
+  // whose fence cannot make a fence is not much of a fence.
+  ...FENCE_RUNS,
   // Foreground, so the near half of the frame is not bare floor. A camera at
   // standing height sees a lot of ground and nothing else unless something is
   // close enough to pass it.
@@ -156,7 +180,10 @@ export interface Square {
 }
 
 /** Builds the square. Every placement is a fresh model, so repeats are cheap. */
-export function buildSquare(layout: readonly Placement[] = SQUARE): Square {
+export function buildSquare(
+  layout: readonly Placement[] = SQUARE,
+  options: { readonly houses?: boolean } = {},
+): Square {
   const root = new Group()
   root.name = 'market-square'
   const built: { update?: (s: number) => void; dispose: () => void }[] = []
@@ -185,7 +212,7 @@ export function buildSquare(layout: readonly Placement[] = SQUARE): Square {
     built.push(model)
   }
 
-  root.add(buildHouses())
+  if (options.houses !== false) root.add(buildHouses())
   root.updateMatrixWorld(true)
   const ground = buildGround()
   ground.updateMatrixWorld(true)
