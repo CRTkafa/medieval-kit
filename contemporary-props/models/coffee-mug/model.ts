@@ -60,7 +60,7 @@ export interface CoffeeMugConfig {
 }
 
 export const coffeeMugDefaults: CoffeeMugConfig = {
-  height: 0.095,
+  height: 0.1,
   radius: 0.041,
   // A slight taper. Dead straight is a value in the family, not the default:
   // most mugs narrow a little toward the foot and it keeps the silhouette
@@ -106,16 +106,29 @@ export function createModel(overrides: Partial<CoffeeMugConfig> = {}) {
       // One profile, up the outside, over the rim, down the bore. A single
       // lathe leaves no coincident faces where an outer and an inner shell
       // would meet, and the rim thickness falls out of the turn-around.
+      // The foot's corner radius. A fifth of the mug's radius, which is what
+      // the reference measures and is generous next to anything turned.
+      const foot = R * 0.2
       const half = wall / 2
       const rimY = H - half
       const rimX = R - half
       const s45 = half * Math.SQRT1_2
       const levels: Level[] = [
-        // A short chamfer off the table, so the foot has an edge that reads
-        // as trimmed rather than the wall dying into the ground plane.
-        { y: 0, radius: F * 0.96 },
-        { y: 0.0035, radius: rOut(0.0035) },
-        { y: H * 0.2, radius: rOut(H * 0.2) },
+        /**
+         * A ROUNDED foot, not a chamfer.
+         *
+         * The 3.5 mm bevel that was here read as a trimmed edge, which is
+         * what a thrown pot has and what a slip-cast mug does not: the
+         * reference turns the corner over about a fifth of the radius and
+         * that soft corner is most of why it reads as a mug rather than as a
+         * tube with a lid missing. Sampled at 30 and 60 degrees so the
+         * smoothing takes it as one curve.
+         */
+        { y: 0, radius: F - foot },
+        { y: foot * 0.134, radius: F - foot * 0.5 },
+        { y: foot * 0.5, radius: F - foot * 0.134 },
+        { y: foot, radius: rOut(foot) },
+        { y: H * 0.3, radius: rOut(H * 0.3) },
         { y: H * 0.45, radius: rOut(H * 0.45) },
         { y: H * 0.7, radius: rOut(H * 0.7) },
         { y: H * 0.88, radius: rOut(H * 0.88) },
@@ -148,11 +161,19 @@ export function createModel(overrides: Partial<CoffeeMugConfig> = {}) {
       )
 
       /* ----------------------------------------------------------- handle */
-      // Strap section: deeper across (z, along the wall) than radially. Built
-      // square by arcBarGeometry, flattened by a scale before it moves.
+      /**
+       * Strap section: nearly square, and DEEPER in the plane of the loop.
+       *
+       * It was the other way round, 11.5 mm across the wall against 6 mm
+       * radially, so the widest face of the handle was the one turned toward
+       * anyone looking at the mug from the side. That is a ribbon, and a
+       * handle you could not get a finger round. A real one is close to
+       * square and if anything deeper the way the loop runs, because that is
+       * the direction it has to be stiff in.
+       */
       const scaleT = R / 0.041
-      const tRad = Math.min(0.0072, Math.max(0.0048, 0.006 * scaleT))
-      const widthZ = Math.min(0.0135, Math.max(0.0088, 0.0115 * scaleT))
+      const tRad = Math.min(0.0098, Math.max(0.0062, 0.0082 * scaleT))
+      const widthZ = Math.min(0.0092, Math.max(0.0058, 0.0074 * scaleT))
 
       // Where the loop leaves the wall.
       const topY = H * 0.78
@@ -187,11 +208,15 @@ export function createModel(overrides: Partial<CoffeeMugConfig> = {}) {
       // body both ends sit at the same depth instead of one floating proud.
       const alpha = Math.atan2(-chordX, chordY)
 
+      // Twelve-sided, so the loop has no hard edge running its length. A
+      // square strap's four corners catch light as ridges and no amount of
+      // getting the proportions right stops that reading as a folded ribbon.
       const strap = arcBarGeometry(
         rLoop, tRad, -thetaE, thetaE, 22, [0, 0, 0],
         // The body's own glaze colour: a handle tinted separately shows the
         // join as a colour edge before it shows it as geometry.
         glaze.clone(),
+        12,
       )
       // Flatten to a strap, tilt to the wall, then carry to the wall. Built
       // at the origin in the XY plane, which is already the vertical plane
