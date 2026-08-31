@@ -677,7 +677,7 @@
       "address": "@contemporary-props/core",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-31T23:33:12.349Z",
+      "installedAt": "2026-08-31T23:36:13.364Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\core\\geometry.ts",
@@ -724,11 +724,11 @@
       "address": "@contemporary-props/ceramic-vase",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-31T23:33:12.351Z",
+      "installedAt": "2026-08-31T23:36:13.366Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\ceramic-vase\\model.ts",
-          "sourceHash": "ab7a91d0e4090ecbf6118b25b5c5cf21a06c68570d1b3df21b1b9c240e4c0537"
+          "sourceHash": "18073733b05e509da40b62ffbc1c16c11b76a513440a71df045ea20a24fbaeed"
         }
       ],
       "dependencies": [

@@ -19,10 +19,18 @@
  *   lip       the mouth, rolled slightly proud of the neck so the rim catches
  *             light and the opening does not look like a hole cut in a solid
  *
- * The wall has no thickness. A vase is looked at from outside and the inside of
- * the neck is dark at every angle a prop is seen from, so modelling the bore
+ * The wall HAS thickness, and the note that used to be here saying it did not
+ * was wrong in a way worth keeping written down. It said a vase is looked at
+ * from outside and the inside of the neck is dark at every angle a prop is
+ * seen from, so modelling the bore
  * would spend triangles on something nothing ever sees. The rim reads because
- * the lip steps out, not because there is a wall behind it.
+ * the lip steps out, not because there is a wall behind it. Every clause of
+ * that was true and the conclusion did not follow: the mouth is over half the
+ * belly across, so anything above the vase looks INTO it, finds the far wall's
+ * inside, and a one-sided surface has no inside. It is back-facing, it is
+ * culled, and the vase loses its back wall entirely. Reported as "the front
+ * shows and the back is cut off, as if it disappears", which is exactly what
+ * a culled back face looks like.
  *
  * Parts: `body` alone. There is nothing here that moves or that a consumer
  * would want to reach separately, and inventing parts to look thorough makes
@@ -87,6 +95,24 @@ export function createModel(overrides: Partial<CeramicVaseConfig> = {}) {
       const shoulderY = bellyY + (H - bellyY) * 0.58
       const neck = mouth * 1.04
 
+      /**
+       * The wall, which this vase did not have.
+       *
+       * It was one surface with no thickness and no bore, on the argument that
+       * the inside of the neck is dark from every angle a prop is seen at. It
+       * is not: the mouth is over half the belly across, so anything looking
+       * down at the vase looks into it, and what is in there is the INSIDE of
+       * the far wall. A single-sided surface has no inside. The far wall is
+       * back-facing, it is culled, and the vase is see-through from the one
+       * angle everybody eventually tries.
+       *
+       * So the profile goes up the outside, over the rim and back down the
+       * bore to a floor, which is what the mug in this kit already does. It
+       * costs about four hundred triangles and it is not optional.
+       */
+      const wall = Math.max(0.0035, belly * 0.055)
+      const floorY = H * 0.07
+
       const levels: Level[] = [
         { y: 0, radius: foot * 0.94 },
         // A short straight rise off the table before the curve starts. Without
@@ -101,6 +127,19 @@ export function createModel(overrides: Partial<CeramicVaseConfig> = {}) {
         // catch light rather than being a hole in the top.
         { y: H * 0.97, radius: neck * 1.09 },
         { y: H, radius: neck * 1.06 },
+        // Over the rim. Rolled rather than turned square, so the mouth reads
+        // as a thrown edge and not as sheet cut with scissors.
+        { y: H - wall * 0.25, radius: neck * 1.06 - wall * 0.42 },
+        { y: H - wall * 0.6, radius: neck * 1.06 - wall },
+        // Down the bore, the outside's own profile one wall in, so the wall
+        // reads an even thickness from any angle that sees into it.
+        { y: H * 0.93, radius: neck - wall },
+        { y: shoulderY, radius: belly * 0.74 - wall },
+        { y: bellyY, radius: belly - wall },
+        { y: bellyY * 0.55, radius: belly * 0.93 - wall },
+        // The floor sits above the foot, because a vase is thickest where it
+        // takes the weight.
+        { y: floorY, radius: foot * 0.72 },
       ]
 
       const pieces: BufferGeometry[] = [
@@ -112,7 +151,7 @@ export function createModel(overrides: Partial<CeramicVaseConfig> = {}) {
           // Glaze pools slightly toward the foot and thins over the shoulder,
           // so the top is a touch lighter. It is a small difference and it is
           // what stops a single-slot object reading as flat plastic.
-          { colourTop: tint('ceramic', 0.05), capBottom: true, capTop: false },
+          { colourTop: tint('ceramic', 0.05), capBottom: true, capTop: true },
         ),
       ]
 
