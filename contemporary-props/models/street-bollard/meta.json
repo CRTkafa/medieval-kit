@@ -1,0 +1,62 @@
+{
+  "title": "Street Bollard",
+  "description": "Cast iron street bollard: a base flange, a skirt, two beads and a domed cap, all turned from one profile. The same generator as the traffic cone with different numbers in it, which is the point of it being here.",
+  "category": "Street",
+  "tags": [
+    "contemporary",
+    "street",
+    "procedural"
+  ],
+  "controls": {
+    "height": {
+      "type": "number",
+      "label": "Height",
+      "min": 0.5,
+      "max": 1.4,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "radius": {
+      "type": "number",
+      "label": "Shaft radius",
+      "min": 0.03,
+      "max": 0.12,
+      "step": 0.002,
+      "unit": "m"
+    },
+    "flange": {
+      "type": "number",
+      "label": "Base flange",
+      "min": 1.25,
+      "max": 2.1,
+      "step": 0.05
+    },
+    "bead": {
+      "type": "number",
+      "label": "Bead relief",
+      "min": 0.04,
+      "max": 0.3,
+      "step": 0.01
+    },
+    "segments": {
+      "type": "number",
+      "label": "Sides",
+      "min": 10,
+      "max": 64,
+      "step": 1
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "steelPainted"
+  ],
+  "parts": [
+    "body"
+  ]
+}

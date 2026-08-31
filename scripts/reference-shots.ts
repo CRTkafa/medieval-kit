@@ -192,9 +192,32 @@ const outDir = join(process.cwd(), 'references')
 mkdirSync(outDir, { recursive: true })
 
 const known = await titles(registry)
-const ids = Object.keys(known).filter((id) => (only.length === 0 ? true : only.includes(id)))
-const unknown = only.filter((id) => !(id in known))
-if (unknown.length > 0) throw new Error(`not in ${registry}: ${unknown.join(', ')}`)
+
+/**
+ * An id that is not a model YET is the most important case, not an error.
+ *
+ * The whole argument for this script is that a reference answers "is this
+ * right" and a render cannot, which means the reference has to exist BEFORE
+ * the model does. Requiring the id to be in the registry made it impossible to
+ * do the one thing it is for: shoot row seven and then build row seven. So an
+ * unknown id is allowed as long as somebody has written a HINT for it, because
+ * a hint is the evidence that a person decided what the object is rather than
+ * the generator guessing from a slug.
+ */
+const ahead = only.filter((id) => !(id in known))
+const missingHint = ahead.filter((id) => !(id in HINT))
+if (missingHint.length > 0) {
+  throw new Error(
+    `${missingHint.join(', ')}: not in ${registry} and no HINT. `
+    + 'Add one to reference-shots.ts, after reading the catalogue row for it.',
+  )
+}
+const ids = only.length === 0
+  ? Object.keys(known)
+  : only.map((id) => id)
+const titleOf = (id: string): string =>
+  known[id] ?? id.split('-').map((w) => w[0]!.toUpperCase() + w.slice(1)).join(' ')
+if (ahead.length > 0) console.log(`ahead of the registry: ${ahead.join(', ')}`)
 
 const todo = ids.filter((id) => force || !existsSync(join(outDir, `${id}.png`)))
 console.log(
@@ -211,7 +234,7 @@ for (const id of todo) {
       'exec',
       '--skip-git-repo-check',
       '--dangerously-bypass-approvals-and-sandbox',
-      prompt(id, known[id]!, STYLE[registry]!),
+      prompt(id, titleOf(id), STYLE[registry]!),
     ], { cwd: outDir, stdio: 'pipe', timeout: 10 * 60_000 })
     const ok = existsSync(join(outDir, `${id}.png`))
     console.log(ok ? 'ok' : 'NO FILE')

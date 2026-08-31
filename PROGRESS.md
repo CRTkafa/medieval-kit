@@ -304,12 +304,30 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 6 of the core 100 modelled, and they are rows 1 to
+- **`contemporary-props`**: 7 of the core 100 modelled, and they are rows 1 to
   6 of the build order rather than six picked at random. The catalogue, the
   order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 7 is `street-bollard`. The number 119
+  `contemporary-props/CATALOGUE.md`; row 8 is `gas-cylinder`. The number 119
   appeared here twice and was never anything: the catalogue is 100 core plus a
   further 150.
+
+  The two that were listed here as wrong are done, both rebuilt against a
+  photograph rather than by eye. The pepper mill was a turned baluster and is
+  now the straight tube a present-day one is, with a steel collar, a recessed
+  band of vertical flutes and a knurled knob. The mug's foot is rounded rather
+  than chamfered and its handle is a twelve-sided section instead of a square
+  strap turned the wrong way round.
+
+  Two things learned there that the next model should not have to learn again.
+  A reference hint decides what the reference is and the reference decides what
+  the model becomes, so a hint must not invent a material or a period: writing
+  "a tall WOODEN pepper mill" produced a handsome traditional baluster, the
+  model was rebuilt to match it, and its flute band was deleted for not
+  appearing in a photograph the hint had asked for. Read the catalogue's row
+  for a model before touching it; that band is the reason the mill is fourth in
+  the build order at all. And a reference is to be READ, not copied: it carries
+  about forty flutes, and forty at prop scale is four pixels each and a grey
+  smear. Twenty-two is the same object at the size it is actually seen.
   `pepper-mill` reads as a wooden bottle and needs rewriting. `coffee-mug`'s
   handle is a flat strap whose wide face turns toward the camera; the section
   wants to be squarer and deeper in the plane of the loop.
