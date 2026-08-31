@@ -982,7 +982,6 @@ const captionNote = app.querySelector<HTMLElement>('[data-caption-note]')!
 const recordButton = app.querySelector<HTMLButtonElement>('[data-record]')!
 const recordState = recordButton.querySelector<HTMLElement>('.state')!
 
-let armed = false
 let recorder: MediaRecorder | undefined
 let morphStart: MorphFrame | undefined
 let morphEnd: MorphFrame | undefined
@@ -1056,7 +1055,14 @@ const showcase = createShowcase({
  * wants MP4, so the README documents the one-line ffmpeg remux rather than
  * pretending the file is ready to post.
  */
-function startRecording(seconds: number): void {
+/** Local time, colons out: several takes in a session must not overwrite. */
+function stamp(): string {
+  const now = new Date()
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  return `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+}
+
+function startRecording(label: string): void {
   // Lock to 1080p at pixel ratio 1: `captureStream` takes the drawing buffer,
   // so a ratio of 2 would record 3840x2160 and cost four times the pixels for
   // a clip nobody will view above 1080.
@@ -1065,6 +1071,16 @@ function startRecording(seconds: number): void {
   renderer.setSize(1920, 1080, false)
   camera.aspect = 1920 / 1080
   camera.updateProjectionMatrix()
+  /**
+   * Letterboxed, so what is on screen is what is in the file.
+   *
+   * `setSize(..., false)` deliberately leaves the CSS box alone: it changes the
+   * drawing buffer and nothing else. That is right for the recording and wrong
+   * for the person making it, because a 1920x1080 buffer stretched into a box
+   * of some other shape is a preview that lies about its own framing. Whoever
+   * is driving the sliders is composing a shot they cannot see.
+   */
+  document.body.classList.add('recording')
 
   const stream = canvas.captureStream(60)
   const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
@@ -1080,10 +1096,13 @@ function startRecording(seconds: number): void {
     const url = URL.createObjectURL(new Blob(chunks, { type: mimeType }))
     const link = document.createElement('a')
     link.href = url
-    link.download = `medieval-kit-${seconds}s.webm`
+    link.download = `medieval-kit-${label}.webm`
     link.click()
     setTimeout(() => URL.revokeObjectURL(url), 5000)
     recorder = undefined
+    recordButton.setAttribute('aria-pressed', 'false')
+    recordState.textContent = 'off'
+    document.body.classList.remove('recording')
     if (recordingSize) {
       renderer.setPixelRatio(recordingSize.ratio)
       recordingSize = undefined
@@ -1121,17 +1140,29 @@ document.addEventListener('visibilitychange', () => {
 function runShowcase(seconds: number): void {
   if (showcase.isRunning()) return
   showcase.start(seconds)
-  if (armed) startRecording(seconds)
 }
 
 for (const button of app.querySelectorAll<HTMLButtonElement>('[data-showcase]')) {
   button.addEventListener('click', () => runShowcase(Number(button.dataset.showcase)))
 }
 
+/**
+ * Records what you are doing, not only what the tour does.
+ *
+ * This used to arm the NEXT showcase and nothing else, so the one thing it
+ * could not capture was somebody driving the model themselves: pulling the
+ * sliders, turning it over, finding the angle. That is most of what the
+ * inspector is for. Now it starts and stops on the spot, and a tour started
+ * while it is running is captured like anything else.
+ */
 recordButton.addEventListener('click', () => {
-  armed = !armed
-  recordButton.setAttribute('aria-pressed', String(armed))
-  recordState.textContent = armed ? 'armed' : 'off'
+  if (recorder) {
+    recorder.stop()
+    return
+  }
+  startRecording(stamp())
+  recordButton.setAttribute('aria-pressed', 'true')
+  recordState.textContent = 'stop'
 })
 
 function endShowcase(): void {

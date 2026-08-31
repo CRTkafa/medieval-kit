@@ -13,7 +13,8 @@ viewer is live at <https://medieval.crt.fyi/> and rebuilds on every push. The
 GitHub repository is private, which is deliberate, and which is why the npm
 page's Repository and Issues links 404 until that changes.
 
-**`@contemporary-props`** is six models into a planned 119. Present-day objects,
+**`@contemporary-props`** is six models into a core hundred, with a further
+150 catalogued behind them. Present-day objects,
 no lowpoly budget, no historical constraint. 19 material slots. Nothing is
 published and the version is `0.0.0`.
 
@@ -303,8 +304,12 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 6 of 119 modelled. The catalogue, the build order,
-  the cuts and the slot argument are in `contemporary-props/CATALOGUE.md`.
+- **`contemporary-props`**: 6 of the core 100 modelled, and they are rows 1 to
+  6 of the build order rather than six picked at random. The catalogue, the
+  order, the cuts and the slot argument are in
+  `contemporary-props/CATALOGUE.md`; row 7 is `street-bollard`. The number 119
+  appeared here twice and was never anything: the catalogue is 100 core plus a
+  further 150.
   `pepper-mill` reads as a wooden bottle and needs rewriting. `coffee-mug`'s
   handle is a flat strap whose wide face turns toward the camera; the section
   wants to be squarer and deeper in the plane of the loop.

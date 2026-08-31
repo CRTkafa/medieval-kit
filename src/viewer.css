@@ -589,3 +589,45 @@ a.action .state { overflow: hidden; text-overflow: ellipsis; white-space: nowrap
   color: var(--amber);
   white-space: nowrap;
 }
+
+/* ---------- recording ---------- */
+
+/* The take is locked to 1920x1080, so the preview is letterboxed to match it.
+   Without this the canvas keeps whatever shape its box has and the buffer is
+   stretched into it: the framing you compose is not the framing you get. */
+body.recording .viewport {
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+body.recording canvas {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+/* Nothing in the frame that is not in the file: the overlays are drawn over
+   the canvas by the page, not by the renderer, so they never reach the
+   recording and on screen they only mislead. */
+body.recording .overlay,
+body.recording .showcase-caption { opacity: 0; }
+
+body.recording .viewport::after {
+  content: 'REC';
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  padding: 3px 9px;
+  border-radius: 3px;
+  background: #c8341f;
+  color: #fff;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  animation: rec-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes rec-pulse { 50% { opacity: 0.35; } }
