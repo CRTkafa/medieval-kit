@@ -13,19 +13,26 @@
  * instruments, not art. A reference lit from a dramatic angle hides exactly the
  * silhouette detail we need to compare against.
  *
- * Output goes to `references/`, which is NOT tracked: the corpus is tens of
- * megabytes and belongs to the private studio repo, not to the registry that
- * consumers clone.
+ * It serves either kit. The two keep their metadata in different places, which
+ * is the only thing that made this medieval-only before: `my-registry` has one
+ * `meta.ts` holding every entry, `contemporary-props` has a `meta.json` beside
+ * each model. Both carry a `title`, so the difference is where to read it from
+ * and nothing else. What DOES differ per kit is the last clause of the prompt:
+ * asking for "historically plausible medieval construction" while photographing
+ * a fire extinguisher produces a fire extinguisher with rivets and a leather
+ * strap.
  *
- *   bun scripts/reference-shots.ts              → only the missing ones
- *   bun scripts/reference-shots.ts --force      → regenerate everything
- *   bun scripts/reference-shots.ts log-pile ... → only these
+ * Output goes to `references/`, one corpus for both kits, which is safe because
+ * the ids are unique across them. It is NOT tracked: tens of megabytes that
+ * belong to the studio, not to the registry consumers clone.
+ *
+ *   bun scripts/reference-shots.ts my-registry                → only the missing
+ *   bun scripts/reference-shots.ts contemporary-props --force → all of them
+ *   bun scripts/reference-shots.ts contemporary-props pepper-mill coffee-mug
  */
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readdirSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-
-import { MODEL_META } from '../my-registry/meta.ts'
 
 /** The Codex binary ships inside the VS Code ChatGPT extension. */
 function findCodex(): string {
@@ -46,10 +53,28 @@ function findCodex(): string {
 }
 
 /**
+ * What the objects are, per registry.
+ *
+ * Not decoration: it is the clause that keeps the generator in the right
+ * century. Without it the medieval kit gets modern reproductions and the
+ * contemporary one gets everything upholstered in leather.
+ */
+const STYLE: Record<string, string> = {
+  'my-registry':
+    'historically plausible medieval construction',
+  'contemporary-props':
+    'an ordinary present-day object of the kind in everyday use now, '
+    + 'plain and unstyled, no retro or vintage treatment',
+}
+
+/**
  * Extra wording for models whose name alone would send the generator somewhere
- * useless. "Phial" produces perfume bottles; "sack" produces modern hessian.
+ * useless. "Phial" produces perfume bottles; "sack" produces modern hessian;
+ * "pepper mill" without the crown and the collar produces a wooden bottle,
+ * which is exactly what the model of it currently looks like.
  */
 const HINT: Record<string, string> = {
+  // --- medieval ---
   'bronze-bell': 'a bronze bell hanging in a simple wooden swinging frame',
   'cart-wheel': 'a wooden spoked cart wheel with an iron tyre, standing upright',
   'coin-pouch': 'a small drawstring leather coin purse, closed, resting on its base',
@@ -77,9 +102,53 @@ const HINT: Record<string, string> = {
   'wooden-shovel': 'a medieval wooden shovel with an iron-shod blade',
   'wooden-stool': 'a three-legged wooden milking stool',
   'wooden-bench': 'a plain wooden bench with plank legs',
+
+  // --- contemporary, built ---
+  'ceramic-vase': 'a plain glazed ceramic vase, empty, with no flowers in it',
+  'coffee-mug': 'a plain glazed stoneware coffee mug with a loop handle, empty, seen so the handle is to one side',
+  'wine-glass': 'an empty stemmed wine glass in clear glass',
+  'pepper-mill': 'a tall wooden table pepper mill: a turned wooden body with a small metal crown knob on top and the grinder collar at its base',
+  'stockpot': 'a stainless steel lidded stockpot with two riveted side handles',
+  'traffic-cone': 'an orange PVC traffic cone with a white reflective band, on its square base',
+
+  // --- contemporary, next in the build order ---
+  'street-bollard': 'a black cast iron street bollard set into a pavement',
+  'gas-cylinder': 'an industrial gas cylinder with a valve handwheel and a caged guard',
+  'fire-extinguisher': 'a red fire extinguisher with a squeeze lever, hose and pressure gauge',
+  'pedestal-basin': 'a white ceramic pedestal wash basin',
+  'jersey-barrier': 'a single concrete jersey traffic barrier section',
+  'picnic-table': 'a wooden picnic table with bench seats attached to an A-frame',
 }
 
-function prompt(id: string, title: string): string {
+/**
+ * Title per model id, from wherever the kit keeps it.
+ *
+ * `my-registry` is a TypeScript record and has to be imported; the others keep
+ * a `meta.json` beside each model, which is the shape the newer kit uses and
+ * the one anything after it will.
+ */
+async function titles(registry: string): Promise<Record<string, string>> {
+  if (registry === 'my-registry') {
+    const { MODEL_META } = await import('../my-registry/meta.ts')
+    return Object.fromEntries(
+      Object.entries(MODEL_META as Record<string, { title: string }>)
+        .map(([id, meta]) => [id, meta.title]),
+    )
+  }
+  const dir = join(process.cwd(), registry, 'models')
+  if (!existsSync(dir)) throw new Error(`no such registry: ${registry}/models`)
+  const out: Record<string, string> = {}
+  for (const id of readdirSync(dir)) {
+    // `core` is the shared vocabulary, not a model.
+    if (id === 'core') continue
+    const meta = join(dir, id, 'meta.json')
+    if (!existsSync(meta)) continue
+    out[id] = (JSON.parse(readFileSync(meta, 'utf8')) as { title?: string }).title ?? id
+  }
+  return out
+}
+
+function prompt(id: string, title: string, style: string): string {
   const subject = HINT[id] ?? title.toLowerCase()
   return [
     'Use your image generation tool to create ONE photographic reference image',
@@ -88,9 +157,8 @@ function prompt(id: string, title: string): string {
     'Requirements: a single object, three-quarter view from slightly above,',
     'the WHOLE object visible with clear space around it, resting on the',
     'ground, plain dark neutral background, even studio lighting with soft',
-    'shadows, sharp focus throughout, historically plausible medieval',
-    'construction, no people, no hands, no text, no watermark, no props',
-    'other than the object itself.',
+    `shadows, sharp focus throughout, ${style}, no people, no hands, no text,`,
+    'no watermark, no props other than the object itself.',
     '',
     `Save the image to the current working directory as exactly ${id}.png.`,
     'Do not create any other file. When done, print only the saved path.',
@@ -99,28 +167,42 @@ function prompt(id: string, title: string): string {
 
 const args = process.argv.slice(2)
 const force = args.includes('--force')
-const only = args.filter((a) => !a.startsWith('--'))
+const positional = args.filter((a) => !a.startsWith('--'))
+const registry = positional[0]
+const only = positional.slice(1)
+
+if (!registry || !(registry in STYLE)) {
+  console.error(
+    `Usage: bun scripts/reference-shots.ts <${Object.keys(STYLE).join('|')}> [id ...] [--force]`,
+  )
+  process.exit(1)
+}
 
 const codex = findCodex()
 const outDir = join(process.cwd(), 'references')
 mkdirSync(outDir, { recursive: true })
 
-const ids = Object.keys(MODEL_META).filter((id) => (only.length === 0 ? true : only.includes(id)))
-const todo = ids.filter((id) => force || !existsSync(join(outDir, `${id}.png`)))
+const known = await titles(registry)
+const ids = Object.keys(known).filter((id) => (only.length === 0 ? true : only.includes(id)))
+const unknown = only.filter((id) => !(id in known))
+if (unknown.length > 0) throw new Error(`not in ${registry}: ${unknown.join(', ')}`)
 
-console.log(`${todo.length} reference(s) to generate (${ids.length - todo.length} already present)`)
+const todo = ids.filter((id) => force || !existsSync(join(outDir, `${id}.png`)))
+console.log(
+  `${registry}: ${todo.length} reference(s) to generate `
+  + `(${ids.length - todo.length} already present of ${ids.length})`,
+)
 
 let done = 0
 let failed = 0
 for (const id of todo) {
-  const title = (MODEL_META as Record<string, { title: string }>)[id]!.title
   process.stdout.write(`  ${id} … `)
   try {
     execFileSync(codex, [
       'exec',
       '--skip-git-repo-check',
       '--dangerously-bypass-approvals-and-sandbox',
-      prompt(id, title),
+      prompt(id, known[id]!, STYLE[registry]!),
     ], { cwd: outDir, stdio: 'pipe', timeout: 10 * 60_000 })
     const ok = existsSync(join(outDir, `${id}.png`))
     console.log(ok ? 'ok' : 'NO FILE')
