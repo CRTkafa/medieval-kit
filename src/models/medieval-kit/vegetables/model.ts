@@ -520,8 +520,23 @@ export function createModel(overrides: Partial<VegetablesConfig> = {}) {
         } else {
           // Sitting slot, or the overflow ring past the authored bundle.
           const inRing = slot === undefined
+          /**
+           * Bulbs only, out in the overflow.
+           *
+           * A lying kind in a sitting spot gets laid flat where it stands,
+           * which is right inside the bundle and wrong outside it: a 20 cm
+           * root lying 20 cm clear of everything does not read as another
+           * vegetable, it reads as the one that fell off. At `count` 24 the
+           * ring held a carrot alone on the left and a second leek detached
+           * at the front, and the pile stopped being a pile. Nor the cabbage:
+           * the bundle has exactly one, the way the reference does, and a ring
+           * of them buries everything the heap was made of. What is left is
+           * the small round kinds, banked against the bundle.
+           */
+          const rounds = mix.filter((k) => !LIES_DOWN.has(k) && k !== 'cabbage')
+          const ringMix = rounds.length > 0 ? rounds : mix
           const kind = inRing
-            ? mix[i % mix.length]!
+            ? ringMix[i % ringMix.length]!
             : pickKind(i, (slot as SitSlot).kind, false)
           const g = grow(kind, r)
           if (LIES_DOWN.has(kind)) {
@@ -535,7 +550,13 @@ export function createModel(overrides: Partial<VegetablesConfig> = {}) {
           settle(g)
           if (inRing) {
             const angle = i * 2.399963
-            const ring = S * spreadK * (1.9 + 0.3 * Math.floor(i / SLOTS.length))
+            // Banked against the bundle, not orbiting it. At 1.9 the ring sat
+            // outside the parsnip tips with clear ground between, so every
+            // overflow piece read as separate from the heap rather than as
+            // part of it; the jitter is there because a dozen pieces on one
+            // exact radius is a wreath.
+            const ring = S * spreadK
+              * (1.62 + 0.3 * Math.floor(i / SLOTS.length) + jitter(r, 0.16))
             g.translate(Math.sin(angle) * ring, 0, Math.cos(angle) * ring)
           } else {
             const s = slot as SitSlot

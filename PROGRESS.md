@@ -8,7 +8,7 @@ mistakes that shaped both.
 ## The two kits
 
 **`@medieval-kit`** is finished and published. 37 models, 39,518 triangles, 13
-material slots, MIT. On npm as `@medieval-kit/registry`, currently `0.2.0`. The
+material slots, MIT. On npm as `@medieval-kit/registry`, currently `0.2.1`. The
 viewer is live at <https://medieval.crt.fyi/> and rebuilds on every push. The
 GitHub repository is private, which is deliberate, and which is why the npm
 page's Repository and Issues links 404 until that changes.

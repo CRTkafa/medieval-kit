@@ -19,6 +19,7 @@
  */
 import { Box3, Group, Vector3 } from 'three/webgpu'
 
+import { MODEL_META } from '../my-registry/meta.ts'
 import { FACTORIES } from '@/catalog.ts'
 
 import { buildGround, buildHouses } from './scenery.ts'
@@ -156,7 +157,7 @@ function stall(
 export const SQUARE: readonly Placement[] = [
   // --- The mill, and the yard behind it ------------------------------------
   { id: 'post-mill', at: [-0.38, -7.02], yaw: 0.25 },
-  ...around([-4.6, -8.2], 0.3, [
+  ...around([-6.0, -8.8], 0.3, [
     { id: 'log-pile', at: [0, 0] },
     { id: 'log-pile', at: [1.05, 0.12], yaw: 0.1 },
     { id: 'log-pile', at: [0.5, -0.02], on: LOGS, yaw: 0.06 },
@@ -177,49 +178,49 @@ export const SQUARE: readonly Placement[] = [
   // Four stalls, turned a little further toward the square as they go back so
   // the row reads as a row and not as a wall. Everything on a counter sits at
   // COUNTER; everything at the foot of one is what did not fit on it.
-  ...stall([-6.9, 3.0], -1.32, [
-    { id: 'vegetables', at: [-0.42, -0.06], on: COUNTER },
-    { id: 'vegetables', at: [0.16, 0.04], on: COUNTER, yaw: 0.7 },
+  ...stall([-6.9, 4.0], -1.32, [
+    { id: 'vegetables', at: [-0.42, -0.06], on: COUNTER, patch: { kinds: 6, lead: 1 } },
+    { id: 'vegetables', at: [0.16, 0.04], on: COUNTER, yaw: 0.7, patch: { kinds: 6, lead: 4 } },
     { id: 'wicker-basket', at: [0.54, -0.08], on: COUNTER, yaw: 0.3 },
-    { id: 'wooden-crate', at: [-0.95, 0.55], yaw: 0.25 },
-    { id: 'wooden-crate', at: [-0.95, 0.55], on: CRATE, yaw: 0.5 },
-    { id: 'vegetables', at: [-0.95, 0.55], on: CRATE * 2, yaw: -0.3 },
-    { id: 'wicker-basket', at: [0.9, 0.6], yaw: -0.2 },
+    { id: 'wooden-crate', at: [-1.15, 0.6], yaw: 0.25 },
+    { id: 'wooden-crate', at: [-1.15, 0.6], on: CRATE, yaw: 0.5 },
+    { id: 'vegetables', at: [-1.15, 0.6], on: CRATE * 2, yaw: -0.3, patch: { kinds: 6, lead: 2 } },
+    { id: 'wicker-basket', at: [1.3, 0.8], yaw: -0.2 },
     { id: 'linen-sack', at: [1.25, 0.35], yaw: 0.5 },
   ]),
-  ...stall([-7.2, 0.85], -1.45, [
+  ...stall([-7.2, 1.1], -1.45, [
     { id: 'linen-sack', at: [-0.45, 0], on: COUNTER, yaw: 0.2 },
     { id: 'linen-sack', at: [-0.12, 0.06], on: COUNTER, yaw: -0.5 },
     { id: 'wicker-basket', at: [0.3, -0.05], on: COUNTER },
     { id: 'wicker-basket', at: [0.62, 0.05], on: COUNTER, yaw: 0.8 },
-    { id: 'linen-sack', at: [-1.05, 0.5], yaw: 0.1 },
-    { id: 'linen-sack', at: [-0.78, 0.62], yaw: 0.9 },
-    { id: 'linen-sack', at: [-0.92, 0.56], on: 0.5, yaw: -0.4 },
-    { id: 'wooden-crate', at: [1.0, 0.5], yaw: -0.35 },
+    { id: 'linen-sack', at: [-1.0, 0.42], yaw: 0.1 },
+    { id: 'linen-sack', at: [-0.58, 0.72], yaw: 0.9 },
+    { id: 'linen-sack', at: [-0.8, 0.57], on: 0.5, yaw: -0.4 },
+    { id: 'wooden-crate', at: [1.05, 0.5], yaw: -0.35 },
   ]),
-  ...stall([-7.5, -1.35], -1.55, [
+  ...stall([-7.5, -1.8], -1.55, [
     { id: 'oak-tankard', at: [-0.5, -0.05], on: COUNTER },
     { id: 'oak-tankard', at: [-0.32, 0.08], on: COUNTER, yaw: 0.6 },
     { id: 'oak-tankard', at: [-0.13, -0.02], on: COUNTER, yaw: -0.4 },
     { id: 'glass-phial', at: [0.22, 0.02], on: COUNTER },
     { id: 'glass-phial', at: [0.33, -0.06], on: COUNTER, yaw: 0.9 },
-    { id: 'wooden-barrel', at: [1.05, 0.35], yaw: 0.2 },
-    { id: 'wooden-barrel', at: [1.15, -0.55], yaw: -0.3 },
-    { id: 'oak-tankard', at: [1.05, 0.35], on: BARREL, yaw: 0.3 },
+    { id: 'wooden-barrel', at: [1.05, 0.45], yaw: 0.2 },
+    { id: 'wooden-barrel', at: [1.0, -0.95], yaw: -0.3 },
+    { id: 'oak-tankard', at: [1.05, 0.45], on: BARREL, yaw: 0.3 },
   ]),
-  ...stall([-7.8, -3.5], -1.62, [
+  ...stall([-7.8, -3.9], -1.62, [
     { id: 'leather-book', at: [-0.48, 0], on: COUNTER, yaw: 0.15 },
     { id: 'leather-book', at: [-0.2, 0.06], on: COUNTER, yaw: -0.6 },
     { id: 'coin-pouch', at: [0.08, -0.04], on: COUNTER, yaw: 0.4 },
     { id: 'glass-phial', at: [0.34, 0.03], on: COUNTER },
     { id: 'iron-lantern', at: [0.58, -0.02], on: COUNTER, yaw: 0.2 },
-    { id: 'wooden-chest', at: [1.0, 0.45], yaw: -0.4 },
-    { id: 'coin-pouch', at: [1.0, 0.45], on: CHEST, yaw: 0.7 },
+    { id: 'wooden-chest', at: [1.42, 0.58], yaw: -0.4 },
+    { id: 'coin-pouch', at: [1.42, 0.58], on: CHEST, yaw: 0.7 },
     { id: 'straw-broom', at: [-1.15, -0.35], yaw: 0.3, lean: [0.18, 0.1] },
   ]),
   { id: 'wooden-ladder', at: [-9.3, 4.6], yaw: 0.35, lean: [0.22, 0] },
-  { id: 'pitch-torch', at: [-6.2, 4.4] },
-  { id: 'pitch-torch', at: [-6.6, -4.6] },
+  { id: 'pitch-torch', at: [-4.7, 5.3] },
+  { id: 'pitch-torch', at: [-4.8, -3.0] },
 
   // --- The forge, back left ------------------------------------------------
   ...around([-6.4, -6.0], 0.42, [
@@ -227,13 +228,13 @@ export const SQUARE: readonly Placement[] = [
     { id: 'iron-anvil', at: [1.7, 0.75], yaw: -0.9 },
     { id: 'grindstone', at: [-0.4, 1.75], yaw: -0.2 },
     { id: 'wooden-bucket', at: [1.15, 1.6] },
-    { id: 'iron-cauldron', at: [-1.7, -0.1], yaw: -0.2 },
+    { id: 'iron-cauldron', at: [-1.9, -2.3], yaw: -0.2 },
     { id: 'round-shield', at: [1.05, -0.85], yaw: 0.1, lean: [-0.3, 0] },
     { id: 'log-pile', at: [2.5, -0.3], yaw: 0.2 },
-    { id: 'wooden-crate', at: [2.45, 1.5], yaw: 0.35 },
-    { id: 'wooden-crate', at: [2.45, 1.5], on: CRATE, yaw: 0.05 },
+    { id: 'wooden-crate', at: [2.2, -1.4], yaw: 0.35 },
+    { id: 'wooden-crate', at: [2.2, -1.4], on: CRATE, yaw: 0.05 },
     { id: 'wooden-shovel', at: [-1.2, 1.5], yaw: 0.2, lean: [0.2, 0.06] },
-    { id: 'wooden-hoe', at: [-1.45, 1.7], yaw: 0.35, lean: [0.18, 0.12] },
+    { id: 'wooden-hoe', at: [0.9, 2.3], yaw: 0.35, lean: [0.18, 0.12] },
   ]),
 
   // --- The middle: the well and what gathers at it -------------------------
@@ -242,10 +243,10 @@ export const SQUARE: readonly Placement[] = [
     { id: 'wooden-bucket', at: [1.15, 0.35], yaw: 0.4 },
     { id: 'wooden-bucket', at: [1.42, 0.1], yaw: -0.3 },
     { id: 'stone-trough', at: [-2.4, 0.9], yaw: 0.4 },
-    { id: 'wooden-bucket', at: [-1.6, 1.35], yaw: 0.7 },
+    { id: 'wooden-bucket', at: [-1.9, 1.75], yaw: 0.7 },
   ]),
-  { id: 'bronze-bell', at: [1.73, -4.4], yaw: -0.25 },
-  { id: 'pitch-torch', at: [-1.4, -0.5] },
+  { id: 'bronze-bell', at: [2.9, -3.3], yaw: -0.25 },
+  { id: 'pitch-torch', at: [-2.9, -2.7] },
 
   // --- The tavern, down the right side -------------------------------------
   ...around([4.7, -1.6], 0.18, [
@@ -274,7 +275,7 @@ export const SQUARE: readonly Placement[] = [
   ]),
   { id: 'tavern-sign', at: [6.2, -0.2], yaw: -1.5 },
   { id: 'pitch-torch', at: [4.3, -3.4] },
-  { id: 'wooden-chest', at: [7.3, -2.6], yaw: -0.35 },
+  { id: 'wooden-chest', at: [8.3, -1.5], yaw: -0.35 },
 
   // --- The front, where the camera comes in --------------------------------
   ...around([3.1, 2.3], -0.4, [
@@ -324,7 +325,7 @@ export const SQUARE: readonly Placement[] = [
     { id: 'linen-sack', at: [0.2, 0.12], on: 0.5, yaw: -0.4 },
     { id: 'wicker-basket', at: [0.85, -0.3], yaw: 0.2 },
   ]),
-  ...around([-6.0, -0.3], 0.4, [
+  ...around([-5.2, 0.9], 0.4, [
     { id: 'wooden-barrel', at: [0, 0] },
     { id: 'wooden-barrel', at: [0.88, 0.22], yaw: 0.3 },
     { id: 'wicker-basket', at: [0, 0], on: BARREL, yaw: 0.5 },
@@ -332,7 +333,7 @@ export const SQUARE: readonly Placement[] = [
   ]),
   ...around([-5.7, -2.7], -0.2, [
     { id: 'wooden-crate', at: [0, 0] },
-    { id: 'vegetables', at: [0, 0], on: CRATE, yaw: 0.4 },
+    { id: 'vegetables', at: [0, 0], on: CRATE, yaw: 0.4, patch: { kinds: 6, lead: 5 } },
     { id: 'linen-sack', at: [0.75, 0.3], yaw: -0.5 },
   ]),
   ...around([-0.5, 3.3], 0.3, [
@@ -407,11 +408,25 @@ export function buildSquare(
   const built: { update?: (s: number) => void; dispose: () => void }[] = []
   const fires: { at: Vector3; id: string }[] = []
 
-  for (const spot of layout) {
+  for (const [index, spot] of layout.entries()) {
     const make = FACTORIES[spot.id]
     if (!make) throw new Error(`not in catalog: ${spot.id}`)
     const model = make()
-    if (spot.patch) model.configure(spot.patch)
+
+    /**
+     * A different seed for every instance that will take one.
+     *
+     * Otherwise every barrel in the square is the SAME barrel: same stave
+     * jitter, same hoop wander, same knots, and a row of them reads as one
+     * object pasted five times, which is the thing a kit's own advertisement
+     * can least afford to look like. The seed comes from the placement's
+     * index, so it is stable across runs and changes when the layout does.
+     */
+    const patch: Record<string, number> = { ...(spot.patch ?? {}) }
+    if (patch.seed === undefined && MODEL_META[spot.id]?.controls.seed) {
+      patch.seed = 1 + ((index * 11 + 5) % 64)
+    }
+    if (Object.keys(patch).length > 0) model.configure(patch)
 
     const [lx, lz] = spot.lean ?? [0, 0]
     model.root.rotation.set(lx, spot.yaw ?? 0, lz)
