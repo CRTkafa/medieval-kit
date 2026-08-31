@@ -504,6 +504,18 @@ export function arcBarGeometry(
   segments: number,
   centre: Vec3,
   colour: Color,
+  /**
+   * Sides of the CROSS SECTION. Four, the default, is the square this always
+   * was and reproduces it corner for corner.
+   *
+   * More than four rounds it, and `thickness` goes on meaning the same thing:
+   * the width across the section. A square handle strap has four hard edges
+   * running the length of the loop and they catch the light as ridges, which
+   * is what made a mug handle read as a folded ribbon however well its
+   * proportions were set. A real one is an oval, and an oval is what a
+   * twelve-sided section scaled unevenly gives.
+   */
+  sides = 4,
 ): BufferGeometry {
   const sink: Sink = { position: [], color: [] }
   const h = thickness / 2
@@ -519,21 +531,36 @@ export function arcBarGeometry(
     const at = (su: number, sv: number): Vec3 =>
       [px + sv * h * rx, py + sv * h * ry, cz + su * h]
     // u = the plane normal, v = the radial direction. Since u×v equals the
-    // tangent, this ordering is counter-clockwise relative to the sweep direction.
-    rings.push([at(1, 1), at(-1, 1), at(-1, -1), at(1, -1)])
+    // tangent, this ordering is counter-clockwise relative to the sweep
+    // direction, and the half-step offset is what puts a four-sided section's
+    // corners exactly where the hand-written [1,1] [-1,1] [-1,-1] [1,-1] put
+    // them. `reach` keeps `thickness` meaning the width across: the corner
+    // circle circumscribes the square at four sides and IS the section at
+    // more.
+    const reach = sides === 4 ? Math.SQRT2 : 1
+    const ring: Vec3[] = []
+    for (let j = 0; j < sides; j += 1) {
+      const t = ((j + 0.5) / sides) * Math.PI * 2
+      ring.push(at(Math.cos(t) * reach, Math.sin(t) * reach))
+    }
+    rings.push(ring)
   }
 
   for (let i = 0; i < segments; i += 1) {
     const a = rings[i]!, b = rings[i + 1]!
-    for (let j = 0; j < 4; j += 1) {
-      const k = (j + 1) % 4
+    for (let j = 0; j < sides; j += 1) {
+      const k = (j + 1) % sides
       quad(sink, a[j]!, a[k]!, b[k]!, b[j]!, colour)
     }
   }
 
+  // Fans rather than quads, because the section is no longer always four
+  // sided. At four they are the same two triangles the quad was.
   const first = rings[0]!, last = rings[segments]!
-  quad(sink, first[0]!, first[3]!, first[2]!, first[1]!, colour) // start cap
-  quad(sink, last[0]!, last[1]!, last[2]!, last[3]!, colour)     // end cap
+  for (let j = 1; j < sides - 1; j += 1) {
+    tri(sink, first[0]!, first[j + 1]!, first[j]!, colour)
+    tri(sink, last[0]!, last[j]!, last[j + 1]!, colour)
+  }
   return finish(sink)
 }
 

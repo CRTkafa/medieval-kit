@@ -48,6 +48,23 @@ import { createModel as createWell } from '@/models/medieval-kit/stone-well/mode
 import { createModel as createCauldron } from '@/models/medieval-kit/iron-cauldron/model.ts'
 import { createModel as createCart } from '@/models/medieval-kit/hand-cart/model.ts'
 import { createModel as createVeg } from '@/models/medieval-kit/vegetables/model.ts'
+
+// --- @contemporary-props. Its metadata is a sidecar per model rather than
+// one shared record, so it is imported as JSON rather than read off a map.
+import { createModel as createCpCeramicVase } from '@/models/contemporary-props/ceramic-vase/model.ts'
+import { createModel as createCpCoffeeMug } from '@/models/contemporary-props/coffee-mug/model.ts'
+import { createModel as createCpWineGlass } from '@/models/contemporary-props/wine-glass/model.ts'
+import { createModel as createCpPepperMill } from '@/models/contemporary-props/pepper-mill/model.ts'
+import { createModel as createCpStockpot } from '@/models/contemporary-props/stockpot/model.ts'
+import { createModel as createCpTrafficCone } from '@/models/contemporary-props/traffic-cone/model.ts'
+import { createModel as createCpStreetBollard } from '@/models/contemporary-props/street-bollard/model.ts'
+import cpMetaCeramicVase from '../contemporary-props/models/ceramic-vase/meta.json'
+import cpMetaCoffeeMug from '../contemporary-props/models/coffee-mug/meta.json'
+import cpMetaWineGlass from '../contemporary-props/models/wine-glass/meta.json'
+import cpMetaPepperMill from '../contemporary-props/models/pepper-mill/meta.json'
+import cpMetaStockpot from '../contemporary-props/models/stockpot/meta.json'
+import cpMetaTrafficCone from '../contemporary-props/models/traffic-cone/meta.json'
+import cpMetaStreetBollard from '../contemporary-props/models/street-bollard/meta.json'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
 import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/model.ts'
 import { createModel as createTrough } from '@/models/medieval-kit/stone-trough/model.ts'
@@ -226,10 +243,72 @@ const ACTIONS: Readonly<Record<string, (model: KitModel) => { label(): string; r
   },
 }
 
-function entryFor(id: string): Entry {
-  const meta = MODEL_META[id]
-  if (!meta) throw new Error(`no MODEL_META entry for ${id}`)
-  const factory = FACTORIES[id]
+/**
+ * The second kit, kept apart from the first on purpose.
+ *
+ * Nothing is shared but the viewer: different palette, different vocabulary,
+ * different century. Holding both in one map would mean one namespace for two
+ * kits and a lookup that cannot say which one an id belongs to.
+ */
+/**
+ * What the viewer needs out of a model's metadata, whichever kit wrote it.
+ *
+ * The medieval kit types this precisely in its own `meta.ts`; the contemporary
+ * one is JSON and arrives untyped. Structural is the honest description: the
+ * catalogue only reads these fields and neither kit's extra ones concern it.
+ */
+interface ModelMetaLike {
+  readonly title: string
+  readonly description: string
+  readonly controls: Readonly<Record<string, {
+    label: string; min: number; max: number; step: number; unit?: string
+  }>>
+  readonly materialSlots: readonly string[]
+  readonly parts: readonly string[]
+}
+
+const CONTEMPORARY_ORDER = [
+  'ceramic-vase', 'coffee-mug', 'wine-glass', 'pepper-mill',
+  'stockpot', 'traffic-cone', 'street-bollard',
+] as const
+
+const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
+  'ceramic-vase': as(createCpCeramicVase),
+  'coffee-mug': as(createCpCoffeeMug),
+  'wine-glass': as(createCpWineGlass),
+  'pepper-mill': as(createCpPepperMill),
+  'stockpot': as(createCpStockpot),
+  'traffic-cone': as(createCpTrafficCone),
+  'street-bollard': as(createCpStreetBollard),
+}
+
+const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
+  'ceramic-vase': cpMetaCeramicVase as ModelMetaLike,
+  'coffee-mug': cpMetaCoffeeMug as ModelMetaLike,
+  'wine-glass': cpMetaWineGlass as ModelMetaLike,
+  'pepper-mill': cpMetaPepperMill as ModelMetaLike,
+  'stockpot': cpMetaStockpot as ModelMetaLike,
+  'traffic-cone': cpMetaTrafficCone as ModelMetaLike,
+  'street-bollard': cpMetaStreetBollard as ModelMetaLike,
+}
+
+/**
+ * One catalogue entry, from whichever kit the model belongs to.
+ *
+ * The namespace and the two maps used to be hard-coded to the medieval kit,
+ * which was correct while there was one. Passing them in is the whole of what
+ * a second registry needed: nothing else in here knows or cares which kit it
+ * is looking at, because both describe themselves the same way.
+ */
+function entryFor(
+  id: string,
+  namespace = '@medieval-kit',
+  metaOf: Readonly<Record<string, ModelMetaLike>> = MODEL_META as unknown as Readonly<Record<string, ModelMetaLike>>,
+  factoryOf: Readonly<Record<string, () => KitModel>> = FACTORIES,
+): Entry {
+  const meta = metaOf[id]
+  if (!meta) throw new Error(`no metadata for ${id}`)
+  const factory = factoryOf[id]
   if (!factory) throw new Error(`no factory registration for ${id}`)
 
   const specs: ParamSpec[] = Object.entries(meta.controls).map(([key, control]) => ({
@@ -243,8 +322,8 @@ function entryFor(id: string): Entry {
 
   return {
     id,
-    namespace: '@medieval-kit',
-    address: `@medieval-kit/${id}`,
+    namespace,
+    address: `${namespace}/${id}`,
     who: meta.description,
     build: () => {
       const model = factory()
@@ -551,6 +630,12 @@ export const REGISTRIES = [
     // 'kit' first: what whoever opens the inspector sees first is the whole kit.
     entries: ['kit', ...MEDIEVAL_ORDER] as readonly string[],
   },
+  {
+    namespace: '@contemporary-props',
+    scheme: 'file:',
+    rest: 'contemporary-props/dist/registry.json',
+    entries: [...CONTEMPORARY_ORDER] as readonly string[],
+  },
 ] as const
 
 /**
@@ -598,4 +683,8 @@ export const CATALOG: Record<string, Entry> = {
   },
   kit: kitEntry(),
   ...Object.fromEntries(MEDIEVAL_ORDER.map((id) => [id, entryFor(id)])),
+  ...Object.fromEntries(CONTEMPORARY_ORDER.map((id) => [
+    id,
+    entryFor(id, '@contemporary-props', CONTEMPORARY_META, CONTEMPORARY_FACTORIES),
+  ])),
 }

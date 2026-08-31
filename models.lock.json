@@ -677,11 +677,11 @@
       "address": "@contemporary-props/core",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T13:01:08.200Z",
+      "installedAt": "2026-08-31T23:16:37.833Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\core\\geometry.ts",
-          "sourceHash": "00ec2d2b459c909612841820f0afd2db97dc85729baec695493f6ec609178fbc"
+          "sourceHash": "a1b202f3ecdb6a0b614e1867702a965e9def1f4cdeaaaaa88b050f616eed9941"
         },
         {
           "path": "src\\models\\contemporary-props\\core\\index.ts",
@@ -724,7 +724,7 @@
       "address": "@contemporary-props/ceramic-vase",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T13:01:08.203Z",
+      "installedAt": "2026-08-31T23:16:37.836Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\ceramic-vase\\model.ts",
@@ -739,11 +739,11 @@
       "address": "@contemporary-props/coffee-mug",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T13:01:08.204Z",
+      "installedAt": "2026-08-31T23:16:37.838Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\coffee-mug\\model.ts",
-          "sourceHash": "3ac9a507c369cb4c3a3badb53f818a2b8e985560da690108923692431b74e39e"
+          "sourceHash": "04c6a4c1b4f07727cf0b608ad833fef48f937ab19b3ba42348c1aa752c6c438d"
         }
       ],
       "dependencies": [
@@ -754,11 +754,11 @@
       "address": "@contemporary-props/pepper-mill",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T13:01:08.206Z",
+      "installedAt": "2026-08-31T23:16:37.839Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\pepper-mill\\model.ts",
-          "sourceHash": "132dd1816b7c74badc307d3b9d05fff0c0c9754508e740145a50e568ff34b1ff"
+          "sourceHash": "756e07f3dbb7641623cb4dcd3ad8c560ffe6c00b685afa8c7d08c69cb6b5d14d"
         }
       ],
       "dependencies": [
@@ -769,7 +769,7 @@
       "address": "@contemporary-props/stockpot",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T13:01:08.209Z",
+      "installedAt": "2026-08-31T23:16:37.841Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\stockpot\\model.ts",
@@ -784,7 +784,7 @@
       "address": "@contemporary-props/traffic-cone",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T13:01:08.211Z",
+      "installedAt": "2026-08-31T23:16:37.844Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\traffic-cone\\model.ts",
@@ -799,7 +799,7 @@
       "address": "@contemporary-props/wine-glass",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T13:01:08.215Z",
+      "installedAt": "2026-08-31T23:16:37.846Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\wine-glass\\model.ts",
@@ -814,9 +814,24 @@
       "address": "@contemporary-props/kit",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-08-28T13:01:08.215Z",
+      "installedAt": "2026-08-31T23:16:37.846Z",
       "files": [],
       "dependencies": []
+    },
+    "@contemporary-props/street-bollard": {
+      "address": "@contemporary-props/street-bollard",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-08-31T23:16:37.843Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\street-bollard\\model.ts",
+          "sourceHash": "7d6c63eec032363b49fab295cfc4ad7d0b0aed4e610aca54436c781d851ea552"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
     }
   }
 }
