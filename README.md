@@ -188,11 +188,23 @@ bun scripts/flythrough.ts --still 0.35            # one frame, to look at
 bun scripts/flythrough.ts --seconds 24 --fps 30   # the sequence, into frames/
 ```
 
-`scripts/square.ts` is the layout: 56 placements covering every model in the
-kit, each one authored rather than packed. The anvil stands beside the forge,
-the tankards are on the tavern table, the tools lean where somebody left them
-and the mill is at the far end. Anything with an action is switched on first,
-so the sails turn, the forge burns and the sign swings while the camera moves.
+`scripts/square.ts` is the layout: every model in the kit, most of them several
+times, authored rather than packed. Four stalls in a row with goods on their
+counters, crates stacked at their feet and what would not fit spilling into the
+walk; a forge with its anvil, grindstone and log pile; a tavern with two tables
+laid; a cart loaded; the mill behind all of it. Anything with an action is
+switched on first, so the sails turn, the forge burns and the sign swings while
+the camera moves.
+
+Two things make that possible rather than tedious. `around()` places goods in
+the axes of whatever they belong to, so "a basket 0.54 to the right of the
+middle of the counter" survives the stall being turned another ten degrees;
+without it nobody edits four world coordinates by hand twice, and what they do
+instead is leave the counter bare, which is exactly how the first pass came
+out. And the surface heights are MEASURED off the models rather than guessed:
+a stall counter is 0.781, a table 0.68, a cart bed 0.402, a crate lid 0.52.
+Guessing is how a basket ends up hovering a centimetre above a stall, and at
+this scale a centimetre is visible.
 
 `scripts/scenery.ts` is the part the kit does not contain, and it is kept in
 its own file so the line stays visible. The first cut had none of it, and that

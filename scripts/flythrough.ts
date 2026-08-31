@@ -60,23 +60,23 @@ const ground = groundHex ? toLinear(groundHex) : undefined
  * it has to be able to hold it.
  */
 const EYE = new CatmullRomCurve3([
-  new Vector3(7.0, 1.8, 8.2),
-  new Vector3(5.2, 1.6, 5.6),
-  new Vector3(3.8, 1.45, 3.4),
-  new Vector3(3.0, 1.55, 1.2),
-  new Vector3(2.6, 2.2, -0.6),
-  new Vector3(2.4, 3.6, 1.8),
-  new Vector3(2.0, 5.6, 7.0),
+  new Vector3(5.5, 1.8, 8.6),
+  new Vector3(1.6, 1.6, 6.2),
+  new Vector3(-2.0, 1.45, 4.3),
+  new Vector3(-3.8, 1.45, 1.9),
+  new Vector3(-4.6, 1.6, -0.7),
+  new Vector3(-3.4, 2.7, -1.4),
+  new Vector3(-0.8, 4.8, 3.0),
 ], false, 'catmullrom', 0.5)
 
 const AIM = new CatmullRomCurve3([
-  new Vector3(0.8, 1.3, 0.2),
-  new Vector3(-0.4, 1.2, -1.2),
-  new Vector3(-1.8, 1.2, -2.2),
-  new Vector3(-3.0, 1.3, -3.0),
-  new Vector3(-2.0, 1.8, -4.2),
-  new Vector3(-0.8, 2.3, -5.0),
-  new Vector3(-0.3, 2.7, -5.4),
+  new Vector3(-1.8, 1.35, 3.2),
+  new Vector3(-4.6, 1.25, 2.0),
+  new Vector3(-6.4, 1.2, 0.5),
+  new Vector3(-6.8, 1.2, -1.7),
+  new Vector3(-5.6, 1.35, -4.2),
+  new Vector3(-2.2, 2.0, -5.4),
+  new Vector3(-0.4, 2.6, -5.4),
 ], false, 'catmullrom', 0.5)
 
 /**

@@ -76,74 +76,277 @@ const FENCE_RUNS: readonly Placement[] = [
   })),
 ]
 
+/**
+ * The heights of the things you can put something down on, measured off the
+ * models rather than guessed.
+ *
+ * Guessing is how a basket ends up hovering a centimetre over a stall, or sunk
+ * into it, and at this scale both are visible. `on` seats a model's underside
+ * at the number given, so these are surfaces above the ground.
+ */
+const COUNTER = 0.781   // market stall, under its awning
+const TABLE = 0.68      // trestle table
+const CART_BED = 0.402  // hand cart, inside the sides
+const CRATE = 0.52
+const BARREL = 1.05
+const BALE = 0.80
+const CHEST = 0.51
+const BENCH = 0.45
+const TROUGH = 0.51
+const LOGS = 0.58
+
+/** A placement written relative to whatever it belongs to. */
+interface Local {
+  readonly id: string
+  /** Offset from the anchor, in the anchor's own axes. +X is to its right. */
+  readonly at: readonly [number, number]
+  readonly on?: number
+  readonly yaw?: number
+  readonly lean?: readonly [number, number]
+  readonly patch?: Record<string, number>
+}
+
+/**
+ * Puts things down relative to something else.
+ *
+ * A stall turned to face the square has its counter somewhere that depends on
+ * which way it is turned, so writing the basket's position in world
+ * coordinates means recomputing four numbers by hand every time the stall
+ * moves a degree. Nobody does that twice; what they do instead is stop putting
+ * anything on the stall, which is exactly how the first pass came out.
+ */
+function around(
+  anchor: readonly [number, number],
+  yaw: number,
+  items: readonly Local[],
+): Placement[] {
+  const cos = Math.cos(yaw)
+  const sin = Math.sin(yaw)
+  return items.map((item) => ({
+    id: item.id,
+    at: [
+      anchor[0] + item.at[0] * cos + item.at[1] * sin,
+      anchor[1] - item.at[0] * sin + item.at[1] * cos,
+    ] as const,
+    yaw: yaw + (item.yaw ?? 0),
+    on: item.on,
+    lean: item.lean,
+    patch: item.patch,
+  }))
+}
+
+/**
+ * A stall and what is on it.
+ *
+ * The counter is 1.51 by 0.75 and the awning posts stand at its corners, so
+ * goods live between x -0.6 and +0.6 and z -0.25 and +0.25 of the middle;
+ * anything wider than that intersects a post.
+ */
+function stall(
+  at: readonly [number, number],
+  yaw: number,
+  goods: readonly Local[],
+): Placement[] {
+  return [
+    ...around(at, yaw, [{ id: 'market-stall', at: [0, 0] }]),
+    ...around(at, yaw, goods),
+  ]
+}
+
 export const SQUARE: readonly Placement[] = [
-  // --- The mill and the yard behind it ------------------------------------
+  // --- The mill, and the yard behind it ------------------------------------
   { id: 'post-mill', at: [-0.38, -7.02], yaw: 0.25 },
-  { id: 'log-pile', at: [-3.75, -5.93], yaw: 0.3 },
-  { id: 'hay-bale', at: [3.45, -6.08], yaw: -0.2 },
-  { id: 'hay-bale', at: [4.28, -5.38], yaw: 0.4 },
+  ...around([-4.6, -8.2], 0.3, [
+    { id: 'log-pile', at: [0, 0] },
+    { id: 'log-pile', at: [1.05, 0.12], yaw: 0.1 },
+    { id: 'log-pile', at: [0.5, -0.02], on: LOGS, yaw: 0.06 },
+    { id: 'linen-sack', at: [-0.9, 0.5], yaw: 0.4 },
+    { id: 'wooden-crate', at: [-1.6, 0.1], yaw: 0.3 },
+  ]),
+  ...around([4.5, -8.0], -0.2, [
+    { id: 'hay-bale', at: [0, 0] },
+    { id: 'hay-bale', at: [1.12, 0.15], yaw: 0.4 },
+    { id: 'hay-bale', at: [0.56, 0.06], on: BALE, yaw: 0.22 },
+    { id: 'linen-sack', at: [-0.85, 0.55], yaw: -0.3 },
+    { id: 'linen-sack', at: [-1.15, 0.3], yaw: 0.6 },
+    { id: 'wooden-pitchfork', at: [-1.5, -0.4], yaw: 0.5, lean: [0.2, 0.1] },
+  ]),
 
+  // --- The market row, down the left side ----------------------------------
+  //
+  // Four stalls, turned a little further toward the square as they go back so
+  // the row reads as a row and not as a wall. Everything on a counter sits at
+  // COUNTER; everything at the foot of one is what did not fit on it.
+  ...stall([-6.9, 3.0], -1.32, [
+    { id: 'vegetables', at: [-0.42, -0.06], on: COUNTER },
+    { id: 'vegetables', at: [0.16, 0.04], on: COUNTER, yaw: 0.7 },
+    { id: 'wicker-basket', at: [0.54, -0.08], on: COUNTER, yaw: 0.3 },
+    { id: 'wooden-crate', at: [-0.95, 0.55], yaw: 0.25 },
+    { id: 'wooden-crate', at: [-0.95, 0.55], on: CRATE, yaw: 0.5 },
+    { id: 'vegetables', at: [-0.95, 0.55], on: CRATE * 2, yaw: -0.3 },
+    { id: 'wicker-basket', at: [0.9, 0.6], yaw: -0.2 },
+    { id: 'linen-sack', at: [1.25, 0.35], yaw: 0.5 },
+  ]),
+  ...stall([-7.2, 0.85], -1.45, [
+    { id: 'linen-sack', at: [-0.45, 0], on: COUNTER, yaw: 0.2 },
+    { id: 'linen-sack', at: [-0.12, 0.06], on: COUNTER, yaw: -0.5 },
+    { id: 'wicker-basket', at: [0.3, -0.05], on: COUNTER },
+    { id: 'wicker-basket', at: [0.62, 0.05], on: COUNTER, yaw: 0.8 },
+    { id: 'linen-sack', at: [-1.05, 0.5], yaw: 0.1 },
+    { id: 'linen-sack', at: [-0.78, 0.62], yaw: 0.9 },
+    { id: 'linen-sack', at: [-0.92, 0.56], on: 0.5, yaw: -0.4 },
+    { id: 'wooden-crate', at: [1.0, 0.5], yaw: -0.35 },
+  ]),
+  ...stall([-7.5, -1.35], -1.55, [
+    { id: 'oak-tankard', at: [-0.5, -0.05], on: COUNTER },
+    { id: 'oak-tankard', at: [-0.32, 0.08], on: COUNTER, yaw: 0.6 },
+    { id: 'oak-tankard', at: [-0.13, -0.02], on: COUNTER, yaw: -0.4 },
+    { id: 'glass-phial', at: [0.22, 0.02], on: COUNTER },
+    { id: 'glass-phial', at: [0.33, -0.06], on: COUNTER, yaw: 0.9 },
+    { id: 'wooden-barrel', at: [1.05, 0.35], yaw: 0.2 },
+    { id: 'wooden-barrel', at: [1.15, -0.55], yaw: -0.3 },
+    { id: 'oak-tankard', at: [1.05, 0.35], on: BARREL, yaw: 0.3 },
+  ]),
+  ...stall([-7.8, -3.5], -1.62, [
+    { id: 'leather-book', at: [-0.48, 0], on: COUNTER, yaw: 0.15 },
+    { id: 'leather-book', at: [-0.2, 0.06], on: COUNTER, yaw: -0.6 },
+    { id: 'coin-pouch', at: [0.08, -0.04], on: COUNTER, yaw: 0.4 },
+    { id: 'glass-phial', at: [0.34, 0.03], on: COUNTER },
+    { id: 'iron-lantern', at: [0.58, -0.02], on: COUNTER, yaw: 0.2 },
+    { id: 'wooden-chest', at: [1.0, 0.45], yaw: -0.4 },
+    { id: 'coin-pouch', at: [1.0, 0.45], on: CHEST, yaw: 0.7 },
+    { id: 'straw-broom', at: [-1.15, -0.35], yaw: 0.3, lean: [0.18, 0.1] },
+  ]),
+  { id: 'wooden-ladder', at: [-9.3, 4.6], yaw: 0.35, lean: [0.22, 0] },
+  { id: 'pitch-torch', at: [-6.2, 4.4] },
+  { id: 'pitch-torch', at: [-6.6, -4.6] },
 
-  // --- The forge, on the left ----------------------------------------------
-  { id: 'forge-hearth', at: [-4.8, -2.81], yaw: 0.42 },
-  { id: 'iron-anvil', at: [-3.53, -2.03], yaw: -0.5 },
-  { id: 'grindstone', at: [-5.18, -1.09], yaw: 0.25 },
-  { id: 'wooden-bucket', at: [-4.05, -1.17] },
-  { id: 'iron-cauldron', at: [-6.0, -3.59], yaw: 0.2 },
-  { id: 'round-shield', at: [-3.97, -3.59], yaw: 0.5, lean: [-0.28, 0] },
-  { id: 'straw-broom', at: [-5.7, -1.87], lean: [0.16, 0.1] },
-  { id: 'pitch-torch', at: [-6.0, -0.47] },
-  { id: 'wooden-crate', at: [-4.43, -0.31], yaw: 0.35 },
+  // --- The forge, back left ------------------------------------------------
+  ...around([-6.4, -6.0], 0.42, [
+    { id: 'forge-hearth', at: [0, 0] },
+    { id: 'iron-anvil', at: [1.7, 0.75], yaw: -0.9 },
+    { id: 'grindstone', at: [-0.4, 1.75], yaw: -0.2 },
+    { id: 'wooden-bucket', at: [1.15, 1.6] },
+    { id: 'iron-cauldron', at: [-1.7, -0.1], yaw: -0.2 },
+    { id: 'round-shield', at: [1.05, -0.85], yaw: 0.1, lean: [-0.3, 0] },
+    { id: 'log-pile', at: [2.5, -0.3], yaw: 0.2 },
+    { id: 'wooden-crate', at: [2.45, 1.5], yaw: 0.35 },
+    { id: 'wooden-crate', at: [2.45, 1.5], on: CRATE, yaw: 0.05 },
+    { id: 'wooden-shovel', at: [-1.2, 1.5], yaw: 0.2, lean: [0.2, 0.06] },
+    { id: 'wooden-hoe', at: [-1.45, 1.7], yaw: 0.35, lean: [0.18, 0.12] },
+  ]),
 
-  // --- The tavern, on the right --------------------------------------------
-  { id: 'tavern-sign', at: [4.72, -2.65], yaw: -0.35 },
-  { id: 'trestle-table', at: [3.68, -1.09], yaw: 0.18 },
-  { id: 'wooden-bench', at: [3.68, -0.35], yaw: 0.18 },
-  { id: 'wooden-bench', at: [3.68, -1.83], yaw: 0.18 },
-  { id: 'wooden-stool', at: [4.72, -0.78], yaw: -0.4 },
-  { id: 'oak-tankard', at: [3.34, -1.17], on: 0.68 },
-  { id: 'oak-tankard', at: [3.86, -0.98], on: 0.68 },
-  { id: 'leather-book', at: [4.01, -1.25], on: 0.68, yaw: 0.3 },
-  { id: 'glass-phial', at: [3.56, -1.29], on: 0.68 },
-  { id: 'coin-pouch', at: [3.71, -0.94], on: 0.68, yaw: -0.4 },
-  { id: 'iron-lantern', at: [4.16, -1.05], on: 0.68 },
-  { id: 'wooden-chest', at: [5.25, -1.87], yaw: -0.3 },
-  { id: 'wooden-barrel', at: [5.47, -0.7] },
+  // --- The middle: the well and what gathers at it -------------------------
+  ...around([0.4, -2.34], 0.15, [
+    { id: 'stone-well', at: [0, 0] },
+    { id: 'wooden-bucket', at: [1.15, 0.35], yaw: 0.4 },
+    { id: 'wooden-bucket', at: [1.42, 0.1], yaw: -0.3 },
+    { id: 'stone-trough', at: [-2.4, 0.9], yaw: 0.4 },
+    { id: 'wooden-bucket', at: [-1.6, 1.35], yaw: 0.7 },
+  ]),
+  { id: 'bronze-bell', at: [1.73, -4.4], yaw: -0.25 },
+  { id: 'pitch-torch', at: [-1.4, -0.5] },
 
-  // --- The square itself ---------------------------------------------------
-  { id: 'stone-well', at: [0.3, -2.34], yaw: 0.15 },
-  { id: 'stone-trough', at: [-1.58, -1.25], yaw: 0.55 },
-  { id: 'bronze-bell', at: [1.72, -3.28], yaw: -0.25 },
+  // --- The tavern, down the right side -------------------------------------
+  ...around([4.7, -1.6], 0.18, [
+    { id: 'trestle-table', at: [0, 0] },
+    { id: 'wooden-bench', at: [0, 0.95] },
+    { id: 'wooden-bench', at: [0, -0.95] },
+    { id: 'oak-tankard', at: [-0.45, -0.06], on: TABLE },
+    { id: 'oak-tankard', at: [-0.2, 0.1], on: TABLE, yaw: 0.5 },
+    { id: 'oak-tankard', at: [0.28, -0.09], on: TABLE, yaw: -0.7 },
+    { id: 'leather-book', at: [0.5, 0.12], on: TABLE, yaw: 0.3 },
+    { id: 'glass-phial', at: [0.06, 0.16], on: TABLE },
+    { id: 'coin-pouch', at: [-0.6, 0.14], on: TABLE, yaw: -0.4 },
+    { id: 'iron-lantern', at: [0.62, -0.1], on: TABLE, yaw: 0.2 },
+    { id: 'oak-tankard', at: [0.55, 0.95], on: BENCH, yaw: 0.4 },
+    { id: 'wooden-stool', at: [1.25, 0.25], yaw: -0.5 },
+  ]),
+  ...around([5.9, -3.9], -0.3, [
+    { id: 'trestle-table', at: [0, 0], yaw: 0.25 },
+    { id: 'wooden-stool', at: [-0.05, 0.85], yaw: 0.4 },
+    { id: 'wooden-stool', at: [0.15, -0.8], yaw: -0.6 },
+    { id: 'oak-tankard', at: [0.1, 0.05], on: TABLE, yaw: 0.2 },
+    { id: 'oak-tankard', at: [-0.3, -0.05], on: TABLE, yaw: -0.5 },
+    { id: 'wooden-barrel', at: [1.35, 0.6], yaw: 0.15 },
+    { id: 'wooden-barrel', at: [1.45, -0.35], yaw: -0.4 },
+    { id: 'wooden-crate', at: [1.4, 1.5], yaw: 0.3 },
+  ]),
+  { id: 'tavern-sign', at: [6.2, -0.2], yaw: -1.5 },
+  { id: 'pitch-torch', at: [4.3, -3.4] },
+  { id: 'wooden-chest', at: [7.3, -2.6], yaw: -0.35 },
 
-  // --- The stall, front left -----------------------------------------------
-  { id: 'market-stall', at: [-2.55, 1.4], yaw: 0.22 },
-  { id: 'vegetables', at: [-2.92, 1.99], yaw: 0.1 },
-  { id: 'wicker-basket', at: [-2.03, 2.03] },
-  { id: 'linen-sack', at: [-3.45, 1.87], yaw: 0.3 },
-  { id: 'wooden-crate', at: [-3.97, 1.33], yaw: 0.45 },
-  { id: 'wooden-barrel', at: [-1.58, 2.11] },
-  { id: 'wooden-ladder', at: [-4.8, 0.94], yaw: 0.3, lean: [0.22, 0] },
+  // --- The front, where the camera comes in --------------------------------
+  ...around([3.1, 2.3], -0.4, [
+    { id: 'hand-cart', at: [0, 0] },
+    { id: 'wooden-crate', at: [0, -0.4], on: CART_BED, yaw: 0.15 },
+    { id: 'linen-sack', at: [0.02, 0.35], on: CART_BED, yaw: 0.5 },
+    { id: 'linen-sack', at: [-0.1, 0.1], on: CART_BED, yaw: -0.3 },
+    { id: 'wooden-crate', at: [1.35, 0.9], yaw: 0.4 },
+    { id: 'wooden-crate', at: [1.35, 0.9], on: CRATE, yaw: 0.1 },
+    { id: 'wicker-basket', at: [1.35, 0.9], on: CRATE * 2, yaw: -0.4 },
+  ]),
+  ...around([6.4, 2.6], -0.6, [
+    { id: 'wooden-barrel', at: [0, 0] },
+    { id: 'wooden-barrel', at: [0.9, 0.2], yaw: 0.3 },
+    { id: 'wooden-crate', at: [0.45, 1.0], yaw: -0.2 },
+    { id: 'linen-sack', at: [-0.7, 0.75], yaw: 0.4 },
+    { id: 'cart-wheel', at: [-0.95, -0.3], yaw: -0.3, lean: [-0.2, 0] },
+  ]),
+  { id: 'pitch-torch', at: [1.3, 1.6] },
+  { id: 'wooden-stool', at: [1.4, 3.4], yaw: 0.5 },
+  { id: 'wooden-hoe', at: [9.6, 0.4], yaw: 0.2, lean: [0.2, 0.1] },
+  { id: 'wooden-shovel', at: [9.75, 0.75], yaw: 0.1, lean: [0.22, 0.06] },
+  { id: 'wooden-pitchfork', at: [9.9, 1.1], yaw: -0.1, lean: [0.18, -0.08] },
+  { id: 'cart-wheel', at: [-9.9, -2.2], yaw: 1.5, lean: [-0.18, 0] },
+  { id: 'hay-bale', at: [-9.7, 6.2], yaw: 0.3 },
 
-  // --- The cart and the tools, front right ---------------------------------
-  { id: 'hand-cart', at: [2.7, 1.87], yaw: -0.4 },
-  { id: 'cart-wheel', at: [4.43, 1.25], yaw: -0.6, lean: [-0.2, 0] },
-  { id: 'wooden-hoe', at: [5.03, 0.31], yaw: 0.2, lean: [0.18, 0.1] },
-  { id: 'wooden-shovel', at: [5.21, 0.58], yaw: 0.1, lean: [0.2, 0.06] },
-  { id: 'wooden-pitchfork', at: [5.4, 0.86], yaw: -0.1, lean: [0.16, -0.08] },
-  { id: 'wooden-stool', at: [1.95, 1.17], yaw: 0.5 },
-  { id: 'pitch-torch', at: [1.5, 0.16] },
-  // The boundary, and it is the kit's own fence rather than anything invented:
-  // 2.7 m modules run end to end down both sides and across the back. A kit
-  // whose fence cannot make a fence is not much of a fence.
+  // --- What spills into the walk ------------------------------------------
+  //
+  // The camera goes down this lane at 1.45 m, and at that height a scene with
+  // nothing inside three metres is a third of a frame of bare floor however
+  // good the rest of it is. These are the overflow: what a stall could not fit
+  // on its counter, standing where it was put down.
+  ...around([3.2, 6.6], -0.5, [
+    { id: 'wooden-barrel', at: [0, 0] },
+    { id: 'wooden-crate', at: [0.85, 0.3], yaw: 0.3 },
+    { id: 'linen-sack', at: [-0.55, 0.5], yaw: 0.2 },
+  ]),
+  ...around([-5.6, 4.4], 0.25, [
+    { id: 'wooden-crate', at: [0, 0] },
+    { id: 'wooden-crate', at: [0, 0], on: CRATE, yaw: 0.4 },
+    { id: 'wicker-basket', at: [0, 0], on: CRATE * 2, yaw: -0.3 },
+    { id: 'linen-sack', at: [0.8, 0.35], yaw: 0.5 },
+  ]),
+  ...around([-5.9, 2.1], -0.3, [
+    { id: 'linen-sack', at: [0, 0] },
+    { id: 'linen-sack', at: [0.4, 0.25], yaw: 0.8 },
+    { id: 'linen-sack', at: [0.2, 0.12], on: 0.5, yaw: -0.4 },
+    { id: 'wicker-basket', at: [0.85, -0.3], yaw: 0.2 },
+  ]),
+  ...around([-6.0, -0.3], 0.4, [
+    { id: 'wooden-barrel', at: [0, 0] },
+    { id: 'wooden-barrel', at: [0.88, 0.22], yaw: 0.3 },
+    { id: 'wicker-basket', at: [0, 0], on: BARREL, yaw: 0.5 },
+    { id: 'wooden-crate', at: [0.4, 1.0], yaw: -0.35 },
+  ]),
+  ...around([-5.7, -2.7], -0.2, [
+    { id: 'wooden-crate', at: [0, 0] },
+    { id: 'vegetables', at: [0, 0], on: CRATE, yaw: 0.4 },
+    { id: 'linen-sack', at: [0.75, 0.3], yaw: -0.5 },
+  ]),
+  ...around([-0.5, 3.3], 0.3, [
+    { id: 'wooden-barrel', at: [0, 0] },
+    { id: 'wooden-barrel', at: [0.9, -0.25], yaw: -0.4 },
+    { id: 'oak-tankard', at: [0, 0], on: BARREL, yaw: 0.2 },
+  ]),
+  ...around([-1.9, 0.5], -0.4, [
+    { id: 'wooden-crate', at: [0, 0] },
+    { id: 'linen-sack', at: [0.7, 0.2], yaw: 0.6 },
+    { id: 'wicker-basket', at: [0, 0], on: CRATE, yaw: -0.2 },
+  ]),
+
   ...FENCE_RUNS,
-  // Foreground, so the near half of the frame is not bare floor. A camera at
-  // standing height sees a lot of ground and nothing else unless something is
-  // close enough to pass it.
-  { id: 'wooden-crate', at: [4.6, 4.2], yaw: -0.3 },
-  { id: 'wooden-barrel', at: [5.6, 3.4] },
-  { id: 'linen-sack', at: [4.0, 4.7], yaw: 0.5 },
-  { id: 'hay-bale', at: [-8.6, 2.6], yaw: 0.3 },
-  { id: 'pitch-torch', at: [-2.2, -6.0] },
 ]
 
 /**
