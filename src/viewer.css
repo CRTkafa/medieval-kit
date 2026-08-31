@@ -631,3 +631,29 @@ body.recording .viewport::after {
 }
 
 @keyframes rec-pulse { 50% { opacity: 0.35; } }
+
+/* ---------- the catalogue scrolls in place ---------- */
+
+/*
+   Thirty-seven rows is 1,443 px of the rail's 2,968, and every control below
+   them was behind four screens of scrolling. Somebody looking for the record
+   button did not find it, which is the whole report.
+
+   So the list gets its own scroll and stops setting the rail's height. The cap
+   is in vh because the thing it has to stay smaller than is the window, not a
+   number of models: the list has grown by ten since this rail was drawn and it
+   will grow again.
+*/
+.models {
+  max-height: 34vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.models::-webkit-scrollbar { width: 8px; }
+.models::-webkit-scrollbar-track { background: transparent; }
+.models::-webkit-scrollbar-thumb { background: var(--rule); border: 2px solid var(--graphite); border-radius: 4px; }
+
+/* The last block sat flush against the bottom edge with sixteen pixels of
+   slack, which reads as cut off whether or not it is. */
+.rail { padding-bottom: 18px; }

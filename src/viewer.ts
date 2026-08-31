@@ -73,6 +73,34 @@ app.innerHTML = `
       </div>
       <p class="install"><code>bunx vibe3d add @medieval-kit</code></p>
     </section>
+    <section class="block">
+      <p class="block-label">Showcase<span class="block-note">press Esc to stop</span></p>
+      <div class="actions">
+        <!--
+          60 s is the default, not 30.
+
+          The tour gives every model an equal share of the running time, so
+          across 35 of them 30 s is 0.86 s each, 60 s is 1.7 and 90 s is 2.6.
+          A beat spends its time sweeping the parameters and stepping the
+          counts, and none of that reads in under a second: the 30 s run is a
+          flyby of the kit, 60 s is the one that shows what each model can do,
+          and 90 s is there because that share shrinks every time a model is
+          added. The order and the emphasis say so.
+        -->
+        <button class="action action-primary" type="button" data-showcase="60">
+          <span>Play 60 s tour</span><span class="state">&#9654;</span>
+        </button>
+        <button class="action" type="button" data-showcase="30">
+          <span>Play 30 s flyby</span><span class="state">&#9654;</span>
+        </button>
+        <button class="action" type="button" data-showcase="90">
+          <span>Play 90 s tour</span><span class="state">&#9654;</span>
+        </button>
+        <button class="action" type="button" data-record aria-pressed="false">
+          <span>Record to file</span><span class="state">off</span>
+        </button>
+      </div>
+    </section>
     ${REGISTRIES.map((registry) => `
       <section class="block">
         <div class="ns-head">
@@ -131,34 +159,6 @@ app.innerHTML = `
         </button>
         <button class="action" type="button" data-export>
           <span>download GLB</span><span class="state">↓</span>
-        </button>
-      </div>
-    </section>
-    <section class="block">
-      <p class="block-label">Showcase<span class="block-note">press Esc to stop</span></p>
-      <div class="actions">
-        <!--
-          60 s is the default, not 30.
-
-          The tour gives every model an equal share of the running time, so
-          across 35 of them 30 s is 0.86 s each, 60 s is 1.7 and 90 s is 2.6.
-          A beat spends its time sweeping the parameters and stepping the
-          counts, and none of that reads in under a second: the 30 s run is a
-          flyby of the kit, 60 s is the one that shows what each model can do,
-          and 90 s is there because that share shrinks every time a model is
-          added. The order and the emphasis say so.
-        -->
-        <button class="action action-primary" type="button" data-showcase="60">
-          <span>Play 60 s tour</span><span class="state">&#9654;</span>
-        </button>
-        <button class="action" type="button" data-showcase="30">
-          <span>Play 30 s flyby</span><span class="state">&#9654;</span>
-        </button>
-        <button class="action" type="button" data-showcase="90">
-          <span>Play 90 s tour</span><span class="state">&#9654;</span>
-        </button>
-        <button class="action" type="button" data-record aria-pressed="false">
-          <span>Record to file</span><span class="state">off</span>
         </button>
       </div>
     </section>
