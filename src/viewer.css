@@ -647,7 +647,17 @@ body.recording .viewport::after {
 .models {
   max-height: 34vh;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  /*
+   * NO `overscroll-behavior: contain` here, and that is the whole point.
+   *
+   * On the rail it is right: the rail must not hand its overscroll to the page
+   * behind it. Copied onto a list INSIDE the rail it does the opposite of what
+   * is wanted, because what it actually prevents is scroll CHAINING. With the
+   * pointer over the catalogue the list scrolls, reaches its end, and stops
+   * dead: the rail never moves, so every block below the list is unreachable
+   * for as long as the cursor is over it. Which reads exactly as "it scrolls
+   * but the bottom is missing", and is what was reported.
+   */
 }
 
 .models::-webkit-scrollbar { width: 8px; }
