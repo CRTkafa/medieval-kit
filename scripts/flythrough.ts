@@ -26,7 +26,9 @@ import { mkdir, writeFile } from 'node:fs/promises'
 
 import { CatmullRomCurve3, PerspectiveCamera, Vector3 } from 'three/webgpu'
 
-import { encodePng, gather, renderFrom, toLinear } from './raster.ts'
+import {
+  encodePng, gather, renderFrom, setFog, setLighting, setPointLights, toLinear,
+} from './raster.ts'
 import { buildSquare } from './square.ts'
 
 const args = process.argv.slice(2)
@@ -92,12 +94,54 @@ function place(camera: PerspectiveCamera, t: number): void {
   camera.lookAt(AIM.getPoint(at))
 }
 
+/**
+ * The rig, and it is not the kit's.
+ *
+ * Every catalogue picture is taken under a high white sun, which is right for
+ * judging a model and wrong for being anywhere: at noon with a white key the
+ * square is a product shot of a square. This is late afternoon, low and warm,
+ * with the ambient pulled cool so the shadow side goes blue rather than grey.
+ * The kit's own defaults are untouched; nothing that skips this call moves.
+ */
+setLighting({
+  light: [0.66, 0.44, 0.38],
+  sun: [1.12, 0.98, 0.82],
+  sky: [0.36, 0.44, 0.62],
+  ground: [0.2, 0.18, 0.15],
+})
+
+const SKY = {
+  zenith: [0.045, 0.072, 0.135] as const,
+  horizon: [0.185, 0.178, 0.185] as const,
+  glow: [0.46, 0.26, 0.11] as const,
+}
+
+// Haze, which is the only thing that puts a hill 200 m away. Its colour is the
+// sky's at the horizon, because anything else reads as smoke.
+setFog({ colour: SKY.horizon, near: 55, far: 320 })
+
 const square = buildSquare(undefined, { houses: !has('no-houses') })
+
+/**
+ * The fires, as light. Reach is what the flame can plausibly carry: a torch
+ * lights the yard around it and a forge lights the wall behind it.
+ */
+setPointLights(square.fires.map((fire) => {
+  const forge = fire.id === 'forge-hearth'
+  return {
+    at: fire.at,
+    colour: forge ? [1.0, 0.42, 0.13] as const : [1.0, 0.55, 0.2] as const,
+    reach: forge ? 6.5 : fire.id === 'iron-lantern' ? 2.4 : 4.6,
+    strength: forge ? 1.5 : fire.id === 'iron-lantern' ? 0.5 : 0.85,
+  }
+}))
 console.log(`square: ${square.root.children.length} models, ${square.height.toFixed(2)} m tall`)
 await mkdir(outDir, { recursive: true })
 
 const underlay = gather(square.ground)
-const shot = { size: width, tall: height, ground, floor: 0, height: square.height, underlay }
+const shot = {
+  size: width, tall: height, ground, floor: 0, height: square.height, underlay, sky: SKY,
+}
 
 if (has('plan')) {
   // Straight down, to check the layout rather than to look at it. The up

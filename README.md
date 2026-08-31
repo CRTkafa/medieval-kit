@@ -52,9 +52,11 @@ bun add three
 bun add -d @types/three
 ```
 
-`init` writes `models.json` and seeds it with `@scifi-kit` only, so add this
-registry to the `registries` object it created. `vibe3d add` resolves the
-namespace through that map and stops without it:
+`init` writes `models.json` and seeds `@medieval-kit` into it alongside
+`@scifi-kit`, so there is nothing to add by hand. That is upstream as of
+[vibe-stack/vibe3d#11](https://github.com/vibe-stack/vibe3d/pull/11); on an
+older CLI, put the registry in the `registries` object yourself, because
+`vibe3d add` resolves the namespace through that map and stops without it:
 
 ```json
 "@medieval-kit": { "source": "npm:@medieval-kit/registry", "version": "latest" }
@@ -210,12 +212,38 @@ The frontage is still there, eight timber-framed houses behind
 `buildHouses()`, for anything that is not selling the kit. `--no-houses` is
 what leaves them out, and it is what the released cut passes.
 
-Two things that only show up once there is a floor. The ground has to be drawn
-BEFORE the contact shadows, or it paints straight over every one of them, and
-it has to be excluded from casting, or a plane lying on the floor darkens
-itself from edge to edge. And its colour has to vary per vertex rather than per
-face: a flat plane has no shading to break up its own grid, so a colour per
-cell is a chessboard and nothing else.
+The land is grass with the market worn through it, flat for 18 m so the models
+can go on sitting on `y = 0`, then rolling out to hills by 110 m. It is a
+polar mesh rather than a grid, because the detail is wanted where the camera
+is: a grid fine enough for the square would be a million triangles by the time
+it reached the horizon.
+
+Four things that only show up once there is a floor and a horizon, each of
+which cost a render to find:
+
+- **The ground has to be drawn before the contact shadows**, or it paints
+  straight over every one of them, and it has to be left out of what casts, or
+  a plane lying on the floor darkens itself from edge to edge.
+- **Its colour has to vary per vertex, not per face.** A flat plane has no
+  shading to break up its own grid, so a colour per cell is a chessboard and
+  nothing else.
+- **Wind the triangles so the normal points up.** Anticlockwise seen from above
+  points it down, the back face is culled, and the whole ground silently is not
+  there. What shows through is the sky's own horizon band, which looks enough
+  like hazy ground to be believed for a while.
+- **Never write terrain height as a function of the radius.** It comes out as
+  rings centred on wherever the middle is, and rings on a landscape read as a
+  target painted on it. Waves in x and z instead.
+
+`scripts/raster.ts` grew the rig for it, all of it settable and all of it
+defaulted to what it always was, so no picture the kit itself takes moves by a
+pixel: `setLighting` for a low warm sun and a cool ambient, `setPointLights` so
+the torches and the forge actually light the ground they stand on,
+`setFog` for the haze that puts a hill two hundred metres away, and `paintSky`,
+which draws a sky rather than a vertical gradient. The gradient is right for a
+catalogue cell and wrong the moment there is a horizon in the frame, because
+the band that should be brightest is wherever the ground ends, and on a moving
+camera that is a different row every frame.
 
 The camera runs on two splines, one for where it is and one for what it is
 looking at, because a camera that only looks along its own path can never show

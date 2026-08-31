@@ -163,8 +163,23 @@ const WAKE: Readonly<Record<string, (actions: Record<string, (arg?: unknown) => 
   'tavern-sign': (a) => { a.push?.() },
 }
 
+/**
+ * Where a fire is, and how high its flame sits above where the model stands.
+ *
+ * Reported by the builder rather than written down beside it, because a torch
+ * that gets moved and a light that does not is worse than no light at all.
+ */
+export const FIRE_HEIGHT: Readonly<Record<string, number>> = {
+  'pitch-torch': 0.78,
+  'forge-hearth': 1.06,
+  'iron-cauldron': 0.42,
+  'iron-lantern': 0.16,
+}
+
 export interface Square {
   readonly root: Group
+  /** Every lit thing in the scene, in world space. */
+  readonly fires: readonly { at: Vector3; id: string }[]
   /**
    * The floor, kept out of `root` so it can be drawn before the shadows.
    *
@@ -187,6 +202,7 @@ export function buildSquare(
   const root = new Group()
   root.name = 'market-square'
   const built: { update?: (s: number) => void; dispose: () => void }[] = []
+  const fires: { at: Vector3; id: string }[] = []
 
   for (const spot of layout) {
     const make = FACTORIES[spot.id]
@@ -207,6 +223,10 @@ export function buildSquare(
       (spot.on ?? 0) - box.min.y,
       spot.at[1] - centre.z,
     )
+    const flame = FIRE_HEIGHT[spot.id]
+    if (flame !== undefined) {
+      fires.push({ id: spot.id, at: new Vector3(spot.at[0], (spot.on ?? 0) + flame, spot.at[1]) })
+    }
     WAKE[spot.id]?.(model.actions as Record<string, (arg?: unknown) => unknown>)
     root.add(model.root)
     built.push(model)
@@ -221,6 +241,7 @@ export function buildSquare(
   return {
     root,
     ground,
+    fires,
     height,
     update: (seconds: number) => {
       for (const model of built) model.update?.(seconds)

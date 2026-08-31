@@ -138,9 +138,67 @@ export function toLinear(hex: string): [number, number, number] {
 
 /* -------------------------------------------------------------- rasterising */
 
-const LIGHT = new Vector3(0.48, 0.82, 0.31).normalize()
-const SKY: [number, number, number] = [0.42, 0.52, 0.68]
-const GROUND: [number, number, number] = [0.24, 0.2, 0.16]
+/**
+ * The lighting, and why it is a variable rather than a constant.
+ *
+ * A catalogue picture wants one rig and never another: every model in the kit
+ * has been judged under this sun, and moving it silently would move every
+ * score ever recorded against it. A scene is the other case entirely, because
+ * a market square at a high white noon is a product shot of a market square.
+ *
+ * So the rig is settable and the defaults are exactly what they always were.
+ * Nothing that does not call `setLighting` renders a single pixel differently.
+ */
+let LIGHT = new Vector3(0.48, 0.82, 0.31).normalize()
+let SUN: [number, number, number] = [1, 1, 1]
+let SKY: [number, number, number] = [0.42, 0.52, 0.68]
+let GROUND: [number, number, number] = [0.24, 0.2, 0.16]
+
+export interface Lighting {
+  /** Direction TOWARDS the sun. Normalised for you. */
+  readonly light?: readonly [number, number, number]
+  /** The sun's own colour. White leaves the shading exactly as it was. */
+  readonly sun?: readonly [number, number, number]
+  /** Hemisphere ambient: what an upward face sees, and what a downward one does. */
+  readonly sky?: readonly [number, number, number]
+  readonly ground?: readonly [number, number, number]
+}
+
+export function setLighting(next: Lighting): void {
+  if (next.light) LIGHT = new Vector3(next.light[0], next.light[1], next.light[2]).normalize()
+  if (next.sun) SUN = [next.sun[0], next.sun[1], next.sun[2]]
+  if (next.sky) SKY = [next.sky[0], next.sky[1], next.sky[2]]
+  if (next.ground) GROUND = [next.ground[0], next.ground[1], next.ground[2]]
+}
+
+/**
+ * Fires, as light rather than as orange geometry.
+ *
+ * The torches and the forge already draw a flame, and until there was a floor
+ * that was enough, because there was nothing under them for a flame to land
+ * on. On a ground plane at dusk an unlit torch beside a lit one looks like the
+ * same torch: the flame is four pixels and the twenty around it are unchanged.
+ */
+export interface PointLight {
+  readonly at: Vector3
+  readonly colour: readonly [number, number, number]
+  /** Metres to full darkness. */
+  readonly reach: number
+  readonly strength: number
+}
+
+let POINTS: readonly PointLight[] = []
+export function setPointLights(list: readonly PointLight[]): void { POINTS = list }
+
+/** Distance haze, which is what puts a hill 200 m away 200 m away. */
+export interface Fog {
+  readonly colour: readonly [number, number, number]
+  readonly near: number
+  readonly far: number
+}
+
+let FOG: Fog | null = null
+export function setFog(fog: Fog | null): void { FOG = fog }
 
 export interface Frame {
   readonly width: number
@@ -205,7 +263,12 @@ function project(point: Vector3, camera: PerspectiveCamera, frame: Frame): Proje
   }
 }
 
-function shade(tri: Triangle, normal: Vector3, albedo: [number, number, number]): [number, number, number] {
+function shade(
+  tri: Triangle,
+  normal: Vector3,
+  albedo: [number, number, number],
+  at: Vector3 | null,
+): [number, number, number] {
   if (tri.unlit) return albedo
 
   const ndl = Math.max(0, normal.dot(LIGHT))
@@ -228,19 +291,98 @@ function shade(tri: Triangle, normal: Vector3, albedo: [number, number, number])
   const half = LIGHT.clone().add(new Vector3(0, 0, 1)).normalize()
   const spec = Math.pow(Math.max(0, normal.dot(half)), exponent) * (1 - tri.roughness) * 1.6
 
+  // Fires. Skipped entirely when there are none, which is every render the
+  // kit itself makes.
+  const fire: [number, number, number] = [0, 0, 0]
+  if (POINTS.length > 0 && at) {
+    for (const light of POINTS) {
+      const dx = light.at.x - at.x, dy = light.at.y - at.y, dz = light.at.z - at.z
+      const distance = Math.sqrt(dx * dx + dy * dy + dz * dz)
+      if (distance >= light.reach) continue
+      // Squared falloff, and a face turned away from the flame gets nothing.
+      const falloff = (1 - distance / light.reach) ** 2
+      const facing = Math.max(0, (normal.x * dx + normal.y * dy + normal.z * dz) / (distance || 1))
+      const amount = falloff * (0.25 + 0.75 * facing) * light.strength
+      fire[0] += light.colour[0]! * amount
+      fire[1] += light.colour[1]! * amount
+      fire[2] += light.colour[2]! * amount
+    }
+  }
+
   return [0, 1, 2].map((i) => {
     const base = albedo[i]!
-    const lit = base * diffuseStrength + base * ambient[i]! * envStrength
+    const lit = base * diffuseStrength * SUN[i]! + base * ambient[i]! * envStrength
     // On metal the reflection colour comes from albedo, on a dielectric white.
     const tint = metal > 0.5 ? base : 1
-    return lit + spec * tint * (0.35 + metal * 0.9)
+    return lit + base * fire[i]! + spec * tint * (0.35 + metal * 0.9) * SUN[i]!
   }) as [number, number, number]
+}
+
+/**
+ * The sky, drawn as a sky rather than as a vertical gradient on the frame.
+ *
+ * The gradient is right for a catalogue cell, where the background is a
+ * backdrop cloth and is meant to be one. Put a horizon in the picture and it
+ * stops working, because the band that should be brightest is wherever the
+ * ground ends, and on a moving camera that is a different row every frame.
+ *
+ * The direction of each pixel's ray is bilinear across the frame and NOT an
+ * approximation: for a pinhole camera the image plane is planar, so
+ * interpolating four corner points and normalising afterwards is exact, and it
+ * costs four unprojections a frame instead of two million.
+ */
+export interface SkyOptions {
+  readonly zenith: readonly [number, number, number]
+  readonly horizon: readonly [number, number, number]
+  /** Colour of the glow around the sun. */
+  readonly glow: readonly [number, number, number]
+}
+
+export function paintSky(frame: Frame, camera: PerspectiveCamera, sky: SkyOptions): void {
+  camera.updateMatrixWorld(true)
+  camera.updateProjectionMatrix()
+  const corner = (x: number, y: number): Vector3 =>
+    new Vector3(x, y, 0.5).unproject(camera).sub(camera.position)
+  const topLeft = corner(-1, 1)
+  const topRight = corner(1, 1)
+  const bottomLeft = corner(-1, -1)
+  const bottomRight = corner(1, -1)
+
+  const direction = new Vector3()
+  for (let y = 0; y < frame.height; y += 1) {
+    const v = 1 - (y + 0.5) / frame.height
+    for (let x = 0; x < frame.width; x += 1) {
+      const u = (x + 0.5) / frame.width
+      const ax = topLeft.x + (topRight.x - topLeft.x) * u
+      const ay = topLeft.y + (topRight.y - topLeft.y) * u
+      const az = topLeft.z + (topRight.z - topLeft.z) * u
+      const bx = bottomLeft.x + (bottomRight.x - bottomLeft.x) * u
+      const by = bottomLeft.y + (bottomRight.y - bottomLeft.y) * u
+      const bz = bottomLeft.z + (bottomRight.z - bottomLeft.z) * u
+      direction.set(bx + (ax - bx) * v, by + (ay - by) * v, bz + (az - bz) * v).normalize()
+
+      // Up the dome, and warm where the sun is. Below the horizon the horizon
+      // colour simply continues, so anything the terrain fails to cover reads
+      // as haze rather than as a hole.
+      const up = Math.max(0, direction.y)
+      const climb = 1 - (1 - Math.min(1, up / 0.55)) ** 2
+      const sun = Math.max(0, direction.dot(LIGHT))
+      const glow = sun ** 6 * 0.55 + sun ** 2 * 0.1
+
+      const i = (y * frame.width + x) * 3
+      for (let k = 0; k < 3; k += 1) {
+        const band = sky.horizon[k]! + (sky.zenith[k]! - sky.horizon[k]!) * climb
+        frame.colour[i + k] = band + sky.glow[k]! * glow
+      }
+    }
+  }
 }
 
 function raster(frame: Frame, camera: PerspectiveCamera, triangles: readonly Triangle[]): void {
   // Transparent triangles go last: they test depth but do NOT write depth,
   // otherwise the wick behind the glass disappears.
   const ordered = [...triangles].sort((a, b) => (a.opacity === b.opacity ? 0 : a.opacity < 1 ? 1 : -1))
+  const needsWorld = POINTS.length > 0 || FOG !== null
 
   for (const tri of ordered) {
     const pa = project(tri.a, camera, frame)
@@ -295,7 +437,25 @@ function raster(frame: Frame, camera: PerspectiveCamera, triangles: readonly Tri
             tri.na.z * w1 + tri.nb.z * w2 + tri.nc.z * w0,
           ).normalize()
         }
-        const rgb = shade(tri, shadingNormal, albedo)
+        // The world point, and only when something asks for it. Fires need it
+        // to fall off from and haze needs it to measure to; a contact sheet
+        // has neither and should not pay for the arithmetic.
+        let world: Vector3 | null = null
+        if (needsWorld) {
+          world = new Vector3(
+            tri.a.x * w1 + tri.b.x * w2 + tri.c.x * w0,
+            tri.a.y * w1 + tri.b.y * w2 + tri.c.y * w0,
+            tri.a.z * w1 + tri.b.z * w2 + tri.c.z * w0,
+          )
+        }
+        const rgb = shade(tri, shadingNormal, albedo, world)
+        if (FOG && world) {
+          const distance = camera.position.distanceTo(world)
+          const haze = Math.min(1, Math.max(0, (distance - FOG.near) / (FOG.far - FOG.near)))
+          for (let k = 0; k < 3; k += 1) {
+            rgb[k] = rgb[k]! + (FOG.colour[k]! - rgb[k]!) * haze
+          }
+        }
         const i = at * 3
         const alpha = tri.opacity
         frame.colour[i] = frame.colour[i]! * (1 - alpha) + rgb[0] * alpha
@@ -655,12 +815,15 @@ export function renderFrom(
      * underlay, shadow, everything else.
      */
     readonly underlay?: Gathered
+    /** Painted instead of the backdrop gradient, once there is a horizon. */
+    readonly sky?: SkyOptions
   },
 ): Frame {
-  const { size, tall = size, ground, floor = 0, height, underlay } = options
+  const { size, tall = size, ground, floor = 0, height, underlay, sky } = options
   const frame = newFrame(size, tall, ground)
   camera.updateMatrixWorld(true)
   camera.updateProjectionMatrix()
+  if (sky) paintSky(frame, camera, sky)
   if (underlay) raster(frame, camera, underlay)
   contactShadow(frame, camera, triangles, floor, height)
   raster(frame, camera, triangles)

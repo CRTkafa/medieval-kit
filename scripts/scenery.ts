@@ -34,6 +34,7 @@ function shift(base: Color, lightness: number, saturation = 1): Color {
 }
 
 const EARTH = new Color(0x574b3c)
+const GRASS = new Color(0x4f5a35)
 const PLASTER = new Color(0x9b8b70)
 const TIMBER = new Color(0x4a3626)
 const THATCH = new Color(0x6d4d29)
@@ -41,26 +42,51 @@ const DARK = new Color(0x1d1916)
 
 /* ---------------------------------------------------------------- the floor */
 
+/** Centre of the flat part, which is where everything stands. */
+const HUB: [number, number] = [0, -3]
+/** Inside this radius the ground is dead flat, because models are seated on y = 0. */
+const FLAT = 18
+
 /**
- * Packed earth, and enough of it that the camera never finds its edge.
+ * Height, as a function of where you are.
  *
- * Two parts for one reason. The near field is a grid so the colour can vary
- * cell to cell, because a single flat quad of one colour under a lowpoly scene
- * reads as a sheet of paper the models were placed on. The far field is eight
- * big quads running out to 400 m, because a plane that stops 25 m away leaves
- * a band of sky UNDER the horizon, and at this focal length that band is forty
- * pixels of nothing.
+ * Flat under the square and for a good way past the fence, because every model
+ * in the kit is placed by dropping its bounding box onto y = 0 and a ground
+ * that undulates under them leaves half of them buried and the other half in
+ * the air. Past that it climbs, and by 110 m it is hills.
  *
- * The wear is not decoration. A market square is worn where people walk, and
- * the darkening down the middle is what tells the eye that the lane the camera
- * travels is a lane rather than a gap in the props.
+ * Two angular terms and two radial ones, at frequencies that do not divide
+ * into each other, so the ridges do not line up into a star.
+ */
+function heightAt(x: number, z: number): number {
+  const dx = x - HUB[0]
+  const dz = z - HUB[1]
+  const r = Math.hypot(dx, dz)
+  if (r <= FLAT) return 0
+  const t = Math.min(1, (r - FLAT) / 92)
+  const ramp = t * t * (3 - 2 * t)
+  // Waves in x and z rather than in r. Anything written as a function of the
+  // radius alone comes out as rings centred on the square, and rings on a
+  // landscape read as a target painted on it: the first pass had three of them
+  // stacked behind the mill.
+  const roll = Math.sin(x * 0.031 + z * 0.019 + 0.7) * 0.5
+    + Math.sin(x * 0.013 - z * 0.041 - 2.1) * 0.32
+    + Math.sin(x * 0.072 + z * 0.058 + 4.2) * 0.18
+  const swell = Math.sin(x * 0.0091 - z * 0.0123 + 1.3) * 0.6
+    + Math.sin(x * 0.0047 + z * 0.0068 - 0.4) * 0.4
+  return Math.max(-1.6, ramp * (7.0 + 6.5 * swell) * (0.55 + 0.45 * roll))
+}
+
+/**
+ * The land: grass, worn through to earth where the market is, rolling into
+ * hills by the time it reaches the horizon.
  */
 export function groundGeometry(): BufferGeometry {
   const position: number[] = []
   const colour: number[] = []
 
   /**
-   * Colour by CORNER, from a smooth function of position.
+   * Colour by VERTEX, from a smooth function of position.
    *
    * The first attempt drew one seeded random colour per cell and produced a
    * chessboard, which is what a flat plane always produces when the only thing
@@ -69,41 +95,66 @@ export function groundGeometry(): BufferGeometry {
    * the corners lets the rasteriser interpolate between them, and the cell
    * boundaries stop existing.
    */
-  const toneAt = (x: number, z: number): Color => {
+  /**
+   * Grass everywhere, and the square worn through it.
+   *
+   * Which is the honest way round. A market square is not paved and not a
+   * lawn: it is grass that a few hundred years of feet, carts and market days
+   * have killed in the middle. So the base is grass and the earth is what gets
+   * blended IN, over the area the props actually occupy, with a soft edge,
+   * because a hard line between them would read as a laid surface.
+   */
+  const toneAt = (x: number, z: number, y: number): Color => {
     const broad = Math.sin(x * 0.107 - 0.7) * Math.sin(z * 0.131 + 0.4)
     const fine = Math.sin(x * 0.41 + 1.1) * Math.sin(z * 0.37 + 2.3)
-    // Worn down the middle of the square and around the well: darker, greyer,
-    // and it is what tells the eye the camera's lane is a lane.
-    const lane = Math.exp(-((x - 0.2) ** 2) / 26 - ((z + 2) ** 2) / 150)
-    return shift(EARTH, broad * 0.016 + fine * 0.008 - 0.032 * lane, 1 - 0.3 * lane)
+    const worn = Math.exp(-((x - 0.4) ** 2) / 62 - ((z + 3.2) ** 2) / 96)
+    const lane = Math.exp(-((x - 3.0) ** 2) / 14 - ((z + 1.0) ** 2) / 120)
+    const bare = Math.min(1, worn * 1.25 + lane * 0.55)
+
+    const grass = shift(GRASS, broad * 0.02 + fine * 0.01 - Math.max(0, y) * 0.004)
+    const earth = shift(EARTH, broad * 0.012 + fine * 0.006 - 0.02 * lane, 1 - 0.25 * lane)
+    return new Color().copy(grass).lerp(earth, bare)
   }
 
-  const push = (x0: number, z0: number, x1: number, z1: number, flat?: Color): void => {
-    // Wound so the face points up.
-    const corners: [number, number][] = [[x0, z0], [x0, z1], [x1, z1], [x1, z0]]
-    const order = [0, 1, 2, 0, 2, 3]
-    for (const at of order) {
-      const [x, z] = corners[at]!
-      const c = flat ?? toneAt(x, z)
-      position.push(x, 0, z)
-      colour.push(c.r, c.g, c.b)
+  const vertex = (x: number, z: number): void => {
+    const y = heightAt(x, z)
+    const c = toneAt(x, z, y)
+    position.push(x, y, z)
+    colour.push(c.r, c.g, c.b)
+  }
+
+  /**
+   * Rings rather than a grid, because the detail is wanted where the camera is
+   * and nowhere else. A uniform grid fine enough for the square would be a
+   * million triangles by the time it reached the hills.
+   */
+  const rings: number[] = []
+  for (let r = 0; r < 20; r += 2) rings.push(r)
+  for (let r = 20; r < 60; r += 5) rings.push(r)
+  for (let r = 60; r < 150; r += 10) rings.push(r)
+  for (let r = 150; r <= 430; r += 40) rings.push(r)
+
+  const segments = 128
+  for (let i = 0; i < rings.length - 1; i += 1) {
+    const inner = rings[i]!
+    const outer = rings[i + 1]!
+    for (let s = 0; s < segments; s += 1) {
+      const a0 = (s / segments) * Math.PI * 2
+      const a1 = ((s + 1) / segments) * Math.PI * 2
+      const p = (r: number, a: number): [number, number] =>
+        [HUB[0] + Math.cos(a) * r, HUB[1] + Math.sin(a) * r]
+      const [ax, az] = p(inner, a0)
+      const [bx, bz] = p(inner, a1)
+      const [cx, cz] = p(outer, a1)
+      const [dx, dz] = p(outer, a0)
+      // Wound so the face points UP. Anticlockwise seen from above puts the
+      // normal down, the rasteriser culls the back face, and the whole ground
+      // silently is not there: what shows through is the sky's own horizon
+      // band, which looks enough like hazy ground to be believed for a while.
+      vertex(ax, az); vertex(bx, bz); vertex(cx, cz)
+      vertex(ax, az); vertex(cx, cz); vertex(dx, dz)
     }
   }
-
-  const near = { x0: -30, x1: 30, z0: -34, z1: 24 }
-  const cell = 2.0
-  for (let x = near.x0; x < near.x1 - 1e-6; x += cell) {
-    for (let z = near.z0; z < near.z1 - 1e-6; z += cell) {
-      push(x, z, x + cell, z + cell)
-    }
-  }
-
-  const far = 400
-  const skirt = shift(EARTH, -0.014)
-  push(-far, -far, far, near.z0, skirt)
-  push(-far, near.z1, far, far, skirt)
-  push(-far, near.z0, near.x0, near.z1, skirt)
-  push(near.x1, near.z0, far, near.z1, skirt)
 
   const geometry = new BufferGeometry()
   geometry.setAttribute('position', new BufferAttribute(new Float32Array(position), 3))

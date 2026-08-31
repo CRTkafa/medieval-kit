@@ -312,8 +312,10 @@ asking GitHub Support to purge actually closes it.
   a blind critic, a score, three fixes, a stop condition, and a revise stage.
   There is currently no revise stage at all, so a critic's findings go nowhere.
 - **A medieval pass** with that pipeline, before anything else is added to it.
-- **vibe3d PR**: a branch adding `@medieval-kit` to the init template is pushed
-  to `CRTkafa/vibe3d` and unopened. A second contribution, the floating check,
+- **vibe3d PR**: MERGED. `vibe-stack/vibe3d#11` landed on 2026-08-30 and seeds
+  `@medieval-kit` into what `vibe3d init` writes, so the README's "add it to
+  `models.json` yourself" step is gone on a current CLI. A second contribution,
+  the floating check,
   is not ready: it ran on 174 of their models unmodified but flagged 28, and the
   small-piece flags are artifacts of deriving voxel size from the longest axis.
 - **`reflexive_keygen`**: the branch and tag were rewritten to the noreply
