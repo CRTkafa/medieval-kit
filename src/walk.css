@@ -1,0 +1,81 @@
+:root { color-scheme: dark; }
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #0b0e13;
+  color: #dbe3ec;
+  font: 13px/1.55 ui-sans-serif, system-ui, sans-serif;
+}
+
+#viewport {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: pointer;
+}
+
+body.locked #viewport { cursor: none; }
+
+#hud {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  max-width: 40ch;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: rgba(10, 13, 18, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  transition: opacity 0.25s;
+}
+
+body.locked #hud { opacity: 0.28; }
+
+#hud h1 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+#status { margin: 0 0 10px; color: #8b9aad; }
+
+#keys {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 12px;
+  color: #8b9aad;
+}
+
+#keys dt { color: #e2b872; font-variant-numeric: tabular-nums; }
+#keys dd { margin: 0; }
+
+#readout {
+  position: fixed;
+  bottom: 16px;
+  left: 18px;
+  margin: 0;
+  color: #6f7f92;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The dot is the whole reason a first person view feels aimed rather than
+   dragged, and it only belongs on screen once the pointer is actually locked. */
+#dot {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.locked #dot { opacity: 1; }

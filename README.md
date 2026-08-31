@@ -287,6 +287,34 @@ ffmpeg -framerate 30 -i frames/%05d.png -f lavfi -i anullsrc=r=48000:cl=stereo \
 The silent audio track is deliberate: several players handle an MP4 with no
 audio stream at all badly.
 
+## Walk the square
+
+```sh
+bun run dev        # then open /walk.html
+```
+
+The flythrough answers "what does this look like in a place" on one camera
+move somebody else chose. This answers the question anyone asks straight after
+watching it, which is what is behind me. Click to look, `W A S D` to walk,
+shift to run, `F` to fly, `R` to go back to the gate.
+
+It is the same layout, the same land and the same rig as the video, out of the
+same files, so the two cannot drift: `scenery.ts` exports the sun and sky the
+offline renderer is given, and `walk.ts` builds three.js lights out of the same
+numbers. What differs is only what has to. The sky is a dome instead of a
+per-pixel ray, because a browser will not trace one for free at 60 fps. The
+fires are real point lights that flicker, which the offline path fakes with a
+falloff term. And the houses are off unless the URL says `?houses`, for the
+same reason the video leaves them out.
+
+Three things it is worth knowing before touching it. Keys are bound on the
+DOCUMENT rather than the window, because a window only hears a key once it has
+focus and inside a frame it frequently does not. Pointer lock is requested but
+not assumed: some embeddings refuse it outright with a `WrongDocumentError`, so
+the failure is caught and holding the mouse down does the same job. And the
+canvas is never sized to zero, because one frame at 0 x 0 is all it takes for
+WebGPU to build a swapchain that never recovers.
+
 ## Publish the viewer
 
 ```sh

@@ -12,7 +12,10 @@
  * kept apart from `square.ts` on purpose: everything there is the kit, and
  * everything here is scaffolding around it.
  */
-import { BufferAttribute, BufferGeometry, Color, Group, Mesh, MeshStandardMaterial } from 'three/webgpu'
+import {
+  BackSide, BufferAttribute, BufferGeometry, Color, Group, Mesh,
+  MeshBasicMaterial, MeshStandardMaterial, SphereGeometry, Vector3,
+} from 'three/webgpu'
 
 import {
   boxGeometry,
@@ -31,6 +34,26 @@ function shift(base: Color, lightness: number, saturation = 1): Color {
   const hsl = { h: 0, s: 0, l: 0 }
   base.getHSL(hsl)
   return new Color().setHSL(hsl.h, Math.max(0, hsl.s * saturation), Math.max(0.004, hsl.l + lightness))
+}
+
+/**
+ * The rig the square is lit and painted by, in one place.
+ *
+ * Both views read it: the offline flythrough hands it to the rasteriser, the
+ * browser one builds three.js lights out of it. When they lived in two files
+ * they disagreed within a day.
+ */
+export const SUN = {
+  direction: [0.66, 0.44, 0.38] as const,
+  colour: [1.12, 0.98, 0.82] as const,
+  sky: [0.36, 0.44, 0.62] as const,
+  ground: [0.2, 0.18, 0.15] as const,
+}
+
+export const SKY = {
+  zenith: [0.045, 0.072, 0.135] as const,
+  horizon: [0.185, 0.178, 0.185] as const,
+  glow: [0.46, 0.26, 0.11] as const,
 }
 
 const EARTH = new Color(0x574b3c)
@@ -58,7 +81,7 @@ const FLAT = 18
  * Two angular terms and two radial ones, at frequencies that do not divide
  * into each other, so the ridges do not line up into a star.
  */
-function heightAt(x: number, z: number): number {
+export function heightAt(x: number, z: number): number {
   const dx = x - HUB[0]
   const dz = z - HUB[1]
   const r = Math.hypot(dx, dz)
@@ -319,4 +342,41 @@ export function buildHouses(): Group {
     group.add(mesh)
   }
   return group
+}
+
+/* ----------------------------------------------------------------- the dome */
+
+/**
+ * The sky, for the real-time view.
+ *
+ * The offline renderer paints its sky per pixel from the camera ray, which is
+ * the accurate way and not a thing a rasteriser in a browser will do for free.
+ * A big sphere with the same gradient baked into its vertices costs nothing,
+ * renders on both backends, and at this radius the difference is invisible.
+ *
+ * `fog: false` matters: a dome inside the fog's far plane fades to the fog
+ * colour and the sky becomes one flat wash.
+ */
+export function buildSky(radius = 480): Mesh {
+  const geometry = new SphereGeometry(radius, 48, 32)
+  const position = geometry.getAttribute('position')
+  const colour = new Float32Array(position.count * 3)
+  const sun = new Vector3(SUN.direction[0], SUN.direction[1], SUN.direction[2]).normalize()
+  const at = new Vector3()
+  for (let i = 0; i < position.count; i += 1) {
+    at.fromBufferAttribute(position, i).normalize()
+    const climb = 1 - (1 - Math.min(1, Math.max(0, at.y) / 0.55)) ** 2
+    const glow = Math.max(0, at.dot(sun))
+    for (let k = 0; k < 3; k += 1) {
+      colour[i * 3 + k] = SKY.horizon[k]! + (SKY.zenith[k]! - SKY.horizon[k]!) * climb
+        + SKY.glow[k]! * (glow ** 6 * 0.55 + glow ** 2 * 0.1)
+    }
+  }
+  geometry.setAttribute('color', new BufferAttribute(colour, 3))
+  const mesh = new Mesh(geometry, new MeshBasicMaterial({
+    vertexColors: true, side: BackSide, fog: false, depthWrite: false,
+  }))
+  mesh.name = 'sky'
+  mesh.renderOrder = -1
+  return mesh
 }

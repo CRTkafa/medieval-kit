@@ -30,6 +30,7 @@ import {
   encodePng, gather, renderFrom, setFog, setLighting, setPointLights, toLinear,
 } from './raster.ts'
 import { buildSquare } from './square.ts'
+import { SKY, SUN } from './scenery.ts'
 
 const args = process.argv.slice(2)
 const flag = (name: string): string | undefined => {
@@ -104,17 +105,11 @@ function place(camera: PerspectiveCamera, t: number): void {
  * The kit's own defaults are untouched; nothing that skips this call moves.
  */
 setLighting({
-  light: [0.66, 0.44, 0.38],
-  sun: [1.12, 0.98, 0.82],
-  sky: [0.36, 0.44, 0.62],
-  ground: [0.2, 0.18, 0.15],
+  light: SUN.direction,
+  sun: SUN.colour,
+  sky: SUN.sky,
+  ground: SUN.ground,
 })
-
-const SKY = {
-  zenith: [0.045, 0.072, 0.135] as const,
-  horizon: [0.185, 0.178, 0.185] as const,
-  glow: [0.46, 0.26, 0.11] as const,
-}
 
 // Haze, which is the only thing that puts a hill 200 m away. Its colour is the
 // sky's at the horizon, because anything else reads as smoke.

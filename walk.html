@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@medieval-kit · walk the square</title>
+  </head>
+  <body>
+    <canvas id="viewport" tabindex="0"></canvas>
+    <div id="dot"></div>
+    <div id="hud">
+      <h1>The market square</h1>
+      <p id="status">starting…</p>
+      <dl id="keys">
+        <dt>click</dt><dd>look around (Esc to let go)</dd>
+        <dt>W A S D</dt><dd>walk</dd>
+        <dt>shift</dt><dd>run</dd>
+        <dt>F</dt><dd>fly, and back</dd>
+        <dt>space / C</dt><dd>up, down (flying)</dd>
+        <dt>R</dt><dd>back to the entrance</dd>
+      </dl>
+    </div>
+    <p id="readout"></p>
+    <script type="module" src="/src/walk.ts"></script>
+  </body>
+</html>
