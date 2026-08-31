@@ -58,16 +58,14 @@ export interface PepperMillConfig {
 }
 
 export const pepperMillDefaults: PepperMillConfig = {
-  height: 0.28,
+  height: 0.23,
   baseRadius: 0.03,
   // The waist is what separates a mill from a rolling pin. Below ~0.5 it
-  // reads as an hourglass, above ~0.7 the profile goes straight. Measured
-  // against the reference this one was already right: 58% against its 60%.
+  // reads as an hourglass, above ~0.7 the profile goes straight and the
+  // flutes are doing all the work alone.
   waist: 0.58,
-  waistAt: 0.55,
-  // NONE by default, because the reference has none. See the header: the
-  // flutes were carrying an argument the proportions should have been making.
-  flutes: 0,
+  waistAt: 0.5,
+  flutes: 16,
   segments: 32,
   seed: 23,
 }
@@ -110,10 +108,7 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       const segments = Math.max(12, Math.round(config.segments))
       const waistFraction = Math.min(0.68, Math.max(0.45, config.waist))
       const waistAt = Math.min(0.6, Math.max(0.42, config.waistAt))
-      // 0 is a real answer, not a floor to clamp away: a plain turned mill is
-      // the common one, and the slider could not reach it.
-      const wanted = Math.round(config.flutes)
-      const flutes = wanted <= 0 ? 0 : Math.max(8, Math.min(28, wanted))
+      const flutes = Math.max(8, Math.min(28, Math.round(config.flutes)))
 
       // The cap takes the top ~16% of the height and overlaps the neck by a
       // few millimetres, so the parting line is a step rather than a seam of
@@ -131,14 +126,8 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       // step down going up — drum, belly, head — or the object turns into a
       // chess bishop. It still follows the waist up when the waist is fat, so
       // the swell never dips below the flute tops.
-      // 0.83 of the drum, measured off the reference: the shaft under the head
-      // comes back out almost to the collar's width. At 0.72 the top half was
-      // a neck, and a body that only ever narrows going up is a bottle.
-      const upperR = R * Math.max(0.83, waistFraction * 1.2)
-      // The swell carries almost to the top. Stopping it at 0.74 left a
-      // quarter of the shaft to fall away into a neck, and a body that only
-      // narrows going up is a bottle whatever is standing on it.
-      const upperY = bodyH * 0.86
+      const upperR = R * Math.max(0.72, waistFraction * 1.08)
+      const upperY = bodyH * 0.74
 
       /* ------------------------------------------------------------- body */
       const waistLo = waistY - bandHalf
@@ -165,12 +154,11 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
         // ends go under the surface within a couple of millimetres.
         { y: waistHi + (upperY - waistHi) * 0.4, radius: ((W + upperR) / 2) * 1.02 },
         { y: upperY, radius: upperR },
-        { y: bodyH * 0.95, radius: upperR * 0.99 },
-        // The neck is a hair narrower than the shaft and nothing more. The
-        // cap's lip steps out OVER it, so the parting line is a groove; the
-        // reference has no throat at all and the one here was 0.52 R, which
-        // is what made the head read as a stopper on a bottle.
-        { y: bodyH, radius: R * 0.78 },
+        { y: bodyH * 0.83, radius: upperR * 0.9 },
+        // The throat: the belly turns in to a short neck the cap's lip steps
+        // out over, so the parting line reads as a groove under the head.
+        { y: bodyH * 0.91, radius: R * 0.56 },
+        { y: bodyH, radius: R * 0.52 },
       ]
 
       const woodBase = tint('wood', jitter(random, 0.02))
@@ -224,17 +212,17 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       // so rotation.y grinds.
       const capH = H - seat
       const domeH = capH * 0.6
-      // An OBLATE dome that overhangs the neck, measured off the reference:
-      // its widest point is 0.87 R against a 0.78 R neck and it gets there in
-      // the first third of its height. At 0.61 R it was narrower than the
-      // shaft below it, which is a bullet, not a head.
       const capLevels: Level[] = [
-        { y: 0, radius: R * 0.80 },
-        { y: 0.003, radius: R * 0.86 },
-        { y: domeH * 0.35, radius: R * 0.87 },
-        { y: domeH * 0.68, radius: R * 0.74 },
-        { y: domeH * 0.88, radius: R * 0.52 },
-        { y: domeH, radius: R * 0.34 },
+        { y: 0, radius: R * 0.55 },
+        // The lip rolls out well past the neck so the cap reads as a
+        // separate piece that comes off, not a continuation of the profile.
+        { y: 0.004, radius: R * 0.6 },
+        // The head swells a touch before rounding over: a straight-sided cap
+        // read as a bottle top, and this is the swell that makes it a turban.
+        { y: domeH * 0.3, radius: R * 0.61 },
+        { y: domeH * 0.6, radius: R * 0.55 },
+        { y: domeH * 0.85, radius: R * 0.42 },
+        { y: domeH, radius: R * 0.32 },
       ]
       const dome = latheGeometry(capLevels, segments, [0, 0, 0], tint('wood', jitter(random, 0.02)), {
         colourTop: tint('wood', 0.05),

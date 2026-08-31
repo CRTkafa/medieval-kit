@@ -70,8 +70,17 @@ const STYLE: Record<string, string> = {
 /**
  * Extra wording for models whose name alone would send the generator somewhere
  * useless. "Phial" produces perfume bottles; "sack" produces modern hessian;
- * "pepper mill" without the crown and the collar produces a wooden bottle,
- * which is exactly what the model of it currently looks like.
+ * "pepper mill" without the crown and the collar produces a wooden bottle.
+ *
+ * A hint is not a free description: it decides what the reference is, and the
+ * reference decides what the model becomes. This one said "a tall WOODEN table
+ * pepper mill, a TURNED WOODEN body" and got back a handsome traditional
+ * baluster, and the model was then rebuilt to match it and had its flute band
+ * deleted for not appearing in the photograph. The flute band is the reason
+ * that model is fourth in the build order at all: the catalogue's own row for
+ * it reads "the flute grip is the first radial cut". Read the catalogue row
+ * before writing a hint, and do not put a material in one unless the model's
+ * declared slots demand it.
  */
 const HINT: Record<string, string> = {
   // --- medieval ---
@@ -107,7 +116,7 @@ const HINT: Record<string, string> = {
   'ceramic-vase': 'a plain glazed ceramic vase, empty, with no flowers in it',
   'coffee-mug': 'a plain glazed stoneware coffee mug with a loop handle, empty, seen so the handle is to one side',
   'wine-glass': 'an empty stemmed wine glass in clear glass',
-  'pepper-mill': 'a tall wooden table pepper mill: a turned wooden body with a small metal crown knob on top and the grinder collar at its base',
+  'pepper-mill': 'a contemporary table pepper mill of current design, stainless steel and wood, with a machined ribbed grip band around its waist, a steel knob on top and the grinder collar at its base',
   'stockpot': 'a stainless steel lidded stockpot with two riveted side handles',
   'traffic-cone': 'an orange PVC traffic cone with a white reflective band, on its square base',
 

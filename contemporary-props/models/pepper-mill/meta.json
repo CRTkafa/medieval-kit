@@ -42,7 +42,7 @@
     "flutes": {
       "type": "number",
       "label": "Flutes",
-      "min": 0,
+      "min": 8,
       "max": 28,
       "step": 1
     },
