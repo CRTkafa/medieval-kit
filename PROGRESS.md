@@ -209,6 +209,23 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**Vertex-colour mottle needs vertices, and a long prism cannot have the right
+ones.** The barrier is two metres of one cross-section, so the only direction
+its surface can vary in is its length, and one octave of noise along a line is
+stripes. Chasing the reference's aggregate speckle with a fine cell produced a
+barrier that looked like brushed sheet metal; the cell has to be several rings
+wide and the amount has to stay low, and what comes out is tonal drift across a
+pour rather than aggregate. Aggregate is a texture. This kit does not have
+textures, and three of the critic's rounds asked for one.
+
+The related trap is cheaper to fix and was invisible until it was named: a flat
+quad whose four corners carry four mottle values shows its **diagonal**, because
+the interpolation does not match across the split. It reads as a broad
+triangular facet on a surface that is genuinely one plane, and no amount of
+normal smoothing touches it, because the seam is in the colour rather than the
+geometry. Squarer quads are the whole answer -- subdivide the long edges of the
+section as well as stepping the run.
+
 **The kit's own check camera never looks into anything.** `renderObject` frames
 by bounding box, so a tall object gets a low camera, and the basin's tap hole,
 overflow and waste -- all three verified in place by measurement -- do not appear
@@ -382,10 +399,20 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 10 of the core 100 modelled, and they are the first
-  rows of the build order rather than ten picked at random. The catalogue, the
-  order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 11 is `jersey-barrier`.
+- **`contemporary-props`**: 11 of the core 100 modelled, and they are the first
+  rows of the build order rather than eleven picked at random. The catalogue,
+  the order, the cuts and the slot argument are in
+  `contemporary-props/CATALOGUE.md`; row 12 is `picnic-table`.
+
+  Rows 10 and 11 completed the kit's geometry vocabulary: there are now three
+  ways to make a solid and each is the only reasonable way to make a family.
+  `latheGeometry` for anything round. `planSweepGeometry` for anything whose
+  plan is not a circle but whose profile varies with height -- sanitary ware,
+  cushions. `extrudeGeometry` for anything with a constant section and an
+  arbitrary length -- barriers, kerbs, skirting, rail, plank stock. All three
+  take their profile walked in the SAME direction, from the bottom of the outer
+  wall upward or counter-clockwise seen from +Z, and all three punish getting
+  it backwards the same way.
 
   Row 10 changed its own catalogue entry. It was budgeted at "two lathes making
   an hourglass" and a lathe cannot make it: every basin in use now is a D in

@@ -304,6 +304,121 @@ export function latheGeometry(
 }
 
 /**
+ * A closed section for `extrudeGeometry`: points in the XY plane, in metres.
+ *
+ * COUNTER-CLOCKWISE seen from +Z, which is the direction the section is
+ * extruded along. That is not a convention chosen here, it is the one the rest
+ * of the file already turns at, and getting it backwards produces a solid whose
+ * every face points inward -- which renders as a torn surface rather than as
+ * anything recognisable as a winding fault.
+ */
+export type Section = readonly (readonly [number, number])[]
+
+/**
+ * Runs a fixed cross-section along the Z axis: the third way of making a solid
+ * in this kit, after the lathe and the plan sweep.
+ *
+ * Each of the three is the only reasonable way to build a different family.
+ * A lathe is for anything round. A plan sweep is for anything whose plan is not
+ * a circle but whose profile still varies with height -- sanitary ware, seat
+ * cushions. This is for anything whose SECTION IS CONSTANT and whose length is
+ * arbitrary: barriers, kerbs, skirting, extruded aluminium, rails, gutters,
+ * plank stock. The catalogue has a lot of those, and every one of them is the
+ * same six lines with a different polyline.
+ *
+ * Two limits, both real and both cheap to live with:
+ *
+ * 1. The caps are fans from the section's CENTROID, so a section that is not
+ *    star-shaped about its own centroid gets a cap with folded triangles in it.
+ *    Every extruded thing in the catalogue is star-shaped; a C-channel would
+ *    not be, and would want two extrusions instead of one.
+ * 2. The section is constant. A tapered run is a plan sweep turned on its side,
+ *    not a job for this.
+ *
+ * `colourTop` shades by HEIGHT rather than along the run, because that is what
+ * every other generator here does and what makes a row of these look like one
+ * material rather than a gradient down the road.
+ */
+export function extrudeGeometry(
+  section: Section,
+  length: number,
+  centre: Vec3,
+  colour: Color,
+  options: {
+    readonly capStart?: boolean
+    readonly capEnd?: boolean
+    readonly colourTop?: Color
+    /**
+     * Rings along the run. 1 is a single span end to end.
+     *
+     * It exists for the mottle. Surface variation in this kit is written into
+     * VERTEX COLOURS, so it can only appear where there are vertices, and a
+     * two-metre barrier extruded in one step has none between its ends: the
+     * concrete slot is set to the heaviest mottle in the palette and the model
+     * came out flat as paper. Stepping the run gives the noise somewhere to
+     * live. It costs nothing else -- the section is constant, so every extra
+     * ring is the same ring again.
+     */
+    readonly steps?: number
+  } = {},
+): BufferGeometry {
+  if (section.length < 3) throw new Error('extrudeGeometry needs a section of at least three points')
+  const sink: Sink = { position: [], color: [] }
+  const { capStart = true, capEnd = true } = options
+  const steps = Math.max(1, Math.round(options.steps ?? 1))
+  const top = options.colourTop ?? colour
+  const [cx, cy, cz] = centre
+
+  let low = Infinity
+  let high = -Infinity
+  for (const [, y] of section) {
+    if (y < low) low = y
+    if (y > high) high = y
+  }
+  const span = high - low
+  const shade = (y: number): Color =>
+    span > 1e-9 ? new Color().copy(colour).lerp(top, (y - low) / span) : colour
+
+  const at = (index: number, z: number): Vec3 => {
+    const [x, y] = section[index % section.length]!
+    return [cx + x, cy + y, cz + z]
+  }
+
+  for (let step = 0; step < steps; step += 1) {
+    const z0 = (step / steps) * length
+    const z1 = ((step + 1) / steps) * length
+    for (let i = 0; i < section.length; i += 1) {
+      const c0 = shade(section[i % section.length]![1])
+      const c1 = shade(section[(i + 1) % section.length]![1])
+      const a = at(i, z0)
+      const b = at(i + 1, z0)
+      const c = at(i + 1, z1)
+      const d = at(i, z1)
+      triShaded(sink, a, b, c, c0, c1, c1)
+      triShaded(sink, a, c, d, c0, c1, c0)
+    }
+  }
+
+  if (capStart || capEnd) {
+    let mx = 0
+    let my = 0
+    for (const [x, y] of section) { mx += x; my += y }
+    mx /= section.length
+    my /= section.length
+    const middle = shade(my)
+    for (let i = 0; i < section.length; i += 1) {
+      if (capStart) {
+        tri(sink, [cx + mx, cy + my, cz], at(i + 1, 0), at(i, 0), middle)
+      }
+      if (capEnd) {
+        tri(sink, [cx + mx, cy + my, cz + length], at(i, length), at(i + 1, length), middle)
+      }
+    }
+  }
+  return finish(sink)
+}
+
+/**
  * A closed plan curve in unit coordinates, for `planSweepGeometry`.
  *
  * The points run anticlockwise seen from above and the ring closes back on the
