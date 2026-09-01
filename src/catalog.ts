@@ -58,6 +58,9 @@ import { createModel as createCpPepperMill } from '@/models/contemporary-props/p
 import { createModel as createCpStockpot } from '@/models/contemporary-props/stockpot/model.ts'
 import { createModel as createCpTrafficCone } from '@/models/contemporary-props/traffic-cone/model.ts'
 import { createModel as createCpStreetBollard } from '@/models/contemporary-props/street-bollard/model.ts'
+import { createModel as createCpGasCylinder } from '@/models/contemporary-props/gas-cylinder/model.ts'
+import { createModel as createCpFireExtinguisher } from '@/models/contemporary-props/fire-extinguisher/model.ts'
+import { createModel as createCpPedestalBasin } from '@/models/contemporary-props/pedestal-basin/model.ts'
 import cpMetaCeramicVase from '../contemporary-props/models/ceramic-vase/meta.json'
 import cpMetaCoffeeMug from '../contemporary-props/models/coffee-mug/meta.json'
 import cpMetaWineGlass from '../contemporary-props/models/wine-glass/meta.json'
@@ -65,6 +68,9 @@ import cpMetaPepperMill from '../contemporary-props/models/pepper-mill/meta.json
 import cpMetaStockpot from '../contemporary-props/models/stockpot/meta.json'
 import cpMetaTrafficCone from '../contemporary-props/models/traffic-cone/meta.json'
 import cpMetaStreetBollard from '../contemporary-props/models/street-bollard/meta.json'
+import cpMetaGasCylinder from '../contemporary-props/models/gas-cylinder/meta.json'
+import cpMetaFireExtinguisher from '../contemporary-props/models/fire-extinguisher/meta.json'
+import cpMetaPedestalBasin from '../contemporary-props/models/pedestal-basin/meta.json'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
 import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/model.ts'
 import { createModel as createTrough } from '@/models/medieval-kit/stone-trough/model.ts'
@@ -267,9 +273,19 @@ interface ModelMetaLike {
   readonly parts: readonly string[]
 }
 
+/**
+ * Build order, and it is the one thing here that has to be kept up by hand.
+ *
+ * Three models had been written, verified and committed without reaching this
+ * list, which means they were never in the browser viewer and never in
+ * `verify:glb` -- the GLB gate walks CATALOG, so a model missing from here is
+ * a model nothing round-trips. It read as passing because the count it printed
+ * was never checked against the number of folders on disk.
+ */
 const CONTEMPORARY_ORDER = [
   'ceramic-vase', 'coffee-mug', 'wine-glass', 'pepper-mill',
-  'stockpot', 'traffic-cone', 'street-bollard',
+  'stockpot', 'traffic-cone', 'street-bollard', 'gas-cylinder',
+  'fire-extinguisher', 'pedestal-basin',
 ] as const
 
 const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
@@ -280,6 +296,9 @@ const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'stockpot': as(createCpStockpot),
   'traffic-cone': as(createCpTrafficCone),
   'street-bollard': as(createCpStreetBollard),
+  'gas-cylinder': as(createCpGasCylinder),
+  'fire-extinguisher': as(createCpFireExtinguisher),
+  'pedestal-basin': as(createCpPedestalBasin),
 }
 
 const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
@@ -290,6 +309,9 @@ const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
   'stockpot': cpMetaStockpot as ModelMetaLike,
   'traffic-cone': cpMetaTrafficCone as ModelMetaLike,
   'street-bollard': cpMetaStreetBollard as ModelMetaLike,
+  'gas-cylinder': cpMetaGasCylinder as ModelMetaLike,
+  'fire-extinguisher': cpMetaFireExtinguisher as ModelMetaLike,
+  'pedestal-basin': cpMetaPedestalBasin as ModelMetaLike,
 }
 
 /**
