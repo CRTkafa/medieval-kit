@@ -1,0 +1,64 @@
+{
+  "title": "Fire Extinguisher",
+  "description": "Red bottle under a chrome valve head: an oversized gauge, a brass pin and ring, a carry handle and a lever that squeezes against it, with a hose banded to the shell. The kit's first small-part cluster and its first squeeze lever.",
+  "category": "Tools",
+  "tags": [
+    "contemporary",
+    "tools",
+    "safety",
+    "procedural"
+  ],
+  "controls": {
+    "height": {
+      "type": "number",
+      "label": "Height",
+      "min": 0.25,
+      "max": 1.1,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "radius": {
+      "type": "number",
+      "label": "Shell radius",
+      "min": 0.03,
+      "max": 0.12,
+      "step": 0.002,
+      "unit": "m"
+    },
+    "squeeze": {
+      "type": "number",
+      "label": "Lever squeeze",
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    "segments": {
+      "type": "number",
+      "label": "Sides",
+      "min": 12,
+      "max": 64,
+      "step": 1
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "retroreflective",
+    "chrome",
+    "steelPainted",
+    "rubber",
+    "brass"
+  ],
+  "parts": [
+    "body",
+    "valve",
+    "handle",
+    "lever",
+    "hose"
+  ]
+}

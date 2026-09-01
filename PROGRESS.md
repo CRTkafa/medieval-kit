@@ -179,6 +179,22 @@ Two rules came out of the scoring worth keeping:
   from any angle that could see it, a pitchfork's "tines pinched to a point"
   were already spaced, and a shovel's "flattened slab grip" was a round bar.
   Each cost a measurement to disprove and would have cost a wrong rebuild.
+- **It reverses itself, and that is the plateau.** The extinguisher's third
+  round said the two black members were "roughly twice the reference thickness";
+  they were measured at 1.6x and halved. Its fourth round, on the halved model,
+  said they were "2-3 times thinner" than the reference. The same round called
+  the stepped valve too many tiers after the previous round had demanded the
+  steps. Measured off the photograph the members are 8.5% of bottle diameter
+  against the reference's 8%, so the second complaint is simply wrong, and so
+  were the gauge diameter and head height it offered next.
+
+  The useful reading is that **once a critic starts contradicting its own last
+  round, the score has stopped measuring the model and started measuring the
+  critic.** Three consecutive 79s with no build findings and every remaining
+  claim refuted by measurement is a finished model, not a stuck one. The same
+  critic was reliable throughout on presence -- no foot ring, no outlet hole,
+  no knurl, no needle, no tick ring, no pivot bracket were all true and all
+  worth fixing. Presence it can see; quantity it guesses.
 
 ## Traps, each one paid for
 
@@ -344,10 +360,10 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 8 of the core 100 modelled, and they are rows 1 to
-  6 of the build order rather than six picked at random. The catalogue, the
+- **`contemporary-props`**: 9 of the core 100 modelled, and they are the first
+  rows of the build order rather than nine picked at random. The catalogue, the
   order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 9 is `fire-extinguisher`. The number 119
+  `contemporary-props/CATALOGUE.md`; row 10 is `pedestal-basin`. The number 119
   appeared here twice and was never anything: the catalogue is 100 core plus a
   further 150.
 
