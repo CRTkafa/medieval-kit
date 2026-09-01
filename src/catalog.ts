@@ -64,6 +64,7 @@ import { createModel as createCpPedestalBasin } from '@/models/contemporary-prop
 import { createModel as createCpJerseyBarrier } from '@/models/contemporary-props/jersey-barrier/model.ts'
 import { createModel as createCpPicnicTable } from '@/models/contemporary-props/picnic-table/model.ts'
 import { createModel as createCpParkBench } from '@/models/contemporary-props/park-bench/model.ts'
+import { createModel as createCpPavementSign } from '@/models/contemporary-props/pavement-sign-board/model.ts'
 import cpMetaCeramicVase from '../contemporary-props/models/ceramic-vase/meta.json'
 import cpMetaCoffeeMug from '../contemporary-props/models/coffee-mug/meta.json'
 import cpMetaWineGlass from '../contemporary-props/models/wine-glass/meta.json'
@@ -77,6 +78,7 @@ import cpMetaPedestalBasin from '../contemporary-props/models/pedestal-basin/met
 import cpMetaJerseyBarrier from '../contemporary-props/models/jersey-barrier/meta.json'
 import cpMetaPicnicTable from '../contemporary-props/models/picnic-table/meta.json'
 import cpMetaParkBench from '../contemporary-props/models/park-bench/meta.json'
+import cpMetaPavementSign from '../contemporary-props/models/pavement-sign-board/meta.json'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
 import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/model.ts'
 import { createModel as createTrough } from '@/models/medieval-kit/stone-trough/model.ts'
@@ -292,7 +294,7 @@ const CONTEMPORARY_ORDER = [
   'ceramic-vase', 'coffee-mug', 'wine-glass', 'pepper-mill',
   'stockpot', 'traffic-cone', 'street-bollard', 'gas-cylinder',
   'fire-extinguisher', 'pedestal-basin', 'jersey-barrier',
-  'picnic-table', 'park-bench',
+  'picnic-table', 'park-bench', 'pavement-sign-board',
 ] as const
 
 const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
@@ -309,6 +311,7 @@ const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'jersey-barrier': as(createCpJerseyBarrier),
   'picnic-table': as(createCpPicnicTable),
   'park-bench': as(createCpParkBench),
+  'pavement-sign-board': as(createCpPavementSign),
 }
 
 const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
@@ -325,6 +328,7 @@ const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
   'jersey-barrier': cpMetaJerseyBarrier as ModelMetaLike,
   'picnic-table': cpMetaPicnicTable as ModelMetaLike,
   'park-bench': cpMetaParkBench as ModelMetaLike,
+  'pavement-sign-board': cpMetaPavementSign as ModelMetaLike,
 }
 
 /**

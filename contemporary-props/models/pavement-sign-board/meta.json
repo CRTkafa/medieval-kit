@@ -1,0 +1,56 @@
+{
+  "title": "A-frame Pavement Sign",
+  "description": "Two framed panels hinged at the top, with a collapsing stay between them and moulded feet on the stiles. The kit's first hinge with a real origin: one number folds the sign flat and keeps it standing on the ground while it does.",
+  "category": "Retail",
+  "tags": [
+    "contemporary",
+    "retail",
+    "street",
+    "procedural"
+  ],
+  "controls": {
+    "panel": {
+      "type": "number",
+      "label": "Panel length",
+      "min": 0.5,
+      "max": 1.4,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "width": {
+      "type": "number",
+      "label": "Panel width",
+      "min": 0.35,
+      "max": 1,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "fold": {
+      "type": "number",
+      "label": "Fold",
+      "min": 0,
+      "max": 1,
+      "step": 0.05
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "steelPainted",
+    "plastic",
+    "rubber",
+    "stainless"
+  ],
+  "parts": [
+    "front",
+    "back",
+    "hinges",
+    "stayFront",
+    "stayBack"
+  ]
+}

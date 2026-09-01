@@ -84,7 +84,10 @@ model.root.traverse((object) => {
   if (slot) slots.add(slot)
 })
 
-const box = new Box3().setFromObject(model.root)
+// Precise, for the same reason `support.ts` is: the loose bound is the box
+// around each part's own rotated box, and it reported the A-frame sign 62 mm
+// taller than its tallest vertex.
+const box = new Box3().setFromObject(model.root, true)
 const extent = box.getSize(new Vector3())
 const support = findFloating(model.root, { resolution: 96 })
 

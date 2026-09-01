@@ -226,6 +226,20 @@ normal smoothing touches it, because the seam is in the colour rather than the
 geometry. Squarer quads are the whole answer -- subdivide the long edges of the
 section as well as stepping the run.
 
+**The support gate was lying about anything hinged, and it took a hinged model
+to find out.** `findFloating` based its occupancy grid on
+`Box3.setFromObject(root)`, which is the box around each mesh's own box after
+the world transform -- correct for an axis-aligned part and badly loose for a
+rotated one. The A-frame sign's panels lean 19 degrees, the bound came out 64 mm
+below the lowest real vertex, the grid's bottom six rows were therefore empty,
+and a sign standing flat on the ground was reported as floating 61 mm in the
+air. `check-model.ts` printed the same inflated figure as the model's height.
+
+Both now pass `precise` and the whole kit re-verifies unchanged, so nothing was
+depending on the loose number. Worth keeping in mind that this is the first row
+whose action moves half the object: every gate written against parts that only
+translate is worth re-reading the first time one rotates.
+
 **Face the camera.** The bench was written with its front at -Z, which is a
 sensible drawing convention and means every one of the kit's renders was of
 the back of it: the arch, the bolts and the rake were all on the far side.
@@ -423,10 +437,10 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 13 of the core 100 modelled, and they are the first
-  rows of the build order rather than thirteen picked at random. The catalogue,
+- **`contemporary-props`**: 14 of the core 100 modelled, and they are the first
+  rows of the build order rather than fourteen picked at random. The catalogue,
   the order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 14 is `pavement-sign-board`.
+  `contemporary-props/CATALOGUE.md`; row 15 is `lectern`.
 
   Rows 10 and 11 completed the kit's geometry vocabulary: there are now three
   ways to make a solid and each is the only reasonable way to make a family.

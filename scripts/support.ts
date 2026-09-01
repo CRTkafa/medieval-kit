@@ -94,7 +94,20 @@ export function findFloating(root: Object3D, options: SupportOptions = {}): Supp
   const mode = options.support ?? 'ground'
 
   root.updateMatrixWorld(true)
-  const box = new Box3().setFromObject(root)
+  /*
+   * PRECISE. The flag is the whole difference between this check working and
+   * this check lying about hinged models.
+   *
+   * Without it `setFromObject` takes each mesh's own axis-aligned box and
+   * transforms THAT by the world matrix, so a rotated part contributes the box
+   * around its rotated box. The A-frame sign's panels lean 19 degrees and the
+   * bound came out 64 mm below the lowest real vertex; the occupancy grid is
+   * based at `box.min.y`, so its bottom six rows were empty and the ground
+   * test reported a sign resting flat on the pavement as floating 61 mm in the
+   * air. Every model with a rotated anchor was going to hit this, and from the
+   * fourteenth row on that is most of them.
+   */
+  const box = new Box3().setFromObject(root, true)
   const size = box.getSize(new Vector3())
   const extent = Math.max(size.x, size.y, size.z, 1e-4)
   const voxel = extent / resolution

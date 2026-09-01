@@ -134,6 +134,9 @@ const HINT: Record<string, string> = {
   // "cast side frames" is the catalogue's own word for this row, so the metal
   // is the catalogue's call rather than the hint's.
   'park-bench': 'a municipal park bench: horizontal timber slats on two cast iron end frames, seen from the front and side',
+  // Form only, no material: the catalogue does not name one for this row, and
+  // a hint that invents one decides what the model becomes.
+  'pavement-sign-board': 'an A-frame pavement sign board (sandwich board) standing open, both panels blank, seen from the front and side',
 }
 
 /**
