@@ -226,6 +226,15 @@ normal smoothing touches it, because the seam is in the colour rather than the
 geometry. Squarer quads are the whole answer -- subdivide the long edges of the
 section as well as stepping the run.
 
+**A neutral grey dot on warm timber is a blue dot.** The picnic table's bolt
+heads measure #4e5357 -- neutral by any number you care to take off the buffer
+-- and rendered eight pixels across in a field of saturated pine they read as
+bright blue. Simultaneous contrast pushes a small neutral spot the opposite way
+round the wheel from everything surrounding it, and no amount of measuring the
+colour will show it, because the colour is right. The fix is to take the
+saturation to zero outright so the effect has nothing to work with. Worth
+remembering for every small metal fitting the kit puts on a warm body.
+
 **The kit's own check camera never looks into anything.** `renderObject` frames
 by bounding box, so a tall object gets a low camera, and the basin's tap hole,
 overflow and waste -- all three verified in place by measurement -- do not appear
@@ -399,10 +408,10 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 11 of the core 100 modelled, and they are the first
-  rows of the build order rather than eleven picked at random. The catalogue,
+- **`contemporary-props`**: 12 of the core 100 modelled, and they are the first
+  rows of the build order rather than twelve picked at random. The catalogue,
   the order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 12 is `picnic-table`.
+  `contemporary-props/CATALOGUE.md`; row 13 is `park-bench`.
 
   Rows 10 and 11 completed the kit's geometry vocabulary: there are now three
   ways to make a solid and each is the only reasonable way to make a family.

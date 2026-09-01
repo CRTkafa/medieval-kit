@@ -1,0 +1,60 @@
+{
+  "title": "Picnic Table",
+  "description": "A slatted top and two bench seats on a pair of mirrored A-frames: legs sawn flat at both ends, a bearer under the top and another under the seats, and two braces along the length. The kit's plank array and mirrored frame in one object.",
+  "category": "Street",
+  "tags": [
+    "contemporary",
+    "street",
+    "furniture",
+    "procedural"
+  ],
+  "controls": {
+    "length": {
+      "type": "number",
+      "label": "Length",
+      "min": 1.2,
+      "max": 3.2,
+      "step": 0.05,
+      "unit": "m"
+    },
+    "width": {
+      "type": "number",
+      "label": "Top width",
+      "min": 0.5,
+      "max": 1,
+      "step": 0.02,
+      "unit": "m"
+    },
+    "height": {
+      "type": "number",
+      "label": "Table height",
+      "min": 0.6,
+      "max": 0.85,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "planks": {
+      "type": "number",
+      "label": "Top boards",
+      "min": 3,
+      "max": 9,
+      "step": 1
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "wood",
+    "galvanised"
+  ],
+  "parts": [
+    "top",
+    "seats",
+    "frame"
+  ]
+}

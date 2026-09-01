@@ -62,6 +62,7 @@ import { createModel as createCpGasCylinder } from '@/models/contemporary-props/
 import { createModel as createCpFireExtinguisher } from '@/models/contemporary-props/fire-extinguisher/model.ts'
 import { createModel as createCpPedestalBasin } from '@/models/contemporary-props/pedestal-basin/model.ts'
 import { createModel as createCpJerseyBarrier } from '@/models/contemporary-props/jersey-barrier/model.ts'
+import { createModel as createCpPicnicTable } from '@/models/contemporary-props/picnic-table/model.ts'
 import cpMetaCeramicVase from '../contemporary-props/models/ceramic-vase/meta.json'
 import cpMetaCoffeeMug from '../contemporary-props/models/coffee-mug/meta.json'
 import cpMetaWineGlass from '../contemporary-props/models/wine-glass/meta.json'
@@ -73,6 +74,7 @@ import cpMetaGasCylinder from '../contemporary-props/models/gas-cylinder/meta.js
 import cpMetaFireExtinguisher from '../contemporary-props/models/fire-extinguisher/meta.json'
 import cpMetaPedestalBasin from '../contemporary-props/models/pedestal-basin/meta.json'
 import cpMetaJerseyBarrier from '../contemporary-props/models/jersey-barrier/meta.json'
+import cpMetaPicnicTable from '../contemporary-props/models/picnic-table/meta.json'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
 import { createModel as createForge } from '@/models/medieval-kit/forge-hearth/model.ts'
 import { createModel as createTrough } from '@/models/medieval-kit/stone-trough/model.ts'
@@ -288,6 +290,7 @@ const CONTEMPORARY_ORDER = [
   'ceramic-vase', 'coffee-mug', 'wine-glass', 'pepper-mill',
   'stockpot', 'traffic-cone', 'street-bollard', 'gas-cylinder',
   'fire-extinguisher', 'pedestal-basin', 'jersey-barrier',
+  'picnic-table',
 ] as const
 
 const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
@@ -302,6 +305,7 @@ const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'fire-extinguisher': as(createCpFireExtinguisher),
   'pedestal-basin': as(createCpPedestalBasin),
   'jersey-barrier': as(createCpJerseyBarrier),
+  'picnic-table': as(createCpPicnicTable),
 }
 
 const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
@@ -316,6 +320,7 @@ const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
   'fire-extinguisher': cpMetaFireExtinguisher as ModelMetaLike,
   'pedestal-basin': cpMetaPedestalBasin as ModelMetaLike,
   'jersey-barrier': cpMetaJerseyBarrier as ModelMetaLike,
+  'picnic-table': cpMetaPicnicTable as ModelMetaLike,
 }
 
 /**
