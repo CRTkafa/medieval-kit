@@ -196,6 +196,28 @@ Two rules came out of the scoring worth keeping:
   no knurl, no needle, no tick ring, no pivot bracket were all true and all
   worth fixing. Presence it can see; quantity it guesses.
 
+**A swept profile is walked bottom-up, and a closed one still is.** The basin's
+bowl is one closed profile: down the outside, in under the bowl, up the bore and
+out over the rim. Written in that order -- which is the order it is easiest to
+measure in -- every face on the body pointed inward. Back-face culling then
+removes the near wall and leaves the far wall's inside on show, and what arrives
+in the render is not a shading artefact you can recognise: it is a folded panel
+with a hole in it, low down at the front, that reads as a modelling mistake.
+Three separate rebuilds of the underside chased it before the profile's winding
+was tested directly, by flipping the geometry and rendering it again. The rule
+is `latheGeometry`'s and always was: walk from the bottom of the outer wall
+upward. Write the profile whichever way round reads best and reverse it at the
+call site.
+
+**The kit's own check camera never looks into anything.** `renderObject` frames
+by bounding box, so a tall object gets a low camera, and the basin's tap hole,
+overflow and waste -- all three verified in place by measurement -- do not appear
+in any of the four angles. The critic reported them missing in three consecutive
+rounds and was right about the render every time. Nothing here is worth changing
+for it: moving the camera would re-shoot every render in both kits. It is worth
+knowing that a finding of "detail X is absent" can mean the camera, and that the
+answer is a measurement rather than another rebuild.
+
 ## Traps, each one paid for
 
 **Two trees.** Covered above. It is the single most common way to verify
@@ -360,10 +382,18 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 9 of the core 100 modelled, and they are the first
-  rows of the build order rather than nine picked at random. The catalogue, the
+- **`contemporary-props`**: 10 of the core 100 modelled, and they are the first
+  rows of the build order rather than ten picked at random. The catalogue, the
   order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 10 is `pedestal-basin`. The number 119
+  `contemporary-props/CATALOGUE.md`; row 11 is `jersey-barrier`.
+
+  Row 10 changed its own catalogue entry. It was budgeted at "two lathes making
+  an hourglass" and a lathe cannot make it: every basin in use now is a D in
+  plan, flat at the back because it goes against a wall, and the flat back is
+  what gives the object a front. `planSweepGeometry` and `dPlan` went into core
+  instead, and the cistern, the bath and the back-to-wall pan all inherit them.
+  Row 11's extrusion helper is untouched: that one runs a fixed section along a
+  straight line, which is a different job. The number 119
   appeared here twice and was never anything: the catalogue is 100 core plus a
   further 150.
 

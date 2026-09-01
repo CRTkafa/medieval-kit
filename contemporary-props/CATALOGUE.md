@@ -32,7 +32,7 @@ Read top to bottom as the build order. Rows 1 to 32 exist to establish and prove
 | 7 | street-bollard | Street Bollard | street | simple | | Same generator as the cone with a different profile, which is the cheapest possible proof that profiles are data |
 | 8 | gas-cylinder | Gas Cylinder | tools | simple | valve handwheel turns | Shoulder taper plus foot ring plus caged guard: the first time a lathe carries an array |
 | 9 | fire-extinguisher | Fire Extinguisher | tools | simple | lever squeezes against the guard | The valve head assembly is the first small-part cluster and the first squeeze lever |
-| 10 | pedestal-basin | Pedestal Basin | living | simple | | Two lathes making an hourglass, and the first object where the ceramic slot has to look like ceramic |
+| 10 | pedestal-basin | Pedestal Basin | living | simple | | The first object that is not round: introduces the plan sweep and the D plan, which every wall-hung body after it reuses |
 | 11 | jersey-barrier | Concrete Traffic Barrier | street | simple | | One extruded polyline with end connectors; this is the extrusion helper's reference implementation |
 | 12 | picnic-table | Picnic Table | street | simple | | Plank runs on a mirrored A-frame, the cheapest object that is entirely plank array plus mirrored frame |
 | 13 | park-bench | Park Bench | street | medium | | Slat array between two cast side frames; establishes the slat-with-gap rule everything else copies |

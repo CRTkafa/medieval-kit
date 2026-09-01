@@ -1,0 +1,52 @@
+{
+  "title": "Pedestal Basin",
+  "description": "White glazed basin on a pedestal: a D-shaped plan with a semicircular front and a flat back for the wall, a shallow dish with a chrome waste, a tap hole and an overflow. The kit's first object that is not round.",
+  "category": "Living",
+  "tags": [
+    "contemporary",
+    "living",
+    "bathroom",
+    "procedural"
+  ],
+  "controls": {
+    "height": {
+      "type": "number",
+      "label": "Rim height",
+      "min": 0.6,
+      "max": 1.05,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "width": {
+      "type": "number",
+      "label": "Width",
+      "min": 0.35,
+      "max": 0.9,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "segments": {
+      "type": "number",
+      "label": "Sides",
+      "min": 16,
+      "max": 80,
+      "step": 1
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "ceramic",
+    "chrome"
+  ],
+  "parts": [
+    "bowl",
+    "pedestal",
+    "waste"
+  ]
+}

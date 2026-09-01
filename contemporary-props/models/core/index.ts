@@ -5,10 +5,12 @@ export {
   bendGeometry,
   boxGeometry,
   chamferedBoxGeometry,
+  dPlan,
   dishedSheetGeometry,
   flipGeometry,
   headGeometry,
   latheGeometry,
+  planSweepGeometry,
   mergeColoured,
   mottleGeometry,
   prismGeometry,
@@ -17,7 +19,7 @@ export {
   smoothNormals,
   taperedBoxGeometry,
 } from './geometry.ts'
-export type { Level, MottleOptions, RoughenOptions, SheetLevel, Vec3 } from './geometry.ts'
+export type { Level, MottleOptions, Plan, PlanLevel, RoughenOptions, SheetLevel, Vec3 } from './geometry.ts'
 export { bakeOcclusion } from './occlusion.ts'
 export type { OcclusionOptions } from './occlusion.ts'
 export { createKitModel } from './kit.ts'

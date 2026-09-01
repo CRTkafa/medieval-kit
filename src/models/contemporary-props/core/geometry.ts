@@ -304,6 +304,190 @@ export function latheGeometry(
 }
 
 /**
+ * A closed plan curve in unit coordinates, for `planSweepGeometry`.
+ *
+ * The points run anticlockwise seen from above and the ring closes back on the
+ * first one implicitly, exactly as a lathe's segments do. Values are in the
+ * range -1..1 on both axes; the sweep scales them to real half-extents, so one
+ * plan describes a family of objects of any width and depth.
+ */
+export type Plan = readonly (readonly [number, number])[]
+
+/**
+ * The plan of a wall-hung sanitary ware body: a semicircular front, straight
+ * sides, and a flat back.
+ *
+ * This is a D, and a D is what a lathe cannot make. Every basin, cistern,
+ * bath and back-to-wall pan in the catalogue has one, for the same reason: the
+ * back goes against a wall, and the moment the back is flat the object has a
+ * FRONT, which is most of what makes it read as plumbing rather than as a bowl
+ * on a stick.
+ *
+ * The flat back faces +Z and the round front faces -Z, so a model built on
+ * this plan is already the right way round for a wall behind it.
+ *
+ * Both halves are superellipses and only the exponent differs. The front runs
+ * at 2, which is an ellipse. The back runs high, and the higher it goes the
+ * squarer the back corners get: at 8 the back edge is within 6% of straight
+ * across its middle two thirds, which is closer than the eye reads at prop
+ * scale and costs nothing over the ellipse.
+ *
+ * @param back exponent for the wall half. 2 gives an ellipse (no D at all).
+ */
+export function dPlan(segments: number, back = 8): Plan {
+  const points: Array<readonly [number, number]> = []
+  for (let i = 0; i < segments; i += 1) {
+    const angle = (i / segments) * Math.PI * 2
+    const cos = Math.cos(angle)
+    const sin = Math.sin(angle)
+    /*
+     * The exponent BLENDS rather than switches.
+     *
+     * Switched hard at cos = 0 the two curves meet at exactly (+/-1, 0) -- the
+     * position is continuous for any pair of exponents -- but their tangents
+     * are not, and a tangent break in a swept surface is a crease running the
+     * full height of the object.
+     *
+     * So it blends, and the WINDOW IS ENTIRELY INSIDE THE BACK HALF. Blended
+     * symmetrically about cos = 0 instead, the exponent is already at 5 by the
+     * time it reaches the sides, and a superellipse at 5 has flat sides: the
+     * basin came out with a squared-off panel down each flank, bright and
+     * hard-edged, that looked like a modelling fault and was the plan curve
+     * doing exactly what it had been told. Starting at cos = 0 with a
+     * smoothstep costs nothing -- the derivative is zero there, so the front
+     * half stays a true ellipse and the tangent still matches across the join.
+     */
+    // The window is the WHOLE back half. Ending it early at 0.6 leaves a jump
+    // in curvature where it stops, and a curvature jump on a swept body is a
+    // diagonal crease down the flank -- fainter than the tangent break it
+    // replaced, and still visible.
+    const t = Math.min(1, Math.max(0, cos))
+    const power = 2 / (2 + (back - 2) * (t * t * (3 - 2 * t)))
+    // x from sin and z from cos, which is not a choice: it is the handedness
+    // the rest of the file turns at. Written the intuitive way round, the ring
+    // is traversed backwards, every triangle faces inward, and back-face
+    // culling then shows you the inside of the far wall through the near one.
+    // The result looks like a shading bug and is a winding bug.
+    points.push([
+      Math.sign(sin) * Math.abs(sin) ** power,
+      Math.sign(cos) * Math.abs(cos) ** power,
+    ])
+  }
+  return points
+}
+
+/** One ring of a plan sweep: a height, a scale, and where that ring sits. */
+export interface PlanLevel {
+  /** Vertical position (metres). */
+  readonly y: number
+  /** Multiplier on the plan. 1 is the full half-extents, 0 collapses to a point. */
+  readonly scale: number
+  /**
+   * Multiplier along Z, when it differs from `scale`. Defaults to `scale`.
+   *
+   * A uniform scale cannot describe a rim: a basin's shelf is 44 mm at the
+   * sides and 67 mm front-to-back, and one number gives whichever of those you
+   * solve for and the wrong value for the other. Anything whose wall thickness
+   * is not proportional to its plan needs the second number.
+   */
+  readonly scaleZ?: number
+  /**
+   * Displacement of this ring along Z, in metres. Default 0, which shrinks the
+   * ring about its own centre.
+   *
+   * It exists for one shape and that shape is everywhere: anything against a
+   * wall. A basin, a cistern, a back-to-wall pan all narrow as they descend on
+   * three sides and stay dead flat on the fourth, because the fourth is
+   * touching plaster the whole way down. Scaling alone cannot do that -- it
+   * pulls the back plane forward with everything else, and the object stands
+   * off the wall at the bottom like a piece of furniture. Passing
+   * `shift: halfDepth * (1 - scale)` pins the back edge and lets the front and
+   * sides come in around it.
+   */
+  readonly shift?: number
+}
+
+/**
+ * Sweeps a profile along a closed plan curve. `latheGeometry` is this with a
+ * circle for a plan.
+ *
+ * The difference matters for one reason: a lathe's cross-section is decided by
+ * the generator and a sweep's is decided by the caller, so anything whose
+ * SILHOUETTE FROM ABOVE is not a circle has to come from here. In this kit that
+ * is the sanitary ware, the seat cushions, and later the baths.
+ *
+ * The profile is a list of levels exactly as a lathe's is, WALKED IN THE SAME
+ * DIRECTION: from the bottom of the outer wall upward, because that is what
+ * puts the outward normal on the outside. It does NOT have to be monotonic in
+ * y -- but a closed profile that doubles back has to close the right way round,
+ * and one written the other way round produces a body whose every face points
+ * inward. That does not look like a winding fault in a render; it looks like a
+ * torn surface, because culling removes the near wall and leaves the far one's
+ * inside on show. A basin's profile runs down the outside, under the
+ * bowl, back up the inside and over the rim to where it started; that closed
+ * loop seals the solid without a single cap, which is why both caps default to
+ * off here where a lathe defaults them on.
+ */
+export function planSweepGeometry(
+  plan: Plan,
+  levels: readonly PlanLevel[],
+  half: readonly [number, number],
+  centre: Vec3,
+  colour: Color,
+  options: { readonly capTop?: boolean; readonly capBottom?: boolean; readonly colourTop?: Color } = {},
+): BufferGeometry {
+  if (levels.length < 2) throw new Error('planSweepGeometry needs at least two levels')
+  if (plan.length < 3) throw new Error('planSweepGeometry needs a plan of at least three points')
+  const sink: Sink = { position: [], color: [] }
+  const { capTop = false, capBottom = false } = options
+  const top = options.colourTop ?? colour
+  const [cx, cy, cz] = centre
+  const [hx, hz] = half
+  const lerp = (t: number): Color => new Color().copy(colour).lerp(top, t)
+  const at = (index: number, level: PlanLevel): Vec3 => {
+    const [px, pz] = plan[index % plan.length]!
+    return [
+      cx + px * hx * level.scale,
+      cy + level.y,
+      cz + pz * hz * (level.scaleZ ?? level.scale) + (level.shift ?? 0),
+    ]
+  }
+
+  for (let i = 0; i < levels.length - 1; i += 1) {
+    const low = levels[i]!
+    const high = levels[i + 1]!
+    const cLow = lerp(i / (levels.length - 1))
+    const cHigh = lerp((i + 1) / (levels.length - 1))
+    for (let j = 0; j < plan.length; j += 1) {
+      const l0 = at(j, low)
+      const l1 = at(j + 1, low)
+      const h0 = at(j, high)
+      const h1 = at(j + 1, high)
+      // A level scaled to zero collapses its whole ring onto the axis, so the
+      // quad there is closed with one triangle instead of two degenerate ones.
+      if (Math.abs(low.scale) <= 1e-6) { triShaded(sink, l0, h1, h0, cLow, cHigh, cHigh); continue }
+      if (Math.abs(high.scale) <= 1e-6) { triShaded(sink, l0, l1, h0, cLow, cLow, cHigh); continue }
+      triShaded(sink, l0, l1, h1, cLow, cLow, cHigh)
+      triShaded(sink, l0, h1, h0, cLow, cHigh, cHigh)
+    }
+  }
+
+  const first = levels[0]!
+  const last = levels.at(-1)!
+  for (let j = 0; j < plan.length; j += 1) {
+    if (capBottom && Math.abs(first.scale) > 1e-6) {
+      const c: Vec3 = [cx, cy + first.y, cz + (first.shift ?? 0)]
+      tri(sink, c, at(j + 1, first), at(j, first), colour)
+    }
+    if (capTop && Math.abs(last.scale) > 1e-6) {
+      const c: Vec3 = [cx, cy + last.y, cz + (last.shift ?? 0)]
+      tri(sink, c, at(j, last), at(j + 1, last), top)
+    }
+  }
+  return finish(sink)
+}
+
+/**
  * A single barrel stave: one slice of the ring, a closed solid with thickness.
  *
  * Every level has four corners:
