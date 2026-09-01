@@ -226,6 +226,21 @@ normal smoothing touches it, because the seam is in the colour rather than the
 geometry. Squarer quads are the whole answer -- subdivide the long edges of the
 section as well as stepping the run.
 
+**Face the camera.** The bench was written with its front at -Z, which is a
+sensible drawing convention and means every one of the kit's renders was of
+the back of it: the arch, the bolts and the rake were all on the far side.
+`renderObject` stands at +Z. Anything with a front faces +Z, and the cheapest
+way to get there is one `rotateY(Math.PI)` over the finished pieces.
+
+**A cast frame's arch is closed by its web, not by its legs.** Two wrong
+widths came first on the bench: thin limbs the whole way up gave an inverted V
+with daylight through it, and fat limbs the whole way up gave what the critic
+called a frame three times too massive. The reference's limbs are thin from
+the feet to the last quarter of the height and then broaden into the spandrel
+under the seat, and that is where a casting carries its material. Converging
+early closed the void to half the seat depth; holding the limbs out over their
+feet until late opened it to the reference's three quarters.
+
 **A neutral grey dot on warm timber is a blue dot.** The picnic table's bolt
 heads measure #4e5357 -- neutral by any number you care to take off the buffer
 -- and rendered eight pixels across in a field of saturated pine they read as
@@ -408,10 +423,10 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 12 of the core 100 modelled, and they are the first
-  rows of the build order rather than twelve picked at random. The catalogue,
+- **`contemporary-props`**: 13 of the core 100 modelled, and they are the first
+  rows of the build order rather than thirteen picked at random. The catalogue,
   the order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 13 is `park-bench`.
+  `contemporary-props/CATALOGUE.md`; row 14 is `pavement-sign-board`.
 
   Rows 10 and 11 completed the kit's geometry vocabulary: there are now three
   ways to make a solid and each is the only reasonable way to make a family.

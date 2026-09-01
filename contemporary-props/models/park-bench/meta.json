@@ -1,0 +1,59 @@
+{
+  "title": "Park Bench",
+  "description": "Timber slats bolted between two black cast iron side frames, with an arched void under the seat and a raked back. The kit's slat-with-gap rule: the slat width is derived from the run and the count, never chosen.",
+  "category": "Street",
+  "tags": [
+    "contemporary",
+    "street",
+    "furniture",
+    "procedural"
+  ],
+  "controls": {
+    "length": {
+      "type": "number",
+      "label": "Length",
+      "min": 1,
+      "max": 3,
+      "step": 0.05,
+      "unit": "m"
+    },
+    "height": {
+      "type": "number",
+      "label": "Back height",
+      "min": 0.65,
+      "max": 1,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "slats": {
+      "type": "number",
+      "label": "Seat slats",
+      "min": 3,
+      "max": 9,
+      "step": 1
+    },
+    "backSlats": {
+      "type": "number",
+      "label": "Back slats",
+      "min": 2,
+      "max": 6,
+      "step": 1
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "wood",
+    "steelPainted",
+    "stainless"
+  ],
+  "parts": [
+    "slats",
+    "frames"
+  ]
+}

@@ -131,6 +131,9 @@ const HINT: Record<string, string> = {
   'pedestal-basin': 'a white ceramic pedestal wash basin',
   'jersey-barrier': 'a single concrete jersey traffic barrier section',
   'picnic-table': 'a wooden picnic table with bench seats attached to an A-frame',
+  // "cast side frames" is the catalogue's own word for this row, so the metal
+  // is the catalogue's call rather than the hint's.
+  'park-bench': 'a municipal park bench: horizontal timber slats on two cast iron end frames, seen from the front and side',
 }
 
 /**
