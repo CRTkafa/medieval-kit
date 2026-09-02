@@ -34,6 +34,7 @@ import {
   latheGeometry,
   mergeColoured,
   smoothNormals,
+  type RuntimeContext,
 } from '../core/index.ts'
 
 export interface PavementSignConfig {
@@ -71,7 +72,66 @@ const STAY_AT = 0.62
 const reachOf = (Lp: number): number =>
   Lp * STAY_AT * Math.sin(OPEN) - (SECTION_T / 2) * Math.cos(OPEN)
 
+/**
+ * The pose, written once because TWO THINGS drive it.
+ *
+ * `fold` is a slider and a method. Moving the slider calls `configure()`,
+ * which rebuilds the geometry -- and the geometry does not depend on the fold
+ * at all, because the whole pose is anchor rotations. A rebuild does not
+ * re-run the action that set them, so in the viewer the slider was inert.
+ *
+ * Rebuilding also resets each anchor's POSITION to its origin while leaving
+ * its rotation alone. That is the kit's rule and it is the right one, but this
+ * model drives both, so after any rebuild the pin height and the panel angle
+ * disagreed. Hence one function, called from the action and again every frame.
+ */
+function applyFold(
+  runtime: RuntimeContext<PavementSignConfig, PavementSignParts>,
+  amount: number,
+): void {
+  const { parts } = runtime
+  const t = Math.min(1, Math.max(0, amount))
+  const angle = OPEN * (1 - t)
+  parts.front.anchor.rotation.x = angle
+  parts.back.anchor.rotation.x = -angle
+
+  // The pin rises as the panels straighten, because a folded A-board is taller
+  // than an open one and an origin left at the open height buries the feet.
+  const Lp = Math.min(1.4, Math.max(0.5, runtime.getConfig().panel))
+  const hingeY = Lp * Math.cos(angle)
+  for (const part of [parts.front, parts.back, parts.hinges]) {
+    part.anchor.position.setY(hingeY)
+  }
+
+  /*
+   * ...and then the stay follows, which is two numbers per link.
+   *
+   * The pin sits on the panel's inner face `STAY_AT` of the way down, so where
+   * it ENDS UP is the panel's own rotation applied to that point. The knuckle
+   * is on the centre plane at whatever height a link of fixed length can still
+   * reach from there -- which is what makes the pair go straight when open and
+   * hang when shut, with no case analysis and no clamp.
+   */
+  const reach = reachOf(Lp)
+  for (const [part, facing] of [[parts.stayFront, -1], [parts.stayBack, 1]] as const) {
+    const rot = -facing * angle
+    const ly = -Lp * STAY_AT
+    const lz = (-facing * SECTION_T) / 2
+    const ay = hingeY + ly * Math.cos(rot) - lz * Math.sin(rot)
+    const az = ly * Math.sin(rot) + lz * Math.cos(rot)
+    part.anchor.position.set(0, ay, az)
+    // Built hanging along -Y, so the angle that points it at the knuckle is
+    // measured from straight down.
+    part.anchor.rotation.x = Math.atan2(az, Math.sqrt(Math.max(0, reach * reach - az * az)))
+  }
+}
+
 export function createModel(overrides: Partial<PavementSignConfig> = {}) {
+  // Shared by the action and the frame hook, which are two properties of the
+  // same options object and otherwise have no way to agree.
+  let heldFold = 0
+  let seenFold = Number.NaN
+
   return createKitModel<
     PavementSignConfig,
     'steelPainted' | 'plastic' | 'rubber' | 'stainless',
@@ -305,46 +365,22 @@ export function createModel(overrides: Partial<PavementSignConfig> = {}) {
       }
     },
 
-    actions: ({ parts, getConfig }) => {
-      const set = (amount: number): void => {
-        const t = Math.min(1, Math.max(0, amount))
-        const angle = OPEN * (1 - t)
-        parts.front.anchor.rotation.x = angle
-        parts.back.anchor.rotation.x = -angle
-        // ...and the pin rises as the panels straighten, because a folded
-        // A-board is taller than an open one and an origin left at the open
-        // height buries the feet.
-        const Lp = Math.min(1.4, Math.max(0.5, getConfig().panel))
-        const hingeY = Lp * Math.cos(angle)
-        for (const part of [parts.front, parts.back, parts.hinges]) {
-          part.anchor.position.setY(hingeY)
-        }
-
-        /*
-         * ...and then the stay follows, which is two numbers per link.
-         *
-         * The pin sits on the panel's inner face `STAY_AT` of the way down, so
-         * where it ENDS UP is the panel's own rotation applied to that point.
-         * The knuckle is on the centre plane at whatever height a link of
-         * fixed length can still reach from there -- which is what makes the
-         * pair go straight when open and hang when shut, with no case
-         * analysis and no clamp.
-         */
-        const reach = reachOf(Lp)
-        for (const [part, facing] of [[parts.stayFront, -1], [parts.stayBack, 1]] as const) {
-          const rot = -facing * angle
-          const ly = -Lp * STAY_AT
-          const lz = (-facing * SECTION_T) / 2
-          const ay = hingeY + ly * Math.cos(rot) - lz * Math.sin(rot)
-          const az = ly * Math.sin(rot) + lz * Math.cos(rot)
-          part.anchor.position.set(0, ay, az)
-          // Built hanging along -Y, so the angle that points it at the knuckle
-          // is measured from straight down.
-          part.anchor.rotation.x = Math.atan2(az, Math.sqrt(Math.max(0, reach * reach - az * az)))
-        }
+    actions: (runtime) => {
+      heldFold = runtime.getConfig().fold
+      seenFold = heldFold
+      applyFold(runtime, heldFold)
+      return {
+        fold: (amount = 1) => { heldFold = amount; applyFold(runtime, amount) },
       }
-      set(getConfig().fold)
-      return { fold: (amount = 1) => { set(amount) } }
+    },
+
+    // The config is adopted into the held pose whenever it changes, and the
+    // held pose is re-applied every frame. Between slider moves the action
+    // wins, which is what lets a consumer animate the sign.
+    update: (_dt, runtime) => {
+      const wanted = runtime.getConfig().fold
+      if (wanted !== seenFold) { seenFold = wanted; heldFold = wanted }
+      applyFold(runtime, heldFold)
     },
   }, overrides)
 }

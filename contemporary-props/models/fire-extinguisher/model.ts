@@ -75,6 +75,11 @@ export interface FireExtinguisherActions {
 }
 
 export function createModel(overrides: Partial<FireExtinguisherConfig> = {}) {
+  // Shared by the action and the frame hook; they are two properties of one
+  // options object and otherwise have no way to agree.
+  let heldSqueeze = 0
+  let seenSqueeze = Number.NaN
+
   return createKitModel<
     FireExtinguisherConfig,
     'retroreflective' | 'chrome' | 'steelPainted' | 'rubber' | 'brass',
@@ -603,8 +608,28 @@ export function createModel(overrides: Partial<FireExtinguisherConfig> = {}) {
          */
         parts.lever.anchor.rotation.z = -Math.min(1, Math.max(0, amount)) * 0.46
       }
-      set(getConfig().squeeze)
-      return { squeeze: (amount = 1) => { set(amount) } }
+      heldSqueeze = getConfig().squeeze
+      seenSqueeze = heldSqueeze
+      set(heldSqueeze)
+      return {
+        squeeze: (amount = 1) => { heldSqueeze = amount; set(amount) },
+      }
+    },
+
+    /**
+     * ...and the slider has to reach it, which the action alone does not do.
+     *
+     * `squeeze` is both a control and a method. Moving the control calls
+     * `configure()`, which rebuilds the geometry -- and the lever's pose is a
+     * single anchor rotation that no rebuild re-applies, so in the viewer the
+     * slider was inert while the method worked. Adopting the config into the
+     * held value whenever it changes, and re-applying every frame, makes the
+     * two agree without letting either override the other.
+     */
+    update: (_dt, { parts, getConfig }) => {
+      const wanted = getConfig().squeeze
+      if (wanted !== seenSqueeze) { seenSqueeze = wanted; heldSqueeze = wanted }
+      parts.lever.anchor.rotation.z = -Math.min(1, Math.max(0, heldSqueeze)) * 0.46
     },
   }, overrides)
 }
