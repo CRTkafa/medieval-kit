@@ -137,6 +137,9 @@ const HINT: Record<string, string> = {
   // Form only, no material: the catalogue does not name one for this row, and
   // a hint that invents one decides what the model becomes.
   'pavement-sign-board': 'an A-frame pavement sign board (sandwich board) standing open, both panels blank, seen from the front and side',
+  // "panelled shaft" and "angled cap" are the catalogue's words; the material
+  // is left open because the row does not name one.
+  'lectern': 'a freestanding lectern with a sloped reading top on a tall panelled column, empty, seen from the front and slightly to one side',
 }
 
 /**

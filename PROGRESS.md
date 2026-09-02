@@ -226,6 +226,17 @@ normal smoothing touches it, because the seam is in the colour rather than the
 geometry. Squarer quads are the whole answer -- subdivide the long edges of the
 section as well as stepping the run.
 
+**A flat top under a sloped one is a gap, not a joint.** The lectern's shaft
+was a box and its reading top a board on a 22-degree slope, so the two met
+along one edge and nowhere else: 138 mm of open air at the back of the shaft
+with the desk hanging over it. A joiner cuts the shaft to the underside of the
+desk, which makes its side profile a rectangle with an angled top -- a section,
+and therefore one `extrudeGeometry` call. The panelling then has to follow it:
+the front and back faces end up rectangles 125 mm different in height and the
+two side faces become trapezoids with sloped top rails. Running one border
+height round all four is the obvious economy and it leaves the back face with a
+hand's width of bare shaft above its panel.
+
 **The support gate was lying about anything hinged, and it took a hinged model
 to find out.** `findFloating` based its occupancy grid on
 `Box3.setFromObject(root)`, which is the box around each mesh's own box after
@@ -437,10 +448,10 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 14 of the core 100 modelled, and they are the first
-  rows of the build order rather than fourteen picked at random. The catalogue,
+- **`contemporary-props`**: 15 of the core 100 modelled, and they are the first
+  rows of the build order rather than fifteen picked at random. The catalogue,
   the order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 15 is `lectern`.
+  `contemporary-props/CATALOGUE.md`; row 16 is `bookcase`.
 
   Rows 10 and 11 completed the kit's geometry vocabulary: there are now three
   ways to make a solid and each is the only reasonable way to make a family.
