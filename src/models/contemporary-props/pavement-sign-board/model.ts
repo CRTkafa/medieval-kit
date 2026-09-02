@@ -239,6 +239,21 @@ export function createModel(overrides: Partial<PavementSignConfig> = {}) {
           ))
         }
 
+        /*
+         * ...and the whole panel steps back a couple of millimetres from the
+         * pin.
+         *
+         * Both panels are the same frame mirrored, so their stiles' inner
+         * faces are at the same x by construction. Down at the feet they are
+         * 600 mm apart in z and nothing notices; up at the pin they converge
+         * onto each other and become two surfaces in one plane, overlapping,
+         * with nothing to choose between them. A real hinge has a gap there
+         * for exactly the reason a modelled one needs one.
+         */
+        for (const g of [...pieces, ...board, ...caps, ...leaves]) {
+          g.translate(0, 0, facing * 0.0019)
+        }
+
         bakeOcclusion(pieces, { strength: 0.35 })
         return { frame: pieces, board, caps, leaves }
       }

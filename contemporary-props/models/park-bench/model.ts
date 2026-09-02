@@ -84,12 +84,22 @@ export function createModel(overrides: Partial<ParkBenchConfig> = {}) {
       // critic reported and what a bench that has been reassembled wrong looks
       // like.
       const frameX = Math.max(0.2, L / 2 - frameT)
-      // ...and the slats end HALFWAY THROUGH the frame plate, not at its outer
-      // face. Two millimetres inside the face is flush by any measurement and
-      // still read as protruding from the rear quarter, because the back
-      // slats sit forward of the rest and their end grain shows beside it.
-      // Twenty millimetres inside, they are inarguably held.
-      const slatL = L - frameT
+      /*
+       * The slats end at the MIDDLE of the frame plate, and that one number
+       * was wrong in both directions before it was right.
+       *
+       * Run out to the plate's outer face they are exactly coplanar with it:
+       * 26 pairs of faces sharing a plane, which is what made the whole bench
+       * flicker. They also hid the frame completely, so the back read as three
+       * boards floating in the air with no ironwork holding them -- the
+       * reference's uprights stand proud of the slats at both ends and that is
+       * most of what says the timber is bolted to a casting.
+       *
+       * Half a plate short of the face fixes both: the end grain is buried
+       * inside the iron so no two faces share a plane, and 21 mm of frame
+       * shows beyond every slat.
+       */
+      const slatL = L - frameT * 2
 
       // Darker than the palette's pine, because a park bench's timber has been
       // outside for years and the reference's is a weathered brown three or
@@ -146,10 +156,28 @@ export function createModel(overrides: Partial<ParkBenchConfig> = {}) {
       // brings it back to silver in context.
       const steel = tint('stainless', -0.06, 0.15).offsetHSL(0, -1, 0).offsetHSL(0.08, 0.1, 0)
 
-      const plate = (section: Section, x: number): BufferGeometry =>
-        extrudeGeometry(section, frameT, [0, 0, 0], iron)
+      /**
+       * One plate of the casting, and each is a HAIR thicker than the last.
+       *
+       * The frame is one casting but it is built from four overlapping plates,
+       * and four plates at one thickness share both their faces. Where they
+       * cross -- and they all cross, at the knee and at the rail -- that is two
+       * surfaces in one plane with nothing to choose between them, and the
+       * occlusion bake gives each a slightly different value, so the crossings
+       * flicker as the camera moves.
+       *
+       * A real casting is thickest where it carries load and thinnest at its
+       * extremities, so stepping the four by a millimetre and a bit is not a
+       * dodge: the seat rail ends up the stoutest member and the limbs the
+       * slimmest, which is the right way round. What it buys is that no two of
+       * them share a plane any more.
+       */
+      const plate = (section: Section, x: number, step = 0): BufferGeometry => {
+        const t = frameT + step * 0.0026
+        return extrudeGeometry(section, t, [0, 0, 0], iron)
           .rotateY(-Math.PI / 2)
-          .translate(x + frameT / 2, 0, 0)
+          .translate(x + t / 2, 0, 0)
+      }
 
       /* -------------------------------------------------------------- frame */
       /**
@@ -207,10 +235,12 @@ export function createModel(overrides: Partial<ParkBenchConfig> = {}) {
       ]
 
       for (const side of [-1, 1]) {
-        const x = side > 0 ? frameX : -frameX - frameT
+        // Centred on the frame line, so a thicker plate grows both ways and
+        // neither face lands where another plate's does.
+        const x = side * frameX
         framePieces.push(
-          plate(limb(front), x), plate(limb(back), x),
-          plate(limb(rail), x), plate(limb(rest), x),
+          plate(limb(front), x, 0), plate(limb(back), x, 1),
+          plate(limb(rest), x, 2), plate(limb(rail), x, 3),
         )
         // The feet: flat pads, because a casting this thin would sink into
         // anything softer than tarmac standing on its own section.

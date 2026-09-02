@@ -214,26 +214,27 @@ export function createModel(overrides: Partial<JerseyBarrierConfig> = {}) {
       const ringsPer = (span: number): number => Math.max(1, Math.round(span / 0.06))
 
       /**
-       * The end joint is a HALF LAP, and it is the same joint at both ends.
+       * The end connector is a POCKET CAST INTO THE TOP, not a half lap.
        *
-       * The first cut had a spigot on one end and a dark plate standing in for
-       * a pocket on the other, and the plate could not win: dark enough to read
-       * as a hole it became a black panel the size of the end face, light
-       * enough not to and it became a second projecting rib, which is exactly
-       * what the critic called it. A recess drawn in paint is a recess that is
-       * not there.
+       * Three shapes were tried here. A spigot with a painted pocket opposite
+       * it could not win: dark enough to read as a hole the pocket became a
+       * black panel the size of the end face, light enough not to and it
+       * became a second projecting rib. A half lap fixed that -- it is a
+       * recess that is really there -- and then two separate readers looked at
+       * it and both said the barrier appeared to have been cut in two and
+       * slid. They were right. At 30 mm the step is far too small to read as a
+       * joint and just large enough to read as a fault, and the reference's
+       * ends are square.
        *
-       * A lap is a recess that is there. The upper half of the casting runs
-       * past the lower at one end and the lower past the upper at the other, so
-       * a row of identical barriers interleaves, and each end carries a real
-       * step that is visible from any angle with no shade of grey doing the
-       * work.
+       * So the ends go back to square and the connector goes where a precast
+       * barrier really carries one: a dowel pocket cast down into the top of
+       * each end, so two barriers abutted make one pocket for a pin. It is the
+       * same trick the drainage openings use -- a short span extruded from a
+       * section whose top is lowered -- it is invisible in silhouette, and it
+       * is the only one of the three nobody has misread.
        */
-      const lap = 0.5
-      // Shallow. The reference's ends are very nearly flush, and the catalogue
-      // still wants a connector, so this is as little as will still read as a
-      // step from across a road: 3 cm on an 81 cm casting.
-      const lapD = H * 0.04
+      const pocketTop = 0.9
+      const pocketL = H * 0.13
 
       /**
        * The drainage openings, and they are REAL openings.
@@ -253,15 +254,17 @@ export function createModel(overrides: Partial<JerseyBarrierConfig> = {}) {
       const gap = (H * 0.16) / L
 
       interface Span { readonly from: number; readonly to: number; readonly cut: Section }
-      const lapFrac = lapD / L
+      const pocket = pocketL / L
+      const pocketed = band(0, pocketTop)
+      const notched = band(notchH, 1)
       const spans: Span[] = [
-        { from: 0, to: lapFrac, cut: band(lap, 1) },
-        { from: lapFrac, to: 0.14 - gap / 2, cut: section },
-        { from: 0.14 - gap / 2, to: 0.14 + gap / 2, cut: band(notchH, 1) },
-        { from: 0.14 + gap / 2, to: 0.86 - gap / 2, cut: section },
-        { from: 0.86 - gap / 2, to: 0.86 + gap / 2, cut: band(notchH, 1) },
-        { from: 0.86 + gap / 2, to: 1 - lapFrac, cut: section },
-        { from: 1 - lapFrac, to: 1, cut: band(0, lap) },
+        { from: 0, to: pocket, cut: pocketed },
+        { from: pocket, to: 0.16 - gap / 2, cut: section },
+        { from: 0.16 - gap / 2, to: 0.16 + gap / 2, cut: notched },
+        { from: 0.16 + gap / 2, to: 0.84 - gap / 2, cut: section },
+        { from: 0.84 - gap / 2, to: 0.84 + gap / 2, cut: notched },
+        { from: 0.84 + gap / 2, to: 1 - pocket, cut: section },
+        { from: 1 - pocket, to: 1, cut: pocketed },
       ]
 
       const pieces: BufferGeometry[] = spans.map((span) => {

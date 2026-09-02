@@ -43,6 +43,13 @@ jobs:
       - name: Conformance
         run: bun run verify
 
+      # The same two checks that catch what a still render cannot, across the
+      # second registry. `verify` above walks the medieval kit by hand and did
+      # not grow when the second one arrived, so for fifteen models nothing in
+      # CI had ever looked at coplanar faces. Three of them were flickering.
+      - name: Conformance, contemporary
+        run: bun run verify:props
+
       # Nothing may hang in the air with nothing under it — checked across the
       # default, both slider extremes, both ends of a sweep, every action and
       # the midpoint of a morph.

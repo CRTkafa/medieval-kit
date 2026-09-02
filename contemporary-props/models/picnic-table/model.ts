@@ -167,7 +167,22 @@ export function createModel(overrides: Partial<PicnicTableConfig> = {}) {
        * boards land on it -- which is both how they are actually bolted and
        * what stops the two of them fighting over the same 45 mm of timber.
        */
-      const bearerAt = seatY - T - T * 1.6
+      /*
+       * A millimetre and a half of BURY, used everywhere two members meet.
+       *
+       * A bearer whose top lands exactly on a board's underside, a leg cut off
+       * exactly at that same underside, a bearer bolted flat against the face
+       * of a leg -- each of those is two surfaces in one plane, and a pair of
+       * coplanar faces is what a renderer cannot choose between. It shows as
+       * the whole object flickering as the camera moves.
+       *
+       * Real joinery has no gap because the bolt pulls it shut; modelled
+       * joinery needs the two to interpenetrate slightly instead, and 1.5 mm
+       * is under the chamfer on every one of these members so nothing about
+       * it is visible.
+       */
+      const bury = 0.0015
+      const bearerAt = seatY - T - T * 1.6 + bury
       const framePieces: BufferGeometry[] = []
       const boltPieces: BufferGeometry[] = []
       /*
@@ -194,7 +209,10 @@ export function createModel(overrides: Partial<PicnicTableConfig> = {}) {
         const xf = side * footHalf
         const xt = side * legTopHalf
         const run = xt - xf
-        const rise = legTop
+        // ...and the leg's top goes the same hair into the boards, for the
+        // same reason the bearers do: cut off exactly at their underside it
+        // is one more surface sharing their plane.
+        const rise = legTop + bury
         const len = Math.hypot(run, rise)
         // Horizontal cuts at both ends: the leg measures `frameT` across its
         // face but `frameT / cos(angle)` across a horizontal line, and that is
@@ -235,7 +253,7 @@ export function createModel(overrides: Partial<PicnicTableConfig> = {}) {
         // Under the top, on the inside face.
         framePieces.push(board(
           frameT, T * 3.2, W * 1.02,
-          [0, H - T - T * 1.6, z - outward * (legFace / 2 + frameT / 2)], 'x',
+          [0, H - T - T * 1.6 + bury, z - outward * (legFace / 2 + frameT / 2 - bury)], 'x',
         ))
         // Under the seats, on the outside face, reaching past the legs.
         const bearerY = bearerAt
@@ -244,7 +262,7 @@ export function createModel(overrides: Partial<PicnicTableConfig> = {}) {
         // vertical and so is the depth that carries it.
         framePieces.push(board(
           frameT, T * 3.2, footHalf * 2 + W * 0.04,
-          [0, bearerY, z + outward * (legFace / 2 + frameT / 2)], 'x',
+          [0, bearerY, z + outward * (legFace / 2 + frameT / 2 - bury)], 'x',
         ))
         // Two bolts a side through the seat bearer into each leg, which is the
         // joint that actually carries a person.
@@ -284,7 +302,7 @@ export function createModel(overrides: Partial<PicnicTableConfig> = {}) {
         // the frame's outer face and the brace has to reach it.
         const y0 = H - T
         const y1 = bearerAt
-        const z1 = Math.sign(z) * (frameZ + legFace / 2 + frameT / 2)
+        const z1 = Math.sign(z) * (frameZ + legFace / 2 + frameT / 2 - bury)
         const len = Math.hypot(z1, y0 - y1)
         const brace = chamferedBoxGeometry(
           [T * 1.7, frameT], [T * 1.7, frameT], len, T * 0.08, [0, 0, 0], wood(-0.03),

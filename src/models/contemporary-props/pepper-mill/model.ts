@@ -224,7 +224,11 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       pieces.push(latheGeometry(
         collarLevels, segments, [0, 0, 0],
         tint('stainless', jitter(random, 0.02), 0.5),
-        { colourTop: tint('stainless', 0.03, 0.5), capBottom: true },
+        // No bottom cap. The body's own already closes the mill at y = 0 and
+        // it is wider than this one, so a second disc in the same plane adds
+        // nothing but a pair of surfaces the renderer cannot choose between --
+        // fifty of them, at the one place the mill touches a table.
+        { colourTop: tint('stainless', 0.03, 0.5), capBottom: false },
       ))
 
       /* --------------------------------------------------------------- cap */
@@ -277,7 +281,14 @@ export function createModel(overrides: Partial<PepperMillConfig> = {}) {
       const teeth = 20
       const toothR = knobR * 0.055
       for (let i = 0; i < teeth; i += 1) {
-        const angle = (i / teeth) * Math.PI * 2
+        // HALF a step off, which is not cosmetic. The knob's lathe runs 25
+        // facets and the teeth 20, and 25 over 20 is five over four: every
+        // fourth tooth landed exactly on a facet's centre line, so its two
+        // radial faces shared that facet's plane. Ten coplanar faces, all on
+        // the one part of the mill a hand turns. Offsetting the array by half
+        // a tooth puts every tooth on a facet CORNER instead, where nothing
+        // can line up, and it sits the knurl where a machinist would cut it.
+        const angle = ((i + 0.5) / teeth) * Math.PI * 2
         const tooth = chamferedBoxGeometry(
           [toothR * 1.5, toothR * 2],
           [toothR * 1.5, toothR * 2],

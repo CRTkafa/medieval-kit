@@ -220,48 +220,53 @@ export function createModel(overrides: Partial<PedestalBasinConfig> = {}) {
         }),
       ]
 
-      /* ----------------------------------------------------------- tap hole */
+      /* -------------------------------------------------------- the fittings */
       /**
-       * The tap hole and the overflow, and neither is a real hole.
+       * The tap hole, the overflow and the waste, and NONE of them may be a
+       * tube with an open end.
        *
-       * Cutting one would need the geometry the kit does not have. What it
-       * does have is that a hole is read as a DARK DISC BELOW THE SURFACE, so
-       * each is a shallow sunk cylinder in the shade of the glaze with its own
-       * floor. At any distance the model is looked at they are holes, and at
-       * the one distance they are not, they are recesses, which is what a
-       * basin's overflow actually is anyway.
+       * All three were built as short cylinders with `capTop: false`, on the
+       * reasoning that a hole is a shape you look into. It is not, in a
+       * renderer: an open tube shows you its own inside, its inside faces away
+       * from you, back-face culling removes it, and what is left is whatever
+       * was behind the basin. Looking down into the bowl the waste was a
+       * ragged black tear and the tap hole was nothing at all.
+       *
+       * What reads as a hole is a DARK SURFACE YOU CAN SEE -- a capped disc,
+       * sitting a hair proud so nothing can bury it, with a chamfer round it
+       * so its edge catches light the way a rolled rim does. Every one of the
+       * three is now that, and the only difference between them is which way
+       * they face.
        */
-      // Dark enough to read as a shadow rather than as a fitting. At -0.42 it
-      // came out a beige disc and the critic called it a raised plug, which is
-      // also what the geometry was: its mouth ring stood 0.6 mm PROUD of the
-      // shelf. Both are fixed here; a hole is dark and it is below the
-      // surface, and either one alone is a stud.
-      const dark = tint('ceramic', -0.66, 0.15)
+      const dark = tint('ceramic', -0.7, 0.12)
+
+      /** A dark disc facing +Y, to be turned wherever it is needed. */
+      const eye = (radius: number, colour = dark): BufferGeometry => latheGeometry([
+        { y: 0, radius: radius * 0.86 },
+        { y: radius * 0.16, radius },
+        { y: radius * 0.22, radius },
+      ], 16, [0, 0, 0], colour, { capBottom: false, capTop: true })
+
       const tapR = W * 0.038
       // Halfway across the back shelf: between the bore's back edge and the
       // body's, both of which are written above rather than guessed at here.
       const boreBack = rimShift + halfD * 0.757
-      bowlPieces.push(latheGeometry([
-        { y: rimY - tapR * 0.9, radius: tapR * 0.86 },
-        { y: rimY - tapR * 0.25, radius: tapR },
-        { y: rimY - 0.0004, radius: tapR },
-      ], 14, [0, 0, (boreBack + halfD) / 2], dark, { capBottom: true, capTop: false }))
+      bowlPieces.push(
+        eye(tapR).translate(0, rimY - tapR * 0.1, (boreBack + halfD) / 2),
+      )
 
       // The overflow is in the bore's back wall a little under the rim, which
       // is a point on the same profile: the ring at 0.8 of the bowl height.
       const overflowR = W * 0.023
       const overflowY = rimY - bowlH * 0.2
-      bowlPieces.push(latheGeometry([
-        { y: -overflowR * 0.8, radius: overflowR * 0.8 },
-        { y: -overflowR * 0.2, radius: overflowR },
-        { y: -0.0004, radius: overflowR },
-      ], 12, [0, 0, 0], dark, { capBottom: true, capTop: false })
-        // MINUS a quarter turn. Built opening along +Y and turned the other
-        // way, the recess opened into the ceramic behind it instead of into
-        // the bowl, so there was nothing to see from any angle -- which is
-        // exactly what the critic reported.
-        .rotateX(-Math.PI / 2)
-        .translate(0, overflowY, rimShift + halfD * 0.7))
+      bowlPieces.push(
+        eye(overflowR)
+          // MINUS a quarter turn, so it faces INTO the bowl. Turned the other
+          // way it faces the ceramic behind it and there is nothing to see
+          // from any angle, which is what the critic reported.
+          .rotateX(-Math.PI / 2)
+          .translate(0, overflowY, rimShift + halfD * 0.7 - overflowR * 0.1),
+      )
 
       /* ----------------------------------------------------------- pedestal */
       /**
@@ -327,16 +332,23 @@ export function createModel(overrides: Partial<PedestalBasinConfig> = {}) {
        */
       const wasteY = rimY - bowlH * 0.72
       const wasteR = W * 0.062
+      /*
+       * A chrome ring with a dark centre, and both of them CAPPED.
+       *
+       * Built as two open tubes this was the worst of the three: it is looked
+       * straight down into, so both open ends faced the camera and both were
+       * culled. What arrived was a torn black shape in the middle of a white
+       * dish, which is the one thing on this model anybody notices.
+       */
       const waste = mergeColoured([
         latheGeometry([
-          { y: wasteY - 0.006, radius: wasteR * 0.9 },
+          { y: wasteY - 0.004, radius: wasteR * 0.92 },
           { y: wasteY + 0.0015, radius: wasteR },
-          { y: wasteY + 0.0035, radius: wasteR * 0.86 },
-        ], 20, [0, 0, rimShift], tint('chrome', -0.02, 0.4), { capBottom: false, capTop: false }),
-        latheGeometry([
-          { y: wasteY - 0.007, radius: wasteR * 0.78 },
-          { y: wasteY, radius: wasteR * 0.8 },
-        ], 20, [0, 0, rimShift], tint('chrome', -0.55, 0.2), { capBottom: true, capTop: false }),
+          { y: wasteY + 0.0032, radius: wasteR * 0.94 },
+        ], 20, [0, 0, rimShift], tint('chrome', -0.02, 0.4),
+        { capBottom: false, capTop: true }),
+        eye(wasteR * 0.62, tint('chrome', -0.62, 0.15))
+          .translate(0, wasteY + 0.0028, rimShift),
       ])
 
       bakeOcclusion(bowlPieces, { strength: 0.4 })
