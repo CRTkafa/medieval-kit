@@ -209,6 +209,20 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**Do not act on a proportion until you have measured it yourself.** The cycle
+stand's first critique said the hoops were too short and wide; they were
+narrowed on that word alone. The next round said the tube was far too thick for
+the opening -- the same complaint from the opposite side, and unactionable
+together. Measuring the reference settled it in one pass, and showed why both
+readings existed: the six hoops in the photograph are not interchangeable, and
+the far ones are foreshortened to 4.6 tall to one across where the nearest,
+squarest to the camera, is 2.45. Every round that quoted "four to one" was
+reading a hoop the perspective had squeezed.
+
+Against the nearest hoop the original numbers were already right, and the round
+spent narrowing them was spent going backwards. **The critic is worth a
+measurement, not a change.**
+
 **Vertex-colour mottle needs vertices, and a long prism cannot have the right
 ones.** The barrier is two metres of one cross-section, so the only direction
 its surface can vary in is its length, and one octave of noise along a line is
@@ -448,10 +462,22 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 15 of the core 100 modelled, and they are the first
-  rows of the build order rather than fifteen picked at random. The catalogue,
-  the order, the cuts and the slot argument are in
-  `contemporary-props/CATALOGUE.md`; row 16 is `bookcase`.
+- **`contemporary-props`**: 16 of the core 100 modelled, and the build order is
+  now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
+  first hundred across nine domains and named the failure mode: nine domains at
+  a third each, with the helper set shaped by whichever got built first. Fifteen
+  models in, that had happened -- five street, four kitchen, two tools, one each
+  of four more -- so the remaining street rows are being finished before
+  anything else starts. Eleven to go after the cycle stand. The reasoning is written into `CATALOGUE.md` under
+  "Decided: street first"; the short version is that seventeen street objects is
+  a scene somebody can assemble, and what carried the medieval kit was one
+  flythrough rather than a model count.
+
+  The kit keeps its name. `@contemporary-props` is not on npm, so renaming was
+  free at this point and was still the wrong move: `models` says nothing in a
+  registry of models, and the objects that do not fit "prop" -- a pool, a
+  building -- do not fit because they are site rather than because the name is
+  too narrow. Those want a third registry, not a wider second one.
 
   Rows 10 and 11 completed the kit's geometry vocabulary: there are now three
   ways to make a solid and each is the only reasonable way to make a family.

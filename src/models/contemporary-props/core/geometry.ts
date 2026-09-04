@@ -304,6 +304,118 @@ export function latheGeometry(
 }
 
 /**
+ * Runs a round section along an arbitrary path: the fourth way of making a
+ * solid here, after the lathe, the plan sweep and the extrusion.
+ *
+ * Each of the four is the only sensible way to build a family. A lathe is for
+ * anything round about an axis. A plan sweep is for a body whose plan is not a
+ * circle but whose profile varies with height. An extrusion is for a constant
+ * section and an arbitrary length along ONE straight line. This is for a
+ * constant section along a line that BENDS: hoops, handles, chains, swan necks,
+ * mast arms, tube frames, railings.
+ *
+ * Written for the cycle stand, which the catalogue calls the reference for
+ * sweep-then-instance, and with three later rows already in view -- the street
+ * lamp's swan neck (85), the traffic signal's mast arm (100) and the temporary
+ * fence panel's tube frame (31). That is the rule this kit now writes helpers
+ * to: name the rows in another part of the catalogue that will reuse it, or do
+ * not add it to core.
+ *
+ * The frames are PARALLEL TRANSPORTED rather than built from a fixed up vector.
+ * A fixed up vector is fine until the path turns through vertical -- which a
+ * hoop does, at its crown -- and there the section spins through a half turn
+ * between one ring and the next, so the tube pinches to nothing and comes back.
+ * Transporting the frame costs one rotation per ring and cannot do that.
+ */
+export function tubeGeometry(
+  path: readonly Vec3[],
+  radius: number,
+  sides: number,
+  colour: Color,
+  options: { readonly capStart?: boolean; readonly capEnd?: boolean; readonly colourEnd?: Color } = {},
+): BufferGeometry {
+  if (path.length < 2) throw new Error('tubeGeometry needs a path of at least two points')
+  const n = Math.max(3, Math.round(sides))
+  const sink: Sink = { position: [], color: [] }
+  const { capStart = true, capEnd = true } = options
+  const end = options.colourEnd ?? colour
+
+  const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+  const cross = (a: Vec3, b: Vec3): Vec3 =>
+    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+  const dot = (a: Vec3, b: Vec3): number => a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+  const norm = (a: Vec3): Vec3 => {
+    const l = Math.hypot(a[0], a[1], a[2]) || 1
+    return [a[0] / l, a[1] / l, a[2] / l]
+  }
+
+  // Tangents by central difference, so an interior ring points along the curve
+  // rather than along either of the segments meeting at it.
+  const tangents: Vec3[] = path.map((p, i) => {
+    const before = path[i - 1] ?? p
+    const after = path[i + 1] ?? p
+    const d = sub(after, before)
+    return Math.hypot(d[0], d[1], d[2]) < 1e-9 ? [0, 1, 0] : norm(d)
+  })
+
+  // A starting normal: any direction not parallel to the first tangent.
+  let normal = norm(cross(tangents[0]!, Math.abs(tangents[0]![1]) > 0.9 ? [1, 0, 0] : [0, 1, 0]))
+
+  const rings: Vec3[][] = []
+  for (let i = 0; i < path.length; i += 1) {
+    const t = tangents[i]!
+    if (i > 0) {
+      // Rotate the carried normal onto the new tangent's plane. Projecting and
+      // renormalising is the minimal rotation, which is the whole point.
+      const projected = sub(normal, [t[0] * dot(normal, t), t[1] * dot(normal, t), t[2] * dot(normal, t)])
+      const length = Math.hypot(projected[0], projected[1], projected[2])
+      normal = length > 1e-6 ? norm(projected) : norm(cross(t, normal))
+    }
+    const binormal = norm(cross(t, normal))
+    const centre = path[i]!
+    const ring: Vec3[] = []
+    for (let j = 0; j < n; j += 1) {
+      const a = (j / n) * Math.PI * 2
+      const c = Math.cos(a) * radius
+      const s = Math.sin(a) * radius
+      ring.push([
+        centre[0] + normal[0] * c + binormal[0] * s,
+        centre[1] + normal[1] * c + binormal[1] * s,
+        centre[2] + normal[2] * c + binormal[2] * s,
+      ])
+    }
+    rings.push(ring)
+  }
+
+  const shade = (i: number): Color =>
+    new Color().copy(colour).lerp(end, path.length > 1 ? i / (path.length - 1) : 0)
+
+  for (let i = 0; i < rings.length - 1; i += 1) {
+    const lo = rings[i]!
+    const hi = rings[i + 1]!
+    const cLo = shade(i)
+    const cHi = shade(i + 1)
+    for (let j = 0; j < n; j += 1) {
+      const k = (j + 1) % n
+      triShaded(sink, lo[j]!, lo[k]!, hi[k]!, cLo, cLo, cHi)
+      triShaded(sink, lo[j]!, hi[k]!, hi[j]!, cLo, cHi, cLo)
+    }
+  }
+
+  if (capStart) {
+    const ring = rings[0]!
+    const c = path[0]!
+    for (let j = 0; j < n; j += 1) tri(sink, c, ring[(j + 1) % n]!, ring[j]!, colour)
+  }
+  if (capEnd) {
+    const ring = rings.at(-1)!
+    const c = path.at(-1)!
+    for (let j = 0; j < n; j += 1) tri(sink, c, ring[j]!, ring[(j + 1) % n]!, end)
+  }
+  return finish(sink)
+}
+
+/**
  * A closed section for `extrudeGeometry`: points in the XY plane, in metres.
  *
  * COUNTER-CLOCKWISE seen from +Z, which is the direction the section is

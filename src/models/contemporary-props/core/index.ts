@@ -18,6 +18,7 @@ export {
   roughenGeometry,
   staveGeometry,
   smoothNormals,
+  tubeGeometry,
   taperedBoxGeometry,
 } from './geometry.ts'
 export type { Level, MottleOptions, Plan, PlanLevel, RoughenOptions, Section, SheetLevel, Vec3 } from './geometry.ts'

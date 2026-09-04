@@ -292,3 +292,31 @@ The core 100 above covers 21 kitchen objects, 17 street, 15 office, 14 living, 1
 The alternative I would argue for: pick three domains, ship them complete, and let the vocabulary fall out of that rather than driving it. Kitchen, office and street would be my three, because between them they exercise every helper in section 4 (lathe, perforation, carcass, drawer, tube frame, louvre, extrusion, emissive, concrete, glass) and each produces a scene somebody can actually assemble on day one. That is roughly 35 kitchen, 33 office and 32 street objects, which is a hundred, and the follow-on 150 becomes three more complete domains rather than a thinning-out of nine.
 
 The counter-argument, which is why I built the catalogue the way I did, is that vocabulary discovered inside one domain calcifies around that domain's needs, and the fourth domain then fights the helpers. Building `perforate` for the mesh bin, the colander and the fence panel in the same week is what keeps it general. Both positions are defensible. The one I would not defend is the middle, which is what happens by default: nine domains at 30 percent completion each, with the helper set shaped by whichever domain happened to get built first.
+
+### Decided: street first, and street complete
+
+Fifteen models in, the default had happened exactly as predicted. The spread was
+five street, four kitchen, two tools, and one each of retail, office, living and
+decor: eight domains at about a sixth each, and nothing anybody could assemble.
+
+So the order above is now read domain-first, and the domain is **street** — all
+seventeen rows of it before anything else is started. Three reasons, none of them
+about the code being tidier:
+
+1. It was already the deepest domain, so it is the cheapest one to finish.
+2. The three helpers this kit has grown so far -- `planSweepGeometry`,
+   `extrudeGeometry` and the slat-with-gap rule -- are all street and furniture
+   helpers. The vocabulary had already leaned this way whether or not anybody
+   decided it should.
+3. Seventeen street objects is a SCENE. Barrier, bollard, cone, bench, table,
+   sign, bin, fence, lamp, shelter, signal: that is a street somebody can build
+   on the day they install the kit. What carried the medieval kit was not its
+   model count, it was one flythrough of a market square, and the machinery for
+   that already exists in this repository.
+
+The counter-argument above stands and is not being dismissed: helpers discovered
+inside one domain do calcify. The mitigation is to write each new helper against
+the catalogue row that will reuse it NEXT, in another domain, and to say in the
+helper's own comment which row that is. `perforate` is the first test of that --
+it is wanted by the litter bin here, and by the colander and the mesh bin in the
+kitchen -- and it should be built to all three or it should not be built.

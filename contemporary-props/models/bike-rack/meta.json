@@ -1,0 +1,57 @@
+{
+  "title": "Cycle Stand Rack",
+  "description": "A rank of galvanised tube hoops set into a pavement on bolted flanges. One swept hoop instanced along a rail: the kit's reference for sweep-then-instance, and the row that introduces the path sweep.",
+  "category": "Street",
+  "tags": [
+    "contemporary",
+    "street",
+    "cycling",
+    "procedural"
+  ],
+  "controls": {
+    "hoops": {
+      "type": "number",
+      "label": "Hoops",
+      "min": 2,
+      "max": 12,
+      "step": 1
+    },
+    "run": {
+      "type": "number",
+      "label": "Rank length",
+      "min": 0.4,
+      "max": 8,
+      "step": 0.1,
+      "unit": "m"
+    },
+    "height": {
+      "type": "number",
+      "label": "Hoop height",
+      "min": 0.45,
+      "max": 1.1,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "width": {
+      "type": "number",
+      "label": "Hoop width",
+      "min": 0.15,
+      "max": 0.9,
+      "step": 0.01,
+      "unit": "m"
+    },
+    "seed": {
+      "type": "number",
+      "label": "Variation seed",
+      "min": 1,
+      "max": 64,
+      "step": 1
+    }
+  },
+  "materialSlots": [
+    "galvanised"
+  ],
+  "parts": [
+    "hoops"
+  ]
+}

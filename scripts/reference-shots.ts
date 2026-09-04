@@ -134,6 +134,25 @@ const HINT: Record<string, string> = {
   // "cast side frames" is the catalogue's own word for this row, so the metal
   // is the catalogue's call rather than the hint's.
   'park-bench': 'a municipal park bench: horizontal timber slats on two cast iron end frames, seen from the front and side',
+
+  // --- the rest of the street domain, which is the one being finished first ---
+  //
+  // Each of these follows its catalogue row rather than a picture in my head:
+  // where the row names a construction ("perforated drum under an overhanging
+  // hood", "louvre banks on a plinth") the hint says that and nothing more, and
+  // where it names no material the hint names none either.
+  'bike-rack': 'a public cycle stand: a row of identical inverted-U steel hoops set into a pavement',
+  'cable-drum': 'a large empty cable drum standing upright on its flange, with spoked wooden flanges and battens',
+  'litter-bin': 'a public street litter bin: a perforated metal drum under an overhanging hood, on a post',
+  'temporary-fence-panel': 'a single temporary construction fence panel: welded wire mesh in a tube frame, on two feet',
+  'wheeled-waste-bin': 'a large wheeled waste bin with a hinged lid and two wheels, closed',
+  'utility-cabinet': 'a street utility cabinet on a plinth, with louvred doors and a rain-shed roof',
+  'parcel-locker-bank': 'a bank of parcel lockers in a street, a grid of doors of mixed sizes, all closed',
+  'boom-barrier': 'a car park boom barrier: a long striped boom on a cabinet, in the lowered horizontal position',
+  'fire-hydrant': 'a street fire hydrant with a bonnet, bolted flanges and side outlets with caps',
+  'street-lamp': 'a street lamp column: a tapered post with a swan-neck arm and a shallow lantern head',
+  'bus-shelter': 'a bus shelter with a cantilevered roof over glazed side panels and a bench',
+  'traffic-signal': 'a traffic signal head on a mast arm: three stacked aspects with hooded visors',
   // Form only, no material: the catalogue does not name one for this row, and
   // a hint that invents one decides what the model becomes.
   'pavement-sign-board': 'an A-frame pavement sign board (sandwich board) standing open, both panels blank, seen from the front and side',
