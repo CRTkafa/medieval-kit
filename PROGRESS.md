@@ -209,6 +209,16 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**`chamferedBoxGeometry`'s length is its height, and this is the third model to
+get it wrong.** The cable drum's spokes stood on end; the boom barrier's colour
+bands came out one section thick along the boom and a band long across it --
+sixteen paddles in a row, none of them touching, which the support check
+reported as nine floating pieces. It renders, it typechecks, and the only way to
+see it is to look. The tell is a `rotateZ` or `rotateX` immediately after the
+call: whenever a box is being laid down, the dimension that ends up along the
+run has to be the HEIGHT before the turn, and the turn's sign decides which way
+it points.
+
 **A "mixed size distribution" means width too, and it is easy to only do
 height.** The parcel locker bank's first cut varied its tier heights per bay and
 every door still came out one bay wide -- which is a column exercise, not the
@@ -541,13 +551,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 22 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 23 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Five to go after the parcel locker bank. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. Four to go after the boom barrier. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.
