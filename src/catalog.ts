@@ -74,6 +74,7 @@ import { createModel as createCpLockerBank } from '@/models/contemporary-props/p
 import { createModel as createCpBoomBarrier } from '@/models/contemporary-props/boom-barrier/model.ts'
 import { createModel as createCpFireHydrant } from '@/models/contemporary-props/fire-hydrant/model.ts'
 import { createModel as createCpStreetLamp } from '@/models/contemporary-props/street-lamp/model.ts'
+import { createModel as createCpBusShelter } from '@/models/contemporary-props/bus-shelter/model.ts'
 import { createModel as createCpPavementSign } from '@/models/contemporary-props/pavement-sign-board/model.ts'
 import { createModel as createCpLectern } from '@/models/contemporary-props/lectern/model.ts'
 import cpMetaCeramicVase from '../contemporary-props/models/ceramic-vase/meta.json'
@@ -99,6 +100,7 @@ import cpMetaLockerBank from '../contemporary-props/models/parcel-locker-bank/me
 import cpMetaBoomBarrier from '../contemporary-props/models/boom-barrier/meta.json'
 import cpMetaFireHydrant from '../contemporary-props/models/fire-hydrant/meta.json'
 import cpMetaStreetLamp from '../contemporary-props/models/street-lamp/meta.json'
+import cpMetaBusShelter from '../contemporary-props/models/bus-shelter/meta.json'
 import cpMetaPavementSign from '../contemporary-props/models/pavement-sign-board/meta.json'
 import cpMetaLectern from '../contemporary-props/models/lectern/meta.json'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
@@ -328,6 +330,7 @@ const CONTEMPORARY_ORDER = [
   'boom-barrier',
   'fire-hydrant',
   'street-lamp',
+  'bus-shelter',
 ] as const
 
 const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
@@ -354,6 +357,7 @@ const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'boom-barrier': as(createCpBoomBarrier),
   'fire-hydrant': as(createCpFireHydrant),
   'street-lamp': as(createCpStreetLamp),
+  'bus-shelter': as(createCpBusShelter),
   'pavement-sign-board': as(createCpPavementSign),
   'lectern': as(createCpLectern),
 }
@@ -382,6 +386,7 @@ const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
   'boom-barrier': cpMetaBoomBarrier as ModelMetaLike,
   'fire-hydrant': cpMetaFireHydrant as ModelMetaLike,
   'street-lamp': cpMetaStreetLamp as ModelMetaLike,
+  'bus-shelter': cpMetaBusShelter as ModelMetaLike,
   'pavement-sign-board': cpMetaPavementSign as ModelMetaLike,
   'lectern': cpMetaLectern as ModelMetaLike,
 }

@@ -13,7 +13,7 @@ viewer is live at <https://medieval.crt.fyi/> and rebuilds on every push. The
 GitHub repository is private, which is deliberate, and which is why the npm
 page's Repository and Issues links 404 until that changes.
 
-**`@contemporary-props`** is six models into a core hundred, with a further
+**`@contemporary-props`** is 26 models into a core hundred, with a further
 150 catalogued behind them. Present-day objects,
 no lowpoly budget, no historical constraint. 19 material slots. Nothing is
 published and the version is `0.0.0`.
@@ -420,6 +420,16 @@ moving.** `rotateZ(a)` sends local +X to `(cos a, sin a)` and local +Y to
 `(-sin a, cos a)`. Getting it backwards built a cart wheel from twelve stubby
 blocks sticking 89 mm past their own felloe, straight through the iron tyre.
 
+**A depth-direction proportion cannot be judged from the check render, and
+the critic will report it missing every time.** The bus shelter's roof stands
+3.54 post widths past its front posts; the critic reported "roughly one post
+width" in four consecutive rounds, because the camera looks down the depth axis
+and foreshortens exactly the measurement being asked for. The same view merged a
+front post into the rear glazing and turned two glazed bays into three. Neither
+was a fault in the model. When a finding is about an extent along Z, measure the
+built geometry before touching it -- and if it survives the measurement, the
+render is what has to change, not the object.
+
 **Measure by slicing triangles, not by sampling vertices.** A tapered box has
 corners only at its ends, so vertex sampling reported 0.0 mm for a 17 mm
 shoulder. This produced confident wrong numbers three separate times in one
@@ -568,13 +578,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 25 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 26 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Two to go after the street lamp. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. One to go after the bus shelter: `traffic-signal`. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.
