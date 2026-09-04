@@ -13,6 +13,7 @@ export {
   latheGeometry,
   planSweepGeometry,
   mergeColoured,
+  perforate,
   mottleGeometry,
   prismGeometry,
   roughenGeometry,
@@ -21,7 +22,7 @@ export {
   tubeGeometry,
   taperedBoxGeometry,
 } from './geometry.ts'
-export type { Level, MottleOptions, Plan, PlanLevel, RoughenOptions, Section, SheetLevel, Vec3 } from './geometry.ts'
+export type { Level, MottleOptions, PerforationPattern, Plan, PlanLevel, RoughenOptions, Section, SheetLevel, Vec3 } from './geometry.ts'
 export { bakeOcclusion } from './occlusion.ts'
 export type { OcclusionOptions } from './occlusion.ts'
 export { createKitModel } from './kit.ts'

@@ -64,9 +64,35 @@ for (const [id, entry] of Object.entries(CATALOG)) {
   // Precise, for the reason `support.ts` says: the loose bound is the box
   // around each part's own rotated box, and a hinged model reads 60 mm taller
   // than its tallest vertex.
-  const size = new Box3().setFromObject(root, true).getSize(new Vector3())
+  const box = new Box3().setFromObject(root, true)
+  const size = box.getSize(new Vector3())
   if (!Number.isFinite(size.x + size.y + size.z) || size.y <= 0) {
     problems.push('bounds are not finite')
+  }
+
+  /*
+   * ...and it has to be ON the ground, which nothing here was checking.
+   *
+   * `findFloating` measures a model against ITSELF: it looks for pieces with
+   * nothing under them, so a model whose every piece is correctly stacked
+   * passes even when the whole assembly is a metre in the air. The cable drum
+   * shipped like that -- 600 mm up, because it was written in world coordinates
+   * and then given an origin as well, which places it twice -- and every gate
+   * in the repository said it rested on the ground.
+   *
+   * The tolerance is ASYMMETRIC, because the two directions are not the same
+   * fault. A millimetre in the air is a model that will hover over any surface
+   * it is placed on. A couple of millimetres under is the outermost corner of a
+   * chamfered foot, or the end of a centre line offset perpendicular to its own
+   * direction, and the ground hides it -- so it is allowed up to a percent of
+   * the model's own height, which scales from a mug to a bus shelter.
+   */
+  if (Number.isFinite(box.min.y)) {
+    if (box.min.y > 0.001) {
+      problems.push(`floats ${(box.min.y * 1000).toFixed(0)}mm above the ground`)
+    } else if (-box.min.y > Math.max(0.004, size.y * 0.01)) {
+      problems.push(`sinks ${(-box.min.y * 1000).toFixed(0)}mm below the ground`)
+    }
   }
 
   if (problems.length > 0) {

@@ -303,6 +303,102 @@ export function latheGeometry(
   return finish(sink)
 }
 
+/** How a surface is punched, for `perforate`. */
+export interface PerforationPattern {
+  /** Rows of holes up the surface. */
+  readonly rows: number
+  /** Columns of holes around it. */
+  readonly columns: number
+  /** Open fraction of each cell: 0 is solid, 1 is all hole. */
+  readonly open: number
+  /** Offset alternate rows by half a column, which is what a real punch does. */
+  readonly stagger?: boolean
+}
+
+/**
+ * Punches a surface, by building the METAL rather than the holes.
+ *
+ * There is no boolean subtraction in this kit and there is not going to be, so
+ * a perforated plate cannot be a plate with circles taken out of it. What it
+ * can be is the web between the holes, emitted directly: a ring of solid band
+ * at every row boundary, and a short bar between every pair of holes in the
+ * rows. Light passes through what is left, which is the entire point -- a bin
+ * you cannot see into is a drum with a pattern painted on it.
+ *
+ * The holes come out square rather than round, and that is a considered loss.
+ * At the size any of these objects is looked at -- a litter bin a metre tall,
+ * its holes 14 mm -- a hole is three pixels, and what reads is the PITCH and
+ * the open area, neither of which cares about the shape. Round holes at this
+ * density are a texture, and the kit has no textures.
+ *
+ * The surface is passed in as a function of (u, v), so this helper knows
+ * nothing about cylinders. That is deliberate and it is the whole reason it is
+ * written here rather than inside the litter bin: the catalogue defines
+ * perforation across three rows in three different domains -- the mesh waste
+ * bin (28, office, a tapered drum), the colander (29, kitchen, a curved shell,
+ * and the harder case) and the litter bin (30, street) -- and a helper that
+ * only knew how to punch a cylinder would be rewritten by the second of them.
+ * A caller that can describe its own surface gets punched for free.
+ *
+ * @param surface maps u (0..1 around, wrapping) and v (0..1 up) to a point.
+ */
+export function perforate(
+  surface: (u: number, v: number) => Vec3,
+  pattern: PerforationPattern,
+  colour: Color,
+  options: { readonly colourTop?: Color } = {},
+): BufferGeometry {
+  const rows = Math.max(1, Math.round(pattern.rows))
+  const columns = Math.max(3, Math.round(pattern.columns))
+  const open = Math.min(0.92, Math.max(0.05, pattern.open))
+  const sink: Sink = { position: [], color: [] }
+  const top = options.colourTop ?? colour
+
+  const shade = (v: number): Color => new Color().copy(colour).lerp(top, v)
+  const quad = (a: Vec3, b: Vec3, c: Vec3, d: Vec3, cLo: Color, cHi: Color): void => {
+    triShaded(sink, a, b, c, cLo, cLo, cHi)
+    triShaded(sink, a, c, d, cLo, cHi, cHi)
+  }
+
+  // Half the solid left at each boundary, in cell units.
+  const webV = (1 - open) / 2
+  const webU = (1 - open) / 2
+
+  // The rings: one at every row boundary, top and bottom included, so the
+  // punched band is closed by solid metal at both ends rather than ending on a
+  // row of half holes.
+  for (let i = 0; i <= rows; i += 1) {
+    const lo = Math.max(0, (i - webV) / rows)
+    const hi = Math.min(1, (i + webV) / rows)
+    if (hi - lo <= 1e-6) continue
+    const cLo = shade(lo)
+    const cHi = shade(hi)
+    for (let j = 0; j < columns; j += 1) {
+      const u0 = j / columns
+      const u1 = (j + 1) / columns
+      quad(surface(u0, lo), surface(u1, lo), surface(u1, hi), surface(u0, hi), cLo, cHi)
+    }
+  }
+
+  // The bars: one between each pair of holes, spanning the gap the rings left.
+  for (let i = 0; i < rows; i += 1) {
+    const lo = (i + webV) / rows
+    const hi = (i + 1 - webV) / rows
+    if (hi - lo <= 1e-6) continue
+    const cLo = shade(lo)
+    const cHi = shade(hi)
+    const shift = pattern.stagger === true && i % 2 === 1 ? 0.5 : 0
+    for (let j = 0; j < columns; j += 1) {
+      const centre = (j + shift) / columns
+      const u0 = centre - webU / columns
+      const u1 = centre + webU / columns
+      quad(surface(u0, lo), surface(u1, lo), surface(u1, hi), surface(u0, hi), cLo, cHi)
+    }
+  }
+
+  return finish(sink)
+}
+
 /**
  * Runs a round section along an arbitrary path: the fourth way of making a
  * solid here, after the lathe, the plan sweep and the extrusion.

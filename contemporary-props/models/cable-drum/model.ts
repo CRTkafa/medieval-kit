@@ -264,14 +264,19 @@ export function createModel(overrides: Partial<CableDrumConfig> = {}) {
         if (pieces.length === 0) return undefined
         const merged = mergeColoured(pieces)
         merged.rotateX(Math.PI / 2)
-        merged.translate(0, R, 0)
+        // ...and NOT lifted. A part that declares an origin is written in that
+        // origin's own space and the anchor carries it into place; the kit does
+        // not subtract the origin from world-written geometry, it only moves
+        // things temporarily to bake occlusion and moves them back. Lifting
+        // here as well put the whole drum a flange radius into the air, where
+        // it stayed, because the support check measures a model against itself
+        // rather than against the ground.
         return merged
       }
 
       // Every part declares the AXLE as its origin, which is what lets one
-      // rotation roll all three together. The kit subtracts the origin from the
-      // geometry and puts the anchor there, so the geometry above stays written
-      // in world terms and nothing here has to be built twice.
+      // rotation roll all three together, and every part's geometry is written
+      // about that axle rather than about the ground.
       const axle = [0, R, 0] as const
       const cable = tip(cablePieces)
       return {

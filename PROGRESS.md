@@ -209,6 +209,23 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**A part with an origin is written in that origin's own space.** The kit does
+not subtract a declared origin from world-written geometry -- it moves parts
+into place only long enough to bake occlusion, and puts them back. Write the
+geometry where it stands AND give it an origin and it is placed twice. The cable
+drum shipped that way, a flange radius in the air, and so did the litter bin's
+hood.
+
+**Nothing was checking that a model touches the ground.** `findFloating`
+measures a model against ITSELF -- it looks for pieces with nothing under them
+-- so an assembly whose every piece is correctly stacked passes while the whole
+thing hovers. `verify:props` now takes the precise bounding box and requires its
+floor within a millimetre of zero. The tolerance is asymmetric on purpose: a
+millimetre in the air is a model that will hover over any surface it is put on,
+while a couple of millimetres under is the outermost corner of a chamfered foot
+and the ground hides it, so sinking is allowed up to a percent of the model's
+own height. The check found two more models the moment it was written.
+
 **`latheGeometry` caps by default, and the cap on an annulus is a solid disc.**
 The cable drum's flanges were built as an outer tube, an inner tube and two
 annulus faces -- four pieces, two of them quietly filling in the hole the other
@@ -477,13 +494,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 17 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 18 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Ten to go after the cable drum. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. Nine to go after the litter bin. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.
