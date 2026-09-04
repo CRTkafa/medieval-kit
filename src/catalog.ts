@@ -72,6 +72,7 @@ import { createModel as createCpWasteBin } from '@/models/contemporary-props/whe
 import { createModel as createCpUtilityCabinet } from '@/models/contemporary-props/utility-cabinet/model.ts'
 import { createModel as createCpLockerBank } from '@/models/contemporary-props/parcel-locker-bank/model.ts'
 import { createModel as createCpBoomBarrier } from '@/models/contemporary-props/boom-barrier/model.ts'
+import { createModel as createCpFireHydrant } from '@/models/contemporary-props/fire-hydrant/model.ts'
 import { createModel as createCpPavementSign } from '@/models/contemporary-props/pavement-sign-board/model.ts'
 import { createModel as createCpLectern } from '@/models/contemporary-props/lectern/model.ts'
 import cpMetaCeramicVase from '../contemporary-props/models/ceramic-vase/meta.json'
@@ -95,6 +96,7 @@ import cpMetaWasteBin from '../contemporary-props/models/wheeled-waste-bin/meta.
 import cpMetaUtilityCabinet from '../contemporary-props/models/utility-cabinet/meta.json'
 import cpMetaLockerBank from '../contemporary-props/models/parcel-locker-bank/meta.json'
 import cpMetaBoomBarrier from '../contemporary-props/models/boom-barrier/meta.json'
+import cpMetaFireHydrant from '../contemporary-props/models/fire-hydrant/meta.json'
 import cpMetaPavementSign from '../contemporary-props/models/pavement-sign-board/meta.json'
 import cpMetaLectern from '../contemporary-props/models/lectern/meta.json'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
@@ -322,6 +324,7 @@ const CONTEMPORARY_ORDER = [
   'utility-cabinet',
   'parcel-locker-bank',
   'boom-barrier',
+  'fire-hydrant',
 ] as const
 
 const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
@@ -346,6 +349,7 @@ const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'utility-cabinet': as(createCpUtilityCabinet),
   'parcel-locker-bank': as(createCpLockerBank),
   'boom-barrier': as(createCpBoomBarrier),
+  'fire-hydrant': as(createCpFireHydrant),
   'pavement-sign-board': as(createCpPavementSign),
   'lectern': as(createCpLectern),
 }
@@ -372,6 +376,7 @@ const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
   'utility-cabinet': cpMetaUtilityCabinet as ModelMetaLike,
   'parcel-locker-bank': cpMetaLockerBank as ModelMetaLike,
   'boom-barrier': cpMetaBoomBarrier as ModelMetaLike,
+  'fire-hydrant': cpMetaFireHydrant as ModelMetaLike,
   'pavement-sign-board': cpMetaPavementSign as ModelMetaLike,
   'lectern': cpMetaLectern as ModelMetaLike,
 }

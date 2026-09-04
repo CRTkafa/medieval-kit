@@ -209,6 +209,15 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**One anchor has one axis, so a part that must swing about its own placed
+frame needs its own part -- and a rotation ORDER.** The hydrant's three caps
+hinge about three different tangents. Built as one part, any rotation carries
+them round the barrel rather than down its side. Each is now its own part with
+the outlet as its origin, its geometry written in the UNROTATED frame, and its
+anchor set to `YXZ` with a fixed Y that places it and an X that swings it. The
+Y-then-X order is the whole trick: X applied second happens in the placed frame,
+which is the tangent.
+
 **`chamferedBoxGeometry`'s length is its height, and this is the third model to
 get it wrong.** The cable drum's spokes stood on end; the boom barrier's colour
 bands came out one section thick along the boom and a band long across it --
@@ -551,13 +560,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 23 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 24 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Four to go after the boom barrier. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. Three to go after the fire hydrant. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.

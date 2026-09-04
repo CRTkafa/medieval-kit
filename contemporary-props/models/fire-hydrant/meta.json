@@ -1,0 +1,15 @@
+{
+  "title": "Fire Hydrant",
+  "description": "A dry-barrel hydrant: one stepped revolve carrying a break flange, a bonnet flange, bolt heads and radial outlets, with caps that swing off on chains. The profile is the model.",
+  "category": "Street",
+  "tags": ["contemporary", "street", "safety", "procedural"],
+  "controls": {
+    "height": { "type": "number", "label": "Height", "min": 0.5, "max": 1.4, "step": 0.01, "unit": "m" },
+    "outlets": { "type": "number", "label": "Outlets", "min": 1, "max": 3, "step": 1 },
+    "unscrewed": { "type": "number", "label": "Caps off", "min": 0, "max": 1, "step": 0.05 },
+    "segments": { "type": "number", "label": "Sides", "min": 12, "max": 48, "step": 1 },
+    "seed": { "type": "number", "label": "Variation seed", "min": 1, "max": 64, "step": 1 }
+  },
+  "materialSlots": ["retroreflective", "stainless"],
+  "parts": ["body", "chains", "capA", "capB", "capC"]
+}
