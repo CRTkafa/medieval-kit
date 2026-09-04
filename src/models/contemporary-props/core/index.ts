@@ -20,9 +20,11 @@ export {
   staveGeometry,
   smoothNormals,
   tubeGeometry,
+  wheelGeometry,
   taperedBoxGeometry,
 } from './geometry.ts'
-export type { Level, MottleOptions, PerforationPattern, Plan, PlanLevel, RoughenOptions, Section, SheetLevel, Vec3 } from './geometry.ts'
+export type { Level, MottleOptions, PerforationPattern, Plan, PlanLevel,
+  Wheel, RoughenOptions, Section, SheetLevel, Vec3 } from './geometry.ts'
 export { bakeOcclusion } from './occlusion.ts'
 export type { OcclusionOptions } from './occlusion.ts'
 export { createKitModel } from './kit.ts'

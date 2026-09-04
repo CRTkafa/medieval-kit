@@ -303,6 +303,105 @@ export function latheGeometry(
   return finish(sink)
 }
 
+/** A wheel, in the two materials every wheel is made of. */
+export interface Wheel {
+  /** The tyre, which wants a rubber slot. */
+  readonly tyre: BufferGeometry
+  /** The hub and its spokes, which want a plastic or steel one. */
+  readonly hub: BufferGeometry
+  /**
+   * How far the axle must be off the ground for the wheel to TOUCH it.
+   *
+   * Not the radius. A lathed wheel is a polygon, its vertices sit at the
+   * radius and its faces are chords, so unless a vertex happens to land at the
+   * bottom the lowest point of the tyre is `radius * cos(pi / segments)` --
+   * about a millimetre in on a 200 mm wheel at 22 sides. Put the axle at the
+   * radius and the whole model hovers by that millimetre, which is exactly the
+   * fault the ground check exists to catch and exactly the kind nobody finds
+   * by looking.
+   */
+  readonly contact: number
+}
+
+/**
+ * A road wheel: a tyre on a spoked hub, axle along X, centred on the origin.
+ *
+ * The catalogue calls the wheeled bin "the first appearance of the wheel part",
+ * and the part is written here rather than in that model because four more rows
+ * in three other domains want the same thing: the sack truck and the wheelbarrow
+ * (37 and 38, tools), the shopping trolley (42, retail) and the task chair
+ * (93, office). The castor at row 39 is this plus a swivel fork, not a
+ * different wheel.
+ *
+ * Two geometries out rather than one, because a wheel is two materials and the
+ * kit assigns a slot per part. Returning them merged would mean every consumer
+ * who wanted a red trolley got red tyres.
+ *
+ * The tyre is a lathe rather than a torus: a real one has a flat contact patch
+ * and a shoulder, and a torus reads as a doughnut at every size.
+ */
+export function wheelGeometry(options: {
+  readonly radius: number
+  readonly width: number
+  readonly spokes: number
+  readonly tyre: Color
+  readonly hub: Color
+  readonly segments?: number
+}): Wheel {
+  const { radius: R, width: W, tyre: tyreColour, hub: hubColour } = options
+  const segments = Math.max(12, Math.round(options.segments ?? 22))
+  const spokes = Math.max(3, Math.round(options.spokes))
+  const half = W / 2
+
+  // Built about Y and tipped, for the reason every round thing here is: the
+  // lathe turns about Y and one rotation at the end is cheaper than carrying
+  // an axis through every level.
+  const tyre = latheGeometry([
+    { y: -half, radius: R * 0.72 },
+    { y: -half, radius: R * 0.93 },
+    { y: -half * 0.72, radius: R },
+    { y: half * 0.72, radius: R },
+    { y: half, radius: R * 0.93 },
+    { y: half, radius: R * 0.72 },
+  ], segments, [0, 0, 0], tyreColour, { capBottom: false, capTop: false })
+  tyre.rotateZ(Math.PI / 2)
+
+  const hubPieces: BufferGeometry[] = [
+    latheGeometry([
+      { y: -half * 0.62, radius: R * 0.2 },
+      { y: -half * 0.62, radius: R * 0.74 },
+      { y: -half * 0.3, radius: R * 0.76 },
+      { y: half * 0.3, radius: R * 0.76 },
+      { y: half * 0.62, radius: R * 0.74 },
+      { y: half * 0.62, radius: R * 0.2 },
+    ], segments, [0, 0, 0], hubColour, { capBottom: false, capTop: false }),
+    // The boss the axle passes through, closed at both ends so the wheel is
+    // not a tube you can see down.
+    latheGeometry([
+      { y: -half * 0.8, radius: R * 0.2 },
+      { y: half * 0.8, radius: R * 0.2 },
+    ], 12, [0, 0, 0], hubColour, { capBottom: true, capTop: true }),
+  ]
+
+  // The spokes, which are the only thing that says a wheel is turning when it
+  // turns: a plain disc at speed looks exactly like a plain disc at rest.
+  for (let i = 0; i < spokes; i += 1) {
+    const a = (i / spokes) * Math.PI * 2
+    const spoke = chamferedBoxGeometry(
+      [R * 0.17, R * 0.5], [R * 0.13, R * 0.5],
+      W * 0.34, R * 0.03, [0, 0, 0], hubColour,
+    )
+    spoke.rotateX(Math.PI / 2)
+    spoke.translate(0, 0, R * 0.47)
+    spoke.rotateY(a)
+    hubPieces.push(spoke)
+  }
+  const hub = mergeColoured(hubPieces)
+  hub.rotateZ(Math.PI / 2)
+
+  return { tyre, hub, contact: R * Math.cos(Math.PI / segments) }
+}
+
 /** How a surface is punched, for `perforate`. */
 export interface PerforationPattern {
   /** Rows of holes up the surface. */

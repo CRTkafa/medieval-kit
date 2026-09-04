@@ -163,11 +163,31 @@ export function createModel(overrides: Partial<FencePanelConfig> = {}) {
       const columns = Math.max(4, Math.round(inner / Math.min(0.3, Math.max(0.02, config.pitch))))
       const wireR = H * 0.0022
 
+      /*
+       * Every wire is cut to the FRAME, not to a rectangle.
+       *
+       * The frame's top corners are radiused and the mesh is not, so wires cut
+       * to one length stand proud of the bend at both ends -- four or five of
+       * them at each corner, sticking out into the air above the tube they are
+       * supposed to be welded to. It is the sort of fault that is invisible
+       * head on and obvious from anywhere else.
+       *
+       * The cut is the arc's own equation, so it follows the corner radius
+       * whatever it is set to.
+       */
+      const topAt = (x: number): number => {
+        const over = Math.abs(x) - (half - corner)
+        if (over <= 0) return meshHi
+        const drop = corner - Math.sqrt(Math.max(0, corner * corner - over * over))
+        return meshHi - drop
+      }
       for (let i = 0; i <= columns; i += 1) {
         const x = -inner / 2 + (inner / columns) * i
+        const hi = topAt(x)
+        if (hi - meshLo <= wireR * 2) continue
         panelPieces.push(chamferedBoxGeometry(
           [wireR * 2, wireR * 2], [wireR * 2, wireR * 2],
-          meshHi - meshLo, wireR * 0.5, [x, (meshLo + meshHi) / 2, 0], wire,
+          hi - meshLo, wireR * 0.5, [x, (meshLo + hi) / 2, 0], wire,
         ))
       }
       for (let i = 0; i < rails; i += 1) {
@@ -219,6 +239,25 @@ export function createModel(overrides: Partial<FencePanelConfig> = {}) {
         )
         block.translate(side * half, footH / 2, 0)
         footPieces.push(block)
+
+        // The notches at each end, which every moulded foot has: they are how
+        // a forklift or a hand gets under it, and without them the foot reads
+        // as a bevelled brick.
+        for (const end of [-1, 1]) {
+          footPieces.push(chamferedBoxGeometry(
+            [H * 0.05, footL * 0.16], [H * 0.05, footL * 0.16],
+            footH * 0.55, footH * 0.06,
+            [side * half, footH * 0.28, end * footL * 0.34], tint('rubber', -0.3, 0.3),
+          ))
+        }
+        // ...and the moulded recess on the top face either side of the boss.
+        for (const end of [-1, 1]) {
+          footPieces.push(chamferedBoxGeometry(
+            [H * 0.042, footL * 0.2], [H * 0.036, footL * 0.18],
+            footH * 0.12, footH * 0.04,
+            [side * half, footH * 0.96, end * footL * 0.24], tint('rubber', -0.16, 0.3),
+          ))
+        }
         // The boss the leg goes into, so the leg lands in something rather
         // than on it.
         footPieces.push(chamferedBoxGeometry(

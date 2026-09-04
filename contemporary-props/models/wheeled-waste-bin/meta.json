@@ -1,0 +1,15 @@
+{
+  "title": "Wheeled Waste Bin",
+  "description": "A 240 litre moulded bin: a tapered ribbed body, a domed lid hinged on the bar across the back, and two wheels on an axle. The kit's first use of the shared wheel part, which comes back as a tyre and a hub in their own materials.",
+  "category": "Street",
+  "tags": ["contemporary", "street", "waste", "procedural"],
+  "controls": {
+    "height": { "type": "number", "label": "Height", "min": 0.7, "max": 1.4, "step": 0.01, "unit": "m" },
+    "width": { "type": "number", "label": "Width", "min": 0.35, "max": 0.9, "step": 0.01, "unit": "m" },
+    "depth": { "type": "number", "label": "Depth", "min": 0.4, "max": 1.1, "step": 0.01, "unit": "m" },
+    "open": { "type": "number", "label": "Lid open", "min": 0, "max": 1, "step": 0.05 },
+    "seed": { "type": "number", "label": "Variation seed", "min": 1, "max": 64, "step": 1 }
+  },
+  "materialSlots": ["plastic", "rubber"],
+  "parts": ["body", "lid", "wheels", "tyres"]
+}
