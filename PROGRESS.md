@@ -209,6 +209,15 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**An array cut to a rectangle inside a frame that is not one.** The fence
+panel's mesh was cut to a single length, and the frame's top corners are
+radiused: four or five wires at each corner stood proud of the bend, welded to
+nothing. Head on it is invisible; from anywhere else it is the first thing you
+see. The fix is not a shorter wire, it is cutting every wire to the frame's own
+equation -- which then follows the corner radius when that becomes a slider.
+Worth expecting wherever a straight array meets a curved boundary: the bus
+shelter's glazing and the trolley's basket are both this shape of problem.
+
 **A part with an origin is written in that origin's own space.** The kit does
 not subtract a declared origin from world-written geometry -- it moves parts
 into place only long enough to bake occlusion, and puts them back. Write the
@@ -494,13 +503,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 18 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 19 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Nine to go after the litter bin. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. Eight to go after the fence panel. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.

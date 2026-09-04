@@ -1,0 +1,16 @@
+{
+  "title": "Temporary Fence Panel",
+  "description": "A galvanised welded-mesh panel in a bent tube frame, standing in two moulded feet, with coupler tabs on both legs. The wire pitch is a slider and the count is derived from it, so no bay is ever a sliver.",
+  "category": "Street",
+  "tags": ["contemporary", "street", "construction", "procedural"],
+  "controls": {
+    "width": { "type": "number", "label": "Width", "min": 1, "max": 3.6, "step": 0.05, "unit": "m" },
+    "height": { "type": "number", "label": "Height", "min": 1, "max": 2.6, "step": 0.02, "unit": "m" },
+    "pitch": { "type": "number", "label": "Wire pitch", "min": 0.02, "max": 0.3, "step": 0.005, "unit": "m" },
+    "rails": { "type": "number", "label": "Horizontal wires", "min": 2, "max": 14, "step": 1 },
+    "swing": { "type": "number", "label": "Swing at coupler", "min": 0, "max": 1, "step": 0.05 },
+    "seed": { "type": "number", "label": "Variation seed", "min": 1, "max": 64, "step": 1 }
+  },
+  "materialSlots": ["galvanised", "rubber"],
+  "parts": ["panel", "feet"]
+}

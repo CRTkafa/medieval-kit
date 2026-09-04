@@ -67,6 +67,7 @@ import { createModel as createCpParkBench } from '@/models/contemporary-props/pa
 import { createModel as createCpBikeRack } from '@/models/contemporary-props/bike-rack/model.ts'
 import { createModel as createCpCableDrum } from '@/models/contemporary-props/cable-drum/model.ts'
 import { createModel as createCpLitterBin } from '@/models/contemporary-props/litter-bin/model.ts'
+import { createModel as createCpFencePanel } from '@/models/contemporary-props/temporary-fence-panel/model.ts'
 import { createModel as createCpPavementSign } from '@/models/contemporary-props/pavement-sign-board/model.ts'
 import { createModel as createCpLectern } from '@/models/contemporary-props/lectern/model.ts'
 import cpMetaCeramicVase from '../contemporary-props/models/ceramic-vase/meta.json'
@@ -85,6 +86,7 @@ import cpMetaParkBench from '../contemporary-props/models/park-bench/meta.json'
 import cpMetaBikeRack from '../contemporary-props/models/bike-rack/meta.json'
 import cpMetaCableDrum from '../contemporary-props/models/cable-drum/meta.json'
 import cpMetaLitterBin from '../contemporary-props/models/litter-bin/meta.json'
+import cpMetaFencePanel from '../contemporary-props/models/temporary-fence-panel/meta.json'
 import cpMetaPavementSign from '../contemporary-props/models/pavement-sign-board/meta.json'
 import cpMetaLectern from '../contemporary-props/models/lectern/meta.json'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
@@ -307,6 +309,7 @@ const CONTEMPORARY_ORDER = [
   'bike-rack',
   'cable-drum',
   'litter-bin',
+  'temporary-fence-panel',
 ] as const
 
 const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
@@ -326,6 +329,7 @@ const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'bike-rack': as(createCpBikeRack),
   'cable-drum': as(createCpCableDrum),
   'litter-bin': as(createCpLitterBin),
+  'temporary-fence-panel': as(createCpFencePanel),
   'pavement-sign-board': as(createCpPavementSign),
   'lectern': as(createCpLectern),
 }
@@ -347,6 +351,7 @@ const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
   'bike-rack': cpMetaBikeRack as ModelMetaLike,
   'cable-drum': cpMetaCableDrum as ModelMetaLike,
   'litter-bin': cpMetaLitterBin as ModelMetaLike,
+  'temporary-fence-panel': cpMetaFencePanel as ModelMetaLike,
   'pavement-sign-board': cpMetaPavementSign as ModelMetaLike,
   'lectern': cpMetaLectern as ModelMetaLike,
 }
