@@ -209,6 +209,23 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**`createTinter`'s lift lands on the LINEAR value, and clamps to black long
+before it looks as though it should.** `steelPainted` reads as a mid grey and
+measures 0.202 in linear lightness, not the 0.48 it appears to be, so a lift
+past -0.19 is not "darker", it is zero. Two models were built on the wrong side
+of that line without anybody noticing: the utility cabinet's carcass came out
+pure black, and so had the park bench's frames, whose comment claimed a charcoal
+it did not have. Both are fixed and both now take small lifts and get their
+depth from hue and saturation instead. Worth checking against any slot before
+reaching past about -0.15.
+
+**A louvre's whole read is its shadow, so the part carrying it has to be baked.**
+Four banks of five blades standing 8 mm off a door in the door's own paint are
+four rectangles of exactly the door's colour. They were in the geometry and in
+the silhouette from a raking angle, and head on the door was blank -- for three
+passes, because the occlusion bake was running on the carcass and not on the
+doors.
+
 **A polygonal wheel does not touch the ground at its radius.** A lathed wheel's
 vertices sit at the radius and its faces are chords, so unless a vertex happens
 to land at the bottom the lowest point of the tyre is `radius * cos(pi / sides)`
@@ -316,7 +333,9 @@ depending on the loose number. Worth keeping in mind that this is the first row
 whose action moves half the object: every gate written against parts that only
 translate is worth re-reading the first time one rotates.
 
-**Face the camera.** The bench was written with its front at -Z, which is a
+**Face the camera** -- and this is the second model to pay for it, so it is now
+a line in each model rather than only a note here. The bench was written with
+its front at -Z, which is a
 sensible drawing convention and means every one of the kit's renders was of
 the back of it: the arch, the bolts and the rake were all on the far side.
 `renderObject` stands at +Z. Anything with a front faces +Z, and the cheapest
@@ -513,13 +532,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 20 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 21 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Seven to go after the wheeled bin. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. Six to go after the utility cabinet. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.

@@ -110,16 +110,21 @@ export function createModel(overrides: Partial<ParkBenchConfig> = {}) {
       // ten weathered slats came out as one colour.
       const wood = (): ReturnType<typeof tint> => tint('wood', -0.13 + jitter(random, 0.08), 1.6)
       /*
-       * Black-painted cast iron, and not TOO black. The palette's painted
-       * steel is a mid grey because most painted steel is; municipal ironwork
-       * is black, and the tint knows it while the slot stays swappable. But
-       * at -0.34 the frames rendered as flat silhouettes with no form in them
-       * at all -- the arch, the knee and the feet were all one cut-out -- and
-       * the occlusion bake then took what was left. Charcoal leaves the
-       * shading somewhere to go, which is what lets a casting read as a solid
-       * with edges rather than as a shape.
+       * Black-painted cast iron, and NOT actually black.
+       *
+       * The palette's painted steel is a mid grey because most painted steel
+       * is; municipal ironwork is black, and the tint carries that while the
+       * slot stays swappable. The first cut used -0.34 and the frames rendered
+       * as flat silhouettes with no form in them at all -- the arch, the knee
+       * and the feet were one cut-out -- so it went to -0.22, which looked
+       * better and was still exactly zero.
+       *
+       * `createTinter`'s lift lands on the LINEAR value, where `steelPainted`
+       * measures 0.202 rather than the 0.48 it appears to be, so anything past
+       * -0.19 clamps to black. This is a real charcoal, and it is the value the
+       * earlier comment claimed and did not have.
        */
-      const iron = tint('steelPainted', -0.22, 0.4)
+      const iron = tint('steelPainted', -0.13, 0.4)
 
       /**
        * A limb of the casting, from a centre line.

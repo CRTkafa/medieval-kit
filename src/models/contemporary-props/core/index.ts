@@ -11,6 +11,7 @@ export {
   flipGeometry,
   headGeometry,
   latheGeometry,
+  louvreGeometry,
   planSweepGeometry,
   mergeColoured,
   perforate,

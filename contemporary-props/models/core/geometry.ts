@@ -303,6 +303,73 @@ export function latheGeometry(
   return finish(sink)
 }
 
+/**
+ * A bank of louvres: pressed blades in an opening, facing -Z.
+ *
+ * Wanted by two rows in two domains, which is why it is here: the locker bank
+ * (44, office) and the pavement utility cabinet (49, street). The catalogue
+ * planned it "built on perforate" and it is not, and the reason is worth
+ * writing down -- `perforate` emits flat web on a described surface, which is
+ * right for a hole you see through. A louvre is the opposite: solid blades
+ * standing PROUD of a face, each throwing a shadow onto the one below, and the
+ * shadow is the whole read. Sharing code between them would have cost both.
+ *
+ * The blades are pressed rather than open, which is what a sheet-metal louvre
+ * actually is: the skin is slit and the lip rolled out, so there is a blade in
+ * front and a slot behind it. Modelled as open slats in a frame it reads as a
+ * shutter, which is a different object.
+ */
+export function louvreGeometry(options: {
+  readonly width: number
+  readonly height: number
+  readonly blades: number
+  /** How far a blade stands off the face (metres). */
+  readonly depth: number
+  /** Tilt of a blade, radians. Positive throws the shadow downward. */
+  readonly angle: number
+  readonly centre: Vec3
+  readonly colour: Color
+  readonly shadow?: Color
+}): BufferGeometry {
+  const blades = Math.max(1, Math.round(options.blades))
+  const { width: W, height: H, depth, angle, centre, colour } = options
+  const shadow = options.shadow ?? colour
+  const pieces: BufferGeometry[] = []
+
+  // The pitch is derived, so a bank of four and a bank of nine fill the same
+  // opening -- the slat-with-gap rule the park bench settled, in its third use.
+  const pitch = H / blades
+  const thick = pitch * 0.42
+
+  for (let i = 0; i < blades; i += 1) {
+    const y = -H / 2 + pitch * (i + 0.5)
+    const blade = chamferedBoxGeometry(
+      [W, thick], [W * 0.985, thick * 0.8],
+      depth, thick * 0.22, [0, 0, 0], colour,
+    )
+    // Built standing up, laid on its face, then tilted so its lower edge is
+    // further out than its upper one: that is which way a louvre sheds rain.
+    blade.rotateX(-Math.PI / 2)
+    blade.rotateX(angle)
+    blade.translate(centre[0], centre[1] + y, centre[2] - depth / 2)
+    pieces.push(blade)
+
+    // The slot behind the blade. It is dark rather than open because the skin
+    // it is pressed from has a cabinet behind it, and a hole that shows the
+    // background is a hole through the whole object.
+    if (i < blades) {
+      const slot = chamferedBoxGeometry(
+        [W * 0.94, pitch * 0.34], [W * 0.94, pitch * 0.34],
+        depth * 0.5, thick * 0.1, [0, 0, 0], shadow,
+      )
+      slot.rotateX(-Math.PI / 2)
+      slot.translate(centre[0], centre[1] + y + pitch * 0.26, centre[2] - depth * 0.12)
+      pieces.push(slot)
+    }
+  }
+  return mergeColoured(pieces)
+}
+
 /** A wheel, in the two materials every wheel is made of. */
 export interface Wheel {
   /** The tyre, which wants a rubber slot. */

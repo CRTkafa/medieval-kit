@@ -69,6 +69,7 @@ import { createModel as createCpCableDrum } from '@/models/contemporary-props/ca
 import { createModel as createCpLitterBin } from '@/models/contemporary-props/litter-bin/model.ts'
 import { createModel as createCpFencePanel } from '@/models/contemporary-props/temporary-fence-panel/model.ts'
 import { createModel as createCpWasteBin } from '@/models/contemporary-props/wheeled-waste-bin/model.ts'
+import { createModel as createCpUtilityCabinet } from '@/models/contemporary-props/utility-cabinet/model.ts'
 import { createModel as createCpPavementSign } from '@/models/contemporary-props/pavement-sign-board/model.ts'
 import { createModel as createCpLectern } from '@/models/contemporary-props/lectern/model.ts'
 import cpMetaCeramicVase from '../contemporary-props/models/ceramic-vase/meta.json'
@@ -89,6 +90,7 @@ import cpMetaCableDrum from '../contemporary-props/models/cable-drum/meta.json'
 import cpMetaLitterBin from '../contemporary-props/models/litter-bin/meta.json'
 import cpMetaFencePanel from '../contemporary-props/models/temporary-fence-panel/meta.json'
 import cpMetaWasteBin from '../contemporary-props/models/wheeled-waste-bin/meta.json'
+import cpMetaUtilityCabinet from '../contemporary-props/models/utility-cabinet/meta.json'
 import cpMetaPavementSign from '../contemporary-props/models/pavement-sign-board/meta.json'
 import cpMetaLectern from '../contemporary-props/models/lectern/meta.json'
 import { createModel as createShield } from '@/models/medieval-kit/round-shield/model.ts'
@@ -313,6 +315,7 @@ const CONTEMPORARY_ORDER = [
   'litter-bin',
   'temporary-fence-panel',
   'wheeled-waste-bin',
+  'utility-cabinet',
 ] as const
 
 const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
@@ -334,6 +337,7 @@ const CONTEMPORARY_FACTORIES: Readonly<Record<string, () => KitModel>> = {
   'litter-bin': as(createCpLitterBin),
   'temporary-fence-panel': as(createCpFencePanel),
   'wheeled-waste-bin': as(createCpWasteBin),
+  'utility-cabinet': as(createCpUtilityCabinet),
   'pavement-sign-board': as(createCpPavementSign),
   'lectern': as(createCpLectern),
 }
@@ -357,6 +361,7 @@ const CONTEMPORARY_META: Readonly<Record<string, ModelMetaLike>> = {
   'litter-bin': cpMetaLitterBin as ModelMetaLike,
   'temporary-fence-panel': cpMetaFencePanel as ModelMetaLike,
   'wheeled-waste-bin': cpMetaWasteBin as ModelMetaLike,
+  'utility-cabinet': cpMetaUtilityCabinet as ModelMetaLike,
   'pavement-sign-board': cpMetaPavementSign as ModelMetaLike,
   'lectern': cpMetaLectern as ModelMetaLike,
 }
