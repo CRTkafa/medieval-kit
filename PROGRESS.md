@@ -209,6 +209,21 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**`latheGeometry` caps by default, and the cap on an annulus is a solid disc.**
+The cable drum's flanges were built as an outer tube, an inner tube and two
+annulus faces -- four pieces, two of them quietly filling in the hole the other
+two were drawing, because a two-level ring at one height still gets a disc of
+its own radius at each end. The flange rendered as a solid plate with the spokes
+lying on top of it. A ring is ONE lathe with a closed profile walked round it:
+in at the bottom, out, up, back in, no caps. Same shape, a quarter of the code,
+and a real hole through the middle.
+
+**`chamferedBoxGeometry`'s length is its HEIGHT, not part of its section.** The
+same drum's spokes were given their length as the section's second dimension,
+so eight of them came out standing on end and scattered across the flange like
+dropped bricks. It renders, it passes every gate, and it is only visible in a
+picture.
+
 **Do not act on a proportion until you have measured it yourself.** The cycle
 stand's first critique said the hoops were too short and wide; they were
 narrowed on that word alone. The next round said the tube was far too thick for
@@ -462,13 +477,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 16 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 17 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Eleven to go after the cycle stand. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. Ten to go after the cable drum. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.

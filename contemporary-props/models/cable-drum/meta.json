@@ -1,0 +1,15 @@
+{
+  "title": "Cable Drum",
+  "description": "An empty or part-wound timber cable drum lying on its flanges: spoked flanges laminated in two courses, a barrel of staves, and a helix of cable wound one turn beside the last. Three arrays in one object, and it rolls.",
+  "category": "Street",
+  "tags": ["contemporary", "street", "utility", "procedural"],
+  "controls": {
+    "diameter": { "type": "number", "label": "Flange diameter", "min": 0.5, "max": 2.4, "step": 0.02, "unit": "m" },
+    "width": { "type": "number", "label": "Width", "min": 0.25, "max": 1.6, "step": 0.02, "unit": "m" },
+    "spokes": { "type": "number", "label": "Spokes", "min": 4, "max": 12, "step": 1 },
+    "wound": { "type": "number", "label": "Cable wound", "min": 0, "max": 1, "step": 0.05 },
+    "seed": { "type": "number", "label": "Variation seed", "min": 1, "max": 64, "step": 1 }
+  },
+  "materialSlots": ["wood", "galvanised", "rubber"],
+  "parts": ["flanges", "barrel", "cable"]
+}

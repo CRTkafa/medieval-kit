@@ -677,7 +677,7 @@
       "address": "@contemporary-props/core",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.494Z",
+      "installedAt": "2026-09-04T21:08:46.024Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\core\\geometry.ts",
@@ -724,7 +724,7 @@
       "address": "@contemporary-props/ceramic-vase",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.498Z",
+      "installedAt": "2026-09-04T21:08:46.030Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\ceramic-vase\\model.ts",
@@ -739,7 +739,7 @@
       "address": "@contemporary-props/coffee-mug",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.499Z",
+      "installedAt": "2026-09-04T21:08:46.031Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\coffee-mug\\model.ts",
@@ -754,7 +754,7 @@
       "address": "@contemporary-props/pepper-mill",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.511Z",
+      "installedAt": "2026-09-04T21:08:46.045Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\pepper-mill\\model.ts",
@@ -769,7 +769,7 @@
       "address": "@contemporary-props/stockpot",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.514Z",
+      "installedAt": "2026-09-04T21:08:46.048Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\stockpot\\model.ts",
@@ -784,7 +784,7 @@
       "address": "@contemporary-props/traffic-cone",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.517Z",
+      "installedAt": "2026-09-04T21:08:46.051Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\traffic-cone\\model.ts",
@@ -799,7 +799,7 @@
       "address": "@contemporary-props/wine-glass",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.519Z",
+      "installedAt": "2026-09-04T21:08:46.053Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\wine-glass\\model.ts",
@@ -814,7 +814,7 @@
       "address": "@contemporary-props/kit",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.519Z",
+      "installedAt": "2026-09-04T21:08:46.053Z",
       "files": [],
       "dependencies": []
     },
@@ -822,7 +822,7 @@
       "address": "@contemporary-props/street-bollard",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.516Z",
+      "installedAt": "2026-09-04T21:08:46.049Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\street-bollard\\model.ts",
@@ -837,7 +837,7 @@
       "address": "@contemporary-props/gas-cylinder",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.502Z",
+      "installedAt": "2026-09-04T21:08:46.035Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\gas-cylinder\\model.ts",
@@ -852,7 +852,7 @@
       "address": "@contemporary-props/fire-extinguisher",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.501Z",
+      "installedAt": "2026-09-04T21:08:46.033Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\fire-extinguisher\\model.ts",
@@ -867,7 +867,7 @@
       "address": "@contemporary-props/pedestal-basin",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.510Z",
+      "installedAt": "2026-09-04T21:08:46.043Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\pedestal-basin\\model.ts",
@@ -882,7 +882,7 @@
       "address": "@contemporary-props/jersey-barrier",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.504Z",
+      "installedAt": "2026-09-04T21:08:46.036Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\jersey-barrier\\model.ts",
@@ -897,7 +897,7 @@
       "address": "@contemporary-props/picnic-table",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.513Z",
+      "installedAt": "2026-09-04T21:08:46.046Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\picnic-table\\model.ts",
@@ -912,7 +912,7 @@
       "address": "@contemporary-props/park-bench",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.507Z",
+      "installedAt": "2026-09-04T21:08:46.040Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\park-bench\\model.ts",
@@ -927,7 +927,7 @@
       "address": "@contemporary-props/pavement-sign-board",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.508Z",
+      "installedAt": "2026-09-04T21:08:46.041Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\pavement-sign-board\\model.ts",
@@ -942,7 +942,7 @@
       "address": "@contemporary-props/lectern",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.505Z",
+      "installedAt": "2026-09-04T21:08:46.038Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\lectern\\model.ts",
@@ -957,11 +957,26 @@
       "address": "@contemporary-props/bike-rack",
       "source": "file:contemporary-props/dist/registry.json",
       "version": "workspace",
-      "installedAt": "2026-09-04T20:54:45.496Z",
+      "installedAt": "2026-09-04T21:08:46.027Z",
       "files": [
         {
           "path": "src\\models\\contemporary-props\\bike-rack\\model.ts",
           "sourceHash": "7fba900a4e20322003e00b82e832d49c5303529c7bcd41c1429c12ce82643f3e"
+        }
+      ],
+      "dependencies": [
+        "three@>=0.185.0"
+      ]
+    },
+    "@contemporary-props/cable-drum": {
+      "address": "@contemporary-props/cable-drum",
+      "source": "file:contemporary-props/dist/registry.json",
+      "version": "workspace",
+      "installedAt": "2026-09-04T21:08:46.028Z",
+      "files": [
+        {
+          "path": "src\\models\\contemporary-props\\cable-drum\\model.ts",
+          "sourceHash": "23e13f4efccf35cc760f3a3210621e1a6d9e881ae499d949fff97d97b2dff0d6"
         }
       ],
       "dependencies": [
