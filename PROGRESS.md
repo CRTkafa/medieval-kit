@@ -209,6 +209,14 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**A lit thing wants a different SLOT, not a brighter colour.** The street lamp's
+lens switches between `glassTinted` and `emissive` on its `lit` config rather
+than lightening one material, because those are two different things: unlit it
+is grey glass that takes shadow, lit it is a source that must not. The kit
+already knows this -- it skips the occlusion bake on emissive parts -- and
+switching the slot is what lets that rule fire. A part's slot is chosen inside
+`build`, so a config can drive it and no update hook is needed.
+
 **One anchor has one axis, so a part that must swing about its own placed
 frame needs its own part -- and a rotation ORDER.** The hydrant's three caps
 hinge about three different tangents. Built as one part, any rotation carries
@@ -560,13 +568,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 24 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 25 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Three to go after the fire hydrant. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. Two to go after the street lamp. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.

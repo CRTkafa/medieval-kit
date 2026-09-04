@@ -1,0 +1,15 @@
+{
+  "title": "Street Lamp Column",
+  "description": "A cast lamp standard: a flared bell base, a tapering column, a swan neck swept as one tube and a shallow head with a lens that can be lit. The only thing in the street domain that draws a line across the sky.",
+  "category": "Street",
+  "tags": ["contemporary", "street", "lighting", "procedural"],
+  "controls": {
+    "height": { "type": "number", "label": "Height", "min": 2, "max": 8, "step": 0.05, "unit": "m" },
+    "reach": { "type": "number", "label": "Reach", "min": 0.1, "max": 1.6, "step": 0.01, "unit": "m" },
+    "head": { "type": "number", "label": "Head diameter", "min": 0.1, "max": 1.2, "step": 0.01, "unit": "m" },
+    "lit": { "type": "number", "label": "Lit", "min": 0, "max": 1, "step": 1 },
+    "seed": { "type": "number", "label": "Variation seed", "min": 1, "max": 64, "step": 1 }
+  },
+  "materialSlots": ["steelPainted", "glassTinted", "emissive"],
+  "parts": ["column", "arm", "lens"]
+}
