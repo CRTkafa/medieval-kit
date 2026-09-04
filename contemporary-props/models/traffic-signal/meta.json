@@ -1,0 +1,16 @@
+{
+  "title": "Traffic Signal",
+  "description": "Three hooded aspects in a dark casing, hung from a galvanised outreach arm on a drop pin. One aspect lights at a time in its own colour, and the head swings about the pin.",
+  "category": "Street",
+  "tags": ["contemporary", "street", "traffic", "lighting", "procedural"],
+  "controls": {
+    "height": { "type": "number", "label": "Pole height", "min": 2, "max": 6, "step": 0.05, "unit": "m" },
+    "reach": { "type": "number", "label": "Arm reach", "min": 0, "max": 3, "step": 0.05, "unit": "m" },
+    "lens": { "type": "number", "label": "Lens diameter", "min": 0.08, "max": 0.4, "step": 0.005, "unit": "m" },
+    "aspect": { "type": "number", "label": "Lit aspect", "min": 0, "max": 3, "step": 1 },
+    "swing": { "type": "number", "label": "Head swing", "min": -1, "max": 1, "step": 0.05 },
+    "seed": { "type": "number", "label": "Variation seed", "min": 1, "max": 64, "step": 1 }
+  },
+  "materialSlots": ["aluminium", "steelPainted", "glassTinted", "emissive"],
+  "parts": ["pole", "head", "dark", "red", "amber", "green"]
+}

@@ -64,6 +64,17 @@ export async function exportGlb(root: Object3D, options: GlbOptions = {}): Promi
     // The kit is already in metres and Y-up, i.e. the same as glTF's own
     // convention — no conversion needed.
     trs: false,
+    /*
+     * Hidden parts go in the file too.
+     *
+     * GLTFExporter defaults to `onlyVisible: true`, which is right for a scene
+     * snapshot and wrong for a model: a part a model hides is still part of the
+     * model. The traffic signal builds three lit aspects and shows one, so the
+     * default exported a signal that could never turn green — two of its six
+     * meshes were simply missing, and the round-trip check caught it as a mesh
+     * count that did not survive.
+     */
+    onlyVisible: false,
   })
   if (!(result instanceof ArrayBuffer)) throw new Error('GLTFExporter did not return binary output')
   return result

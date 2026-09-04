@@ -61,7 +61,17 @@ interface Triangle {
 function collect(root: Object3D): Triangle[] {
   root.updateMatrixWorld(true)
   const out: Triangle[] = []
-  root.traverse((object) => {
+  /*
+   * `traverseVisible`, not `traverse`.
+   *
+   * A part whose anchor has `visible = false` is not drawn by three.js, so a
+   * raster that draws it does not agree with the viewer the kit ships. Nothing
+   * noticed until a model turned a part off: the traffic signal builds all
+   * three of its lit aspects and shows one, and with a plain traverse every
+   * render, every contact sheet and every critique showed a signal displaying
+   * red, amber and green at once.
+   */
+  root.traverseVisible((object) => {
     if (!(object instanceof Mesh)) return
     const geometry = object.geometry
     const position = geometry.getAttribute('position')
@@ -640,7 +650,8 @@ function frameCamera(
    */
   const points: Vector3[] = []
   root.updateMatrixWorld(true)
-  root.traverse((object) => {
+  // Visible only, so the framing agrees with what `collect` will actually draw.
+  root.traverseVisible((object) => {
     if (!(object instanceof Mesh)) return
     const position = object.geometry.getAttribute('position')
     if (!position) return

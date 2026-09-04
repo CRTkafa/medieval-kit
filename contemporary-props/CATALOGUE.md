@@ -320,3 +320,14 @@ the catalogue row that will reuse it NEXT, in another domain, and to say in the
 helper's own comment which row that is. `perforate` is the first test of that --
 it is wanted by the litter bin here, and by the colander and the mesh bin in the
 kitchen -- and it should be built to all three or it should not be built.
+
+**Street is now complete: seventeen of seventeen**, closing with the bus shelter
+and the traffic signal. The mitigation held. Six helpers came out of the domain --
+`perforate`, `louvreGeometry`, `wheelGeometry`, `splitRuns`, `extrudeGeometry`
+and `planSweepGeometry` -- and every one of them names rows in other domains in
+its own comment. The rule also did its other job, which was to say NO: the
+signal's slant-cut visor has no second customer anywhere in the catalogue, so it
+lives in the model that uses it rather than in core.
+
+Next is a domain, not a scatter. Kitchen and office are the two arguments above;
+kitchen is deeper and already has four rows built.

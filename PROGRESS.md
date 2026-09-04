@@ -13,7 +13,7 @@ viewer is live at <https://medieval.crt.fyi/> and rebuilds on every push. The
 GitHub repository is private, which is deliberate, and which is why the npm
 page's Repository and Issues links 404 until that changes.
 
-**`@contemporary-props`** is 26 models into a core hundred, with a further
+**`@contemporary-props`** is 27 models into a core hundred, with a further
 150 catalogued behind them. Present-day objects,
 no lowpoly budget, no historical constraint. 19 material slots. Nothing is
 published and the version is `0.0.0`.
@@ -420,6 +420,15 @@ moving.** `rotateZ(a)` sends local +X to `(cos a, sin a)` and local +Y to
 `(-sin a, cos a)`. Getting it backwards built a cart wheel from twelve stubby
 blocks sticking 89 mm past their own felloe, straight through the iron tyre.
 
+**An invisible part was still being drawn, and still not being exported.**
+Two bugs with one cause, both found by the first model that hides anything. The
+offline raster used `traverse` rather than `traverseVisible`, so a signal with
+one aspect lit rendered showing red, amber and green at once in every check,
+every contact sheet and every critique. `GLTFExporter` has the opposite default,
+`onlyVisible: true`, so the exported GLB was missing two of its six meshes and
+could never have turned green. A part a model hides is still part of the model,
+and it took a model with a switch to notice that neither end agreed.
+
 **A depth-direction proportion cannot be judged from the check render, and
 the critic will report it missing every time.** The bus shelter's roof stands
 3.54 post widths past its front posts; the critic reported "roughly one post
@@ -429,6 +438,22 @@ front post into the rear glazing and turned two glazed bays into three. Neither
 was a fault in the model. When a finding is about an extent along Z, measure the
 built geometry before touching it -- and if it survives the measurement, the
 render is what has to change, not the object.
+
+The traffic signal is the same trap in its other form: its reference is a studio
+photograph of a HEAD, and the model is a head on a pole because a prop has to
+reach the ground. Six rounds sat at 78, 76, 78, 79, 78, 78. Three of those rounds
+asked for something already measured and correct -- the aspect pitch, the arm
+diameter, the lens as a fraction of the casing -- and one asked for the Fresnel
+rings that had been added the round before. Reversal plus a flat score is the
+protocol's own stop condition, and the honest reading is that a whole-object
+render cannot be scored against a close-up of one part of it.
+
+**`instanceof Mesh` fails silently against a model imported from outside the
+project.** A measuring script written into the scratchpad resolved its own copy
+of `three`, so every `instanceof` was false and the script cheerfully reported
+zero triangles in a 2,500-triangle model. The kit's own scripts use `isMesh`,
+which is why they work; use it in throwaway scripts too, and print a total as a
+canary before trusting a filtered count of anything.
 
 **Measure by slicing triangles, not by sampling vertices.** A tapered box has
 corners only at its ends, so vertex sampling reported 0.0 mm for a 17 mm
@@ -578,13 +603,15 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 26 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 27 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. One to go after the bus shelter: `traffic-signal`. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. **Street is now complete, seventeen of seventeen**,
+  closing with the bus shelter and the traffic signal. Next is a domain rather
+  than a scatter, and the catalogue's argument favours kitchen. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.
