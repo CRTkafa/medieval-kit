@@ -303,6 +303,48 @@ export function latheGeometry(
   return finish(sink)
 }
 
+/** One run in a split: where it starts, and how long it is. */
+export interface Run {
+  /** Centre of the run along the axis, measured from the middle of the total. */
+  readonly at: number
+  readonly size: number
+}
+
+/**
+ * Divides a length into runs of given relative weights, with a gap between
+ * each, so the whole thing fills EXACTLY.
+ *
+ * This is the slat-with-gap rule the park bench settled, generalised to runs
+ * that are not all the same size. That rule -- derive the pitch from the run
+ * and the count, never type it -- only handles equal divisions, and the moment
+ * a bank has one tall door and four short ones it is no longer enough.
+ *
+ * Three rows in three domains want the unequal version: the locker bank (44,
+ * office), the parcel locker bank (50, street, which the catalogue calls the
+ * generator's harder case) and the server rack (78, computing). The arithmetic
+ * is the shared part; the box each run gets filled with is not, and stays in
+ * the models.
+ *
+ * Weights are relative, so [1, 1, 2] is two shorts and a double whatever the
+ * total is, and changing the total moves every run rather than leaving a
+ * remainder at one end.
+ */
+export function splitRuns(total: number, gap: number, weights: readonly number[]): Run[] {
+  if (weights.length === 0) return []
+  const sum = weights.reduce((a, b) => a + b, 0)
+  if (sum <= 0) return []
+  // The gaps come out of the total first; whatever is left is shared by weight.
+  const usable = Math.max(0, total - gap * (weights.length - 1))
+  const runs: Run[] = []
+  let cursor = -total / 2
+  for (const weight of weights) {
+    const size = (usable * weight) / sum
+    runs.push({ at: cursor + size / 2, size })
+    cursor += size + gap
+  }
+  return runs
+}
+
 /**
  * A bank of louvres: pressed blades in an opening, facing -Z.
  *

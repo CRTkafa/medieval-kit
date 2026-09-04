@@ -209,6 +209,15 @@ is `latheGeometry`'s and always was: walk from the bottom of the outer wall
 upward. Write the profile whichever way round reads best and reverse it at the
 call site.
 
+**A "mixed size distribution" means width too, and it is easy to only do
+height.** The parcel locker bank's first cut varied its tier heights per bay and
+every door still came out one bay wide -- which is a column exercise, not the
+harder case the catalogue asked for, and a parcel locker's whole reason for
+existing is that a parcel is not one size. The fix is a seeded merge of one
+adjacent PAIR of bays whose lower two thirds carry doors spanning both. Worth
+remembering for the server rack and the office locker bank, which share the
+split arithmetic and will want the same thing.
+
 **`createTinter`'s lift lands on the LINEAR value, and clamps to black long
 before it looks as though it should.** `steelPainted` reads as a mid grey and
 measures 0.202 in linear lightness, not the 0.48 it appears to be, so a lift
@@ -532,13 +541,13 @@ asking GitHub Support to purge actually closes it.
 
 ## Open
 
-- **`contemporary-props`**: 21 of the core 100 modelled, and the build order is
+- **`contemporary-props`**: 22 of the core 100 modelled, and the build order is
   now DOMAIN FIRST. The catalogue's own section 5 argued against spreading the
   first hundred across nine domains and named the failure mode: nine domains at
   a third each, with the helper set shaped by whichever got built first. Fifteen
   models in, that had happened -- five street, four kitchen, two tools, one each
   of four more -- so the remaining street rows are being finished before
-  anything else starts. Six to go after the utility cabinet. The reasoning is written into `CATALOGUE.md` under
+  anything else starts. Five to go after the parcel locker bank. The reasoning is written into `CATALOGUE.md` under
   "Decided: street first"; the short version is that seventeen street objects is
   a scene somebody can assemble, and what carried the medieval kit was one
   flythrough rather than a model count.
